@@ -24,8 +24,6 @@
 //
 //============================================================================
 
-//`define AXI_DEBUG
-
 module emu
 (
 	//Master input clock
@@ -33,13 +31,10 @@ module emu
 
 	//Async reset from top-level module.
 	//Can be used as initial reset.
-	input         RESET,					// Active-HIGH! Meaning "Low for RUNNING".
-	
-	input			  BTN_USER,
-	input			  BTN_OSD,
+	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [44:0] HPS_BUS,
+	inout  [45:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        CLK_VIDEO,
@@ -49,8 +44,9 @@ module emu
 	output        CE_PIXEL,
 
 	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	output  [7:0] VIDEO_ARX,
-	output  [7:0] VIDEO_ARY,
+	//if VIDEO_ARX[12] or VIDEO_ARY[12] is set then [11:0] contains scaled size instead of aspect ratio.
+	output [12:0] VIDEO_ARX,
+	output [12:0] VIDEO_ARY,
 
 	output  [7:0] VGA_R,
 	output  [7:0] VGA_G,
@@ -58,6 +54,42 @@ module emu
 	output        VGA_HS,
 	output        VGA_VS,
 	output        VGA_DE,    // = ~(VBlank | HBlank)
+	output        VGA_F1,
+	output [1:0]  VGA_SL,
+	output        VGA_SCALER, // Force VGA scaler
+
+	input  [11:0] HDMI_WIDTH,
+	input  [11:0] HDMI_HEIGHT,
+	output        HDMI_FREEZE,
+
+`ifdef MISTER_FB
+	// Use framebuffer in DDRAM (USE_FB=1 in qsf)
+	// FB_FORMAT:
+	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
+	//    [3]   : 0=16bits 565 1=16bits 1555
+	//    [4]   : 0=RGB  1=BGR (for 16/24/32 modes)
+	//
+	// FB_STRIDE either 0 (rounded to 256 bytes) or multiple of pixel size (in bytes)
+	output        FB_EN,
+	output  [4:0] FB_FORMAT,
+	output [11:0] FB_WIDTH,
+	output [11:0] FB_HEIGHT,
+	output [31:0] FB_BASE,
+	output [13:0] FB_STRIDE,
+	input         FB_VBL,
+	input         FB_LL,
+	output        FB_FORCE_BLANK,
+
+`ifdef MISTER_FB_PALETTE
+	// Palette control for 8bit modes.
+	// Ignored for other video modes.
+	output        FB_PAL_CLK,
+	output  [7:0] FB_PAL_ADDR,
+	output [23:0] FB_PAL_DOUT,
+	input  [23:0] FB_PAL_DIN,
+	output        FB_PAL_WR,
+`endif
+`endif
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
@@ -67,39 +99,27 @@ module emu
 	output  [1:0] LED_POWER,
 	output  [1:0] LED_DISK,
 
+	// I/O board button press simulation (active high)
+	// b[1]: user button
+	// b[0]: osd button
+	output  [1:0] BUTTONS,
+
+	input         CLK_AUDIO, // 24.576 MHz
 	output [15:0] AUDIO_L,
 	output [15:0] AUDIO_R,
 	output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
 	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
-	input         TAPE_IN,
 
-	// SD-SPI
+	//ADC
+	inout   [3:0] ADC_BUS,
+
+	//SD-SPI
 	output        SD_SCK,
 	output        SD_MOSI,
 	input         SD_MISO,
 	output        SD_CS,
 	input         SD_CD,
 
-`ifdef VERILATOR
-	output					os_rom_ce_n,
-	output					os_rom_oe_n,
-	input		[7:0]		os_rom_q,
-	input						os_rom_oe,
-	
-	input wire        ioctl_download,
-	input wire        ioctl_wr,
-	//input wire [24:0] ioctl_addr,
-	input wire [15:0] ioctl_data,
-	input wire  [7:0] ioctl_index,
-	output reg         ioctl_wait,
-	
-	(*noprune*)output reg [31:0] loader_addr,
-	
-	output wire [31:0] cart_q,
-	
-	output wire [1:0] cart_oe,
-`endif
-	
 	//High latency DDR3 RAM interface
 	//Use for non-critical time purposes
 	output        DDRAM_CLK,
@@ -125,66 +145,69 @@ module emu
 	output        SDRAM_nCAS,
 	output        SDRAM_nRAS,
 	output        SDRAM_nWE,
-	
-	input	  [6:0] USER_IN,
-	output  [6:0] USER_OUT,
 
-	output  wire         bridge_m0_waitrequest,
-	output  wire [31:0]  bridge_m0_readdata,
-	output  reg          bridge_m0_readdatavalid,
-	input   wire [6:0]   bridge_m0_burstcount,
-	input   wire [31:0]  bridge_m0_writedata,
-	input   wire [19:0]  bridge_m0_address,
-	input   wire         bridge_m0_write,
-	input   wire         bridge_m0_read,
-	input   wire         bridge_m0_byteenable,
-	output  wire         bridge_m0_clk
-);
-
-`ifdef AXI_DEBUG
-axi_debug axi_debug_inst
-(
-	.reset( RESET ) ,		// input  reset
-	.clk_sys( clk_sys ) ,	// input  clk_sys
-	
-	.bridge_m0_waitrequest( bridge_m0_waitrequest ) ,		// output  bridge_m0_waitrequest
-	.bridge_m0_readdata( bridge_m0_readdata ) ,				// output [31:0] bridge_m0_readdata
-	.bridge_m0_readdatavalid( bridge_m0_readdatavalid ) ,	// output  bridge_m0_readdatavalid
-	.bridge_m0_burstcount( bridge_m0_burstcount ) ,	// input [6:0] bridge_m0_burstcount
-	.bridge_m0_writedata( bridge_m0_writedata ) ,	// input [31:0] bridge_m0_writedata
-	.bridge_m0_address( bridge_m0_address ) ,			// input [19:0] bridge_m0_address
-	.bridge_m0_write( bridge_m0_write ) ,				// input  bridge_m0_write
-	.bridge_m0_read( bridge_m0_read ) ,					// input  bridge_m0_read
-	.bridge_m0_byteenable( bridge_m0_byteenable ) ,	// input  bridge_m0_byteenable
-	.bridge_m0_clk( bridge_m0_clk ) ,					// output  bridge_m0_clk
-	
-	.cpu_clken_dbg( cpu_clken_dbg ) ,			// output  cpu_clken
-	
-	.fx68k_as_n_dbg( fx68k_as_n_dbg ) ,			// input  fx68k_as_n
-	
-	.reg0( {16'h0000, fx68k_addr_dbg} ) ,	// input [31:0] reg0
-	.reg1( {16'h0000, fx68k_din_dbg} ) ,	// input [31:0] reg1
-	.reg2( {16'h0000, fx68k_dout_dbg} ) ,	// input [31:0] reg2
-	.reg3( 32'h33333333 ) ,						// input [31:0] reg3
-	.reg4( 32'h44444444 ) ,						// input [31:0] reg4
-	.reg5( 32'h55555555 ) ,						// input [31:0] reg5
-	.reg6( 32'h66666666 ) ,						// input [31:0] reg6
-	.reg7( 32'h77777777 ) 						// input [31:0] reg7
-);
-`else
-assign cpu_clken_dbg = 1'b1;
-assign bridge_m0_waitrequest = 1'b0;
-assign bridge_m0_readdatavalid = bridge_m0_read;
+`ifdef MISTER_DUAL_SDRAM
+	//Secondary SDRAM
+	//Set all output SDRAM_* signals to Z ASAP if SDRAM2_EN is 0
+	input         SDRAM2_EN,
+	output        SDRAM2_CLK,
+	output [12:0] SDRAM2_A,
+	output  [1:0] SDRAM2_BA,
+	inout  [15:0] SDRAM2_DQ,
+	output        SDRAM2_nCS,
+	output        SDRAM2_nCAS,
+	output        SDRAM2_nRAS,
+	output        SDRAM2_nWE,
 `endif
 
+	input         UART_CTS,
+	output        UART_RTS,
+	input         UART_RXD,
+	output        UART_TXD,
+	output        UART_DTR,
+	input         UART_DSR,
 
+	// Open-drain User port.
+	// 0 - D+/RX
+	// 1 - D-/TX
+	// 2..6 - USR2..USR6
+	// Set USER_OUT to 1 to read from USER_IN.
+	input   [6:0] USER_IN,
+	output  [6:0] USER_OUT,
+
+	input         OSD_STATUS
+);
+
+///////// Default values for ports not used in this core /////////
+
+assign ADC_BUS  = 'Z;
+assign USER_OUT = '1;
+assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
-//assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
-//assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
+assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
+assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
 
-//assign LED_USER  = ioctl_download;
-assign LED_DISK  = 0;
+assign VGA_SL = 0;
+assign VGA_F1 = 0;
+assign VGA_SCALER = 0;
+assign HDMI_FREEZE = 0;
+
+assign AUDIO_S = 0;
+assign AUDIO_L = 0;
+assign AUDIO_R = 0;
+assign AUDIO_MIX = 0;
+
+assign LED_DISK = 0;
 assign LED_POWER = 0;
+assign BUTTONS = 0;
+
+// assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
+// //assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
+// //assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
+
+// //assign LED_USER  = ioctl_download;
+// assign LED_DISK  = 0;
+// assign LED_POWER = 0;
 
 
 wire clk_106m;
@@ -250,12 +273,13 @@ wire [10:0] ps2_key;
 wire [24:0] ps2_mouse;
 wire [21:0] gamma_bus;
 
-hps_io #(.STRLEN($size(CONF_STR)>>3), .PS2DIV(1000), .WIDE(1)) hps_io
+hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
+	.EXT_BUS(),
+	.gamma_bus(),
 
-	.conf_str(CONF_STR),
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
 	.buttons(buttons),
@@ -264,6 +288,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3), .PS2DIV(1000), .WIDE(1)) hps_io
 	.status(status),
 	.status_in({status[31:8],region_req,status[5:0]}),
 	.status_set(region_set),
+	.status_menumask(),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),

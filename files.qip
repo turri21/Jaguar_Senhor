@@ -1,0 +1,21 @@
+#set_global_assignment -name SEARCH_PATH jagnetlists/verilog/base
+#set_global_assignment -name SEARCH_PATH jagnetlists/verilog/tom
+#set_global_assignment -name SEARCH_PATH jagnetlists/verilog/jerry
+#set_global_assignment -name SEARCH_PATH jagnetlists/verilog
+
+set_global_assignment -name SYSTEMVERILOG_FILE Jaguar.sv
+set_global_assignment -name QIP_FILE rtl/pll/pll_0002.qip
+
+set_global_assignment -name VERILOG_FILE rtl/jaguar/jaguar.v
+set_global_assignment -name VERILOG_FILE rtl/jaguar/jdefs.v
+set_global_assignment -name QIP_FILE rtl/FX68K/fx68k.qip
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/sdram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/ddram.sv
+set_global_assignment -name VHDL_FILE rtl/bram.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/os_rom_bram.sv
+
+#set_global_assignment -name QIP_FILE rtl/os_rom_bram.qip
+#set_global_assignment -name VERILOG_FILE axi_debug.v
+#set_global_assignment -name VERILOG_FILE sys/fast_talker.v
+#set_global_assignment -name QIP_FILE dsp_dbg_ram0.qip
+#set_global_assignment -name QIP_FILE dsp_dbg_ram1.qip
