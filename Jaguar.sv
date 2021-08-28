@@ -1,5 +1,5 @@
 //============================================================================
-// 
+//
 //  Port to MiSTer.
 //  Copyright (C) 2018 Sorgelig
 //
@@ -184,31 +184,23 @@ assign ADC_BUS  = 'Z;
 assign USER_OUT = '1;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
-assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
-assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
+//assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
+//assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;
 
 assign VGA_SL = 0;
 assign VGA_F1 = 0;
 assign VGA_SCALER = 0;
 assign HDMI_FREEZE = 0;
 
-assign AUDIO_S = 0;
-assign AUDIO_L = 0;
-assign AUDIO_R = 0;
-assign AUDIO_MIX = 0;
-
 assign LED_DISK = 0;
 assign LED_POWER = 0;
 assign BUTTONS = 0;
 
-// assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
-// //assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
-// //assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
+assign LED_USER  = ioctl_download;
 
-// //assign LED_USER  = ioctl_download;
-// assign LED_DISK  = 0;
-// assign LED_POWER = 0;
-
+`define RAM_IDLE  4'b0000
+`define RDY_WAIT  4'b0001
+`define RAM_END   4'b1111
 
 wire clk_106m;
 
@@ -222,20 +214,25 @@ pll pll
 );
 
 
-(*keep*)wire clk_sys = clk_106m;
+wire clk_sys = clk_106m;
 
 
 wire [1:0] scale = status[3:2];
 
-assign VIDEO_ARX = status[1] ? 8'd16 : 8'd4;
-assign VIDEO_ARY = status[1] ? 8'd9  : 8'd3; 
+// assign VIDEO_ARX = status[1] ? 8'd16 : 8'd4;
+// assign VIDEO_ARY = status[1] ? 8'd9  : 8'd3;
+
+wire [1:0] ar = status[8:7];
+
+assign VIDEO_ARX = (!ar) ? 12'd4 : (ar - 1'd1);
+assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
 
 // Status Bit Map:
-//             Uppercase O                    Lowercase o
-// 0         1         2         3          4         5         6   
+//              Upper                          Lower
+// 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
-// 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789abcdefghijklmnopqrstuv
-// XXXXXXXXXXXX XXXXXXXXXXXXXXXXXXX XXXXX 
+// 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
+// X XXXXXXX
 
 // 	"O24,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 
@@ -243,19 +240,21 @@ assign VIDEO_ARY = status[1] ? 8'd9  : 8'd3;
 localparam CONF_STR = {
 	"Jaguar;;",
 	"-;",
-	"F,JAGJ64ROMBIN;",
+	"FS1,JAGJ64ROMBIN;",
+	"FC2,ROM,Load Bios;",
 	"-;",
-	"O4,Region Setting,PAL,NTSC;",
+	"O4,Region Setting,NTSC,PAL;",
 	"O2,Cart Checksum Patch,Off,On;",
-	"O1,Aspect ratio,4:3,16:9;",
+	"O78,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
 	"O3,CPU Speed,Normal,Turbo;",
 	"-;",
 	"R0,Reset;",
 	"J1,A,B,C,Option,Pause,1,2,3,4,5,6,7,8,9,0,Star,Hash;",
-	"J2,A,B,C,Option,Pause,1,2,3,4,5,6,7,8,9,0,Star,Hash;",
+	"jn,Y,B,A,Select,Start;",
+	"jp,Y,B,A,Select,Start;",
 	"-;",
-	"V,v1.51.",`BUILD_DATE
+	"V,v",`BUILD_DATE
 };
 
 wire [63:0] status;
@@ -272,23 +271,27 @@ wire        forced_scandoubler;
 wire [10:0] ps2_key;
 wire [24:0] ps2_mouse;
 wire [21:0] gamma_bus;
-
+wire [15:0] sdram_sz;
 hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
 	.HPS_BUS(HPS_BUS),
-	.EXT_BUS(),
-	.gamma_bus(),
+
+	.buttons(buttons),
+	.status(status),
+
+	.sdram_sz(sdram_sz),
 
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
-	.buttons(buttons),
+
+	.new_vmode(0),
+
 	.forced_scandoubler(forced_scandoubler),
 
-	.status(status),
-	.status_in({status[31:8],region_req,status[5:0]}),
-	.status_set(region_set),
-	.status_menumask(),
+	// .status_in({status[31:8],region_req,status[5:0]}),
+	// .status_set(region_set),
+	//.status_menumask('0),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
@@ -298,20 +301,15 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 	.ioctl_wait(ioctl_wait),
 
 	.ps2_key(ps2_key),
-	
 	.ps2_mouse(ps2_mouse),
-	
+
 	.gamma_bus(gamma_bus)
 );
 
-
-
-`ifndef VERILATOR
 reg [31:0] loader_addr;
-`endif
 
 //reg [15:0] loader_data;
-(*keep*)wire [15:0] loader_data = ioctl_data;
+wire [15:0] loader_data = ioctl_data;
 
 reg        loader_wr;
 reg        loader_en;
@@ -341,10 +339,10 @@ if (reset) begin
 end
 else begin
 	old_download <= ioctl_download;
-	
+
 	loader_wr <= 0;	// Default!
-	
-	if (~old_download && ioctl_download && ioctl_index) begin
+
+	if (~old_download && ioctl_download && ioctl_index[5:0] == 1) begin
 		loader_addr <= 32'h0080_0000;								// Force the cart ROM to load at 0x00800000 in DDR for Jag core. (byte address!)
 																			// (The ROM actually gets written at 0x30800000 in DDR, which is done when load_addr gets assigned to DDRAM_ADDR below).
 		loader_en <= 1;
@@ -356,12 +354,12 @@ else begin
 
 	if (loader_wr) loader_addr <= loader_addr + 2;				// Writing a 16-bit WORD at a time!
 
-	if (ioctl_wr && ioctl_index) begin
+	if (ioctl_wr && ioctl_index[5:0] == 1) begin
 		loader_wr <= 1;
 		ioctl_wait <= 1;
 	end
 	else if (rom_wrack) ioctl_wait <= 1'b0;
-	
+
 	//if (loader_en && DDRAM_BUSY) ioctl_wait <= 1;
 	//else ioctl_wait <= 0;
 
@@ -383,94 +381,26 @@ else begin
 	if (RESET) ioctl_wait <= 0;
 end
 
-`ifndef VERILATOR
 wire reset = RESET | status[0] | buttons[1];
-`else
-wire reset = RESET;
-`endif
-
 
 //wire xresetl = !(reset | loader_en);		// Forces reset only when ioctl_index>0, for cart load.
 wire xresetl = !(reset | ioctl_download);	// Forces reset on BIOS (boot.rom) load (ioctl_index==0), AND cart ROM.
+wire [9:0] dram_a;
+wire dram_ras_n;
+wire dram_cas_n;
+wire [3:0] dram_oe_n;
+wire [3:0] dram_uw_n;
+wire [3:0] dram_lw_n;
+wire [63:0] dram_d;
+wire ch1_ready;
+// From SDRAM to the core.
+wire [63:0] dram_q = ch1_dout[63:0];
 
-
-/* verilator lint_off PINMISSING */
-jaguar jaguar_inst
-(
-	.xresetl( xresetl ) ,		// input  xresetl
-	
-	.sys_clk( clk_sys ) ,		// input  clk_sys
-	
-	.dram_a( dram_a ) ,			// output [9:0] dram_a
-	.dram_ras_n( dram_ras_n ) ,// output  dram_ras_n
-	.dram_cas_n( dram_cas_n ) ,// output  dram_cas_n
-	.dram_oe_n( dram_oe_n ) ,	// output [3:0] dram_oe_n
-	.dram_uw_n( dram_uw_n ) ,	// output [3:0] dram_uw_n
-	.dram_lw_n( dram_lw_n ) ,	// output [3:0] dram_lw_n
-	.dram_d( dram_d ) ,			// output [63:0] dram_d
-	.dram_q( dram_q ) ,			// input [63:0] dram_q
-	.dram_oe( dram_oe ) ,		// input [3:0] dram_oe
-	
-	.fdram( fdram ) ,				// output  fdram
-	.ram_rdy( ram_rdy ) ,		// input  ram_rdy
-
-	.abus_out( abus_out ) ,			// output [23:0] Main Address bus for Tom/Jerry/68K/BIOS/CART.
-
-	//.os_rom_ce_n( os_rom_ce_n ) ,	// output  os_rom_ce_n
-	//.os_rom_oe_n( os_rom_oe_n ) ,	// output  os_rom_oe_n
-	//.os_rom_oe( os_rom_oe ) ,		// input  os_rom_oe
-	.os_rom_q( os_rom_q ) ,			// input [7:0] os_rom_q
-	
-	//.cart_oe_n( cart_oe_n ) ,	// output [1:0] cart_oe_n
-	.cart_ce_n( cart_ce_n ) ,	// output  cart_ce_n
-	.cart_q( cart_q ) ,			// input [31:0] cart_q
-	//.cart_oe( cart_oe ) ,		// input [1:0] cart_oe
-	
-	.vga_bl( vga_bl ) ,		// output  vga_bl
-	.vga_vs_n( vga_vs_n ) ,	// output  vga_vs_n
-	.vga_hs_n( vga_hs_n ) ,	// output  vga_hs_n
-	.vga_r( vga_r ) ,			// output [7:0] vga_r
-	.vga_g( vga_g ) ,			// output [7:0] vga_g
-	.vga_b( vga_b ) ,			// output [7:0] vga_b
-	
-	.pix_clk( pix_clk ) ,	// output  pix_clk
-	
-	.hblank( hblank ) ,		// output hblank
-	.vblank( vblank ) ,		// output vblank
-	
-//	.aud_l_pwm( aud_l_pwm ) ,	// output  aud_l_pwm
-//	.aud_r_pwm( aud_r_pwm ) , 	// output  aud_r_pwm
-	
-	.aud_16_l( aud_16_l ) ,		// output  [15:0] aud_16_l
-	.aud_16_r( aud_16_r ) ,		// output  [15:0] aud_16_r
-	
-	.xwaitl( xwaitl ) ,
-	
-	.vid_ce( vid_ce ) ,
-	
-	.joystick_0( joystick_0 ) ,
-	
-	.startcas( startcas ) ,
-	
-	.turbo( status[3] ) ,
-	
-	.ntsc( status[4] ) ,
-	
-	.cpu_clken_dbg( cpu_clken_dbg ) ,
-	
-	.fx68k_addr_dbg( fx68k_addr_dbg ) ,
-	
-	.fx68k_as_n_dbg( fx68k_as_n_dbg ) ,
-	
-	.fx68k_din_dbg( fx68k_din_dbg ) ,
-	.fx68k_dout_dbg( fx68k_dout_dbg ) ,
-	
-	.ps2_mouse( ps2_mouse ) ,
-	
-	.mouse_ena_1( status[6:5]==1 ) ,
-	.mouse_ena_2( status[6:5]==2 )
-);
-
+wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
+wire fdram;
+wire ram_rdy = (mem_cyc == `RAM_END) || ch1_ready;	// Latency kludge.
+wire [23:0] abus_out;
+wire [7:0] os_rom_q;
 wire cpu_clken_dbg;
 wire fx68k_as_n_dbg;
 wire [23:0] fx68k_addr_dbg;
@@ -480,54 +410,137 @@ wire [15:0] fx68k_dout_dbg;
 wire pix_clk;
 wire hblank;
 wire vblank;
+wire vga_bl;
+wire vga_hs_n;
+wire vga_vs_n;
+wire vid_ce;
 
-wire [23:0] abus_out;
+wire [7:0] vga_r;
+wire [7:0] vga_g;
+wire [7:0] vga_b;
+
+reg cart_ce_n_1 = 1;
+wire cart_ce_n;
+wire [31:0] cart_q;
+wire cart_ce_n_falling = (cart_ce_n_1 && !cart_ce_n);
+
+reg xwaitl;
+wire startcas;
+
+wire [15:0] aud_16_l;
+wire [15:0] aud_16_r;
+
+jaguar jaguar_inst
+(
+	.xresetl( xresetl ) ,		// input  xresetl
+
+	.sys_clk( clk_sys ) ,		// input  clk_sys
+
+	.dram_a( dram_a ) ,			// output [9:0] dram_a
+	.dram_ras_n( dram_ras_n ) ,// output  dram_ras_n
+	.dram_cas_n( dram_cas_n ) ,// output  dram_cas_n
+	.dram_oe_n( dram_oe_n ) ,	// output [3:0] dram_oe_n
+	.dram_uw_n( dram_uw_n ) ,	// output [3:0] dram_uw_n
+	.dram_lw_n( dram_lw_n ) ,	// output [3:0] dram_lw_n
+	.dram_d( dram_d ) ,			// output [63:0] dram_d
+	.dram_q( dram_q ) ,			// input [63:0] dram_q
+	.dram_oe( dram_oe ) ,		// input [3:0] dram_oe
+
+	.fdram( fdram ) ,				// output  fdram
+	.ram_rdy( ram_rdy ) ,		// input  ram_rdy
+
+	.abus_out( abus_out ) ,			// output [23:0] Main Address bus for Tom/Jerry/68K/BIOS/CART.
+
+	//.os_rom_ce_n( os_rom_ce_n ) ,	// output  os_rom_ce_n
+	//.os_rom_oe_n( os_rom_oe_n ) ,	// output  os_rom_oe_n
+	//.os_rom_oe( os_rom_oe ) ,		// input  os_rom_oe
+	.os_rom_q( os_rom_q ) ,			// input [7:0] os_rom_q
+
+	//.cart_oe_n( cart_oe_n ) ,	// output [1:0] cart_oe_n
+	.cart_ce_n( cart_ce_n ) ,	// output  cart_ce_n
+	.cart_q( cart_q ) ,			// input [31:0] cart_q
+	//.cart_oe( cart_oe ) ,		// input [1:0] cart_oe
+
+	.vga_bl( vga_bl ) ,		// output  vga_bl
+	.vga_vs_n( vga_vs_n ) ,	// output  vga_vs_n
+	.vga_hs_n( vga_hs_n ) ,	// output  vga_hs_n
+	.vga_r( vga_r ) ,			// output [7:0] vga_r
+	.vga_g( vga_g ) ,			// output [7:0] vga_g
+	.vga_b( vga_b ) ,			// output [7:0] vga_b
+
+	.pix_clk( pix_clk ) ,	// output  pix_clk
+
+	.hblank( hblank ) ,		// output hblank
+	.vblank( vblank ) ,		// output vblank
+
+//	.aud_l_pwm( aud_l_pwm ) ,	// output  aud_l_pwm
+//	.aud_r_pwm( aud_r_pwm ) , 	// output  aud_r_pwm
+
+	.aud_16_l( aud_16_l ) ,		// output  [15:0] aud_16_l
+	.aud_16_r( aud_16_r ) ,		// output  [15:0] aud_16_r
+
+	.xwaitl( xwaitl ) ,
+
+	.vid_ce( vid_ce ) ,
+
+	.joystick_0( joystick_0 ) ,
+
+	.startcas( startcas ) ,
+
+	.turbo( status[3] ) ,
+
+	.ntsc( ~status[4] ) ,
+
+	.cpu_clken_dbg( cpu_clken_dbg ) ,
+
+	.fx68k_addr_dbg( fx68k_addr_dbg ) ,
+
+	.fx68k_as_n_dbg( fx68k_as_n_dbg ) ,
+
+	.fx68k_din_dbg( fx68k_din_dbg ) ,
+	.fx68k_dout_dbg( fx68k_dout_dbg ) ,
+
+	.ps2_mouse( ps2_mouse ) ,
+
+	.mouse_ena_1( status[6:5]==1 ) ,
+	.mouse_ena_2( status[6:5]==2 )
+);
 
 //wire [1:0] romwidth = status[5:4];
 wire [1:0] romwidth = 2'd2;
 
-reg xwaitl;
+assign cpu_clken_dbg = 1'b1;
+// assign bridge_m0_waitrequest = 1'b0;
+// assign bridge_m0_readdatavalid = bridge_m0_read;
 
-wire [7:0] os_rom_q;
-
-wire vid_ce;
-
-wire startcas;
-
-/* verilator lint_on PINMISSING */
-
-wire fdram;
-
-`ifndef VERILATOR
 //wire os_rom_ce_n;
 //wire os_rom_oe_n;
 //wire os_rom_oe = (~os_rom_ce_n & ~os_rom_oe_n);	// os_rom_oe feeds back TO the core, to enable the internal drivers.
 
-wire os_download = ioctl_download && ioctl_index==0;
+wire os_download = ioctl_download && (ioctl_index[5:0] == 0 || ioctl_index[5:0] == 2);
 
 wire [16:0] os_rom_addr = (os_download) ? {ioctl_addr[16:1],os_lsb} : abus_out[16:0];
 
 wire [7:0] os_rom_din = (!os_lsb) ? ioctl_data[7:0] : ioctl_data[15:8];
 
-os_rom_bram	os_rom_bram_inst (
-	.clock ( clk_sys ),
-	
-	.address ( os_rom_addr ),
-	.data ( os_rom_din ),
-	.wren ( os_wren ),
-
-	.q ( os_rom_dout )
-);
-
+reg os_wren;
 wire [7:0] os_rom_dout;
 
-assign os_rom_q = (abus_out[16:0]==17'h0136E && status[2]) ? 8'h60 :	// Patch the BEQ instruction to a BRA, to skip the cart checksum fail.
-																				os_rom_dout;
-`endif
+os_rom_bram	os_rom_bram_inst (
+	.clock   ( clk_sys ),
+
+	.address ( os_rom_addr ),
+	.data    ( os_rom_din ),
+	.wren    ( os_wren ),
+
+	.q       ( os_rom_dout )
+);
+
+
+assign os_rom_q = (abus_out[16:0]==17'h0136E && status[2]) ? 8'h60 : os_rom_dout; // Patch the BEQ instruction to a BRA, to skip the cart checksum fail.
 
 
 reg os_lsb = 1;
-reg os_wren;
 always @(posedge clk_sys) begin
 	os_wren <= 1'b0;
 
@@ -540,16 +553,6 @@ always @(posedge clk_sys) begin
 		os_lsb <= 1'b1;
 	end
 end
-
-
-wire vga_bl;
-wire vga_hs_n;
-wire vga_vs_n;
-
-wire [7:0] vga_r;
-wire [7:0] vga_g;
-wire [7:0] vga_b;
-
 
 //assign VGA_DE = !vga_bl;
 //assign VGA_HS = !vga_hs_n;
@@ -571,52 +574,44 @@ wire CE_PIX = vid_ce;
 
 video_mixer #(.LINE_LENGTH(640), .HALF_DEPTH(0)) video_mixer
 (
-	.clk_vid(CLK_VIDEO),					// input clk_sys
-	.ce_pix( CE_PIX ),					// input ce_pix
-	
-	.ce_pix_out(CE_PIXEL),				// output ce_pix_out
+	.CLK_VIDEO(CLK_VIDEO),      // input clk_sys
+	.ce_pix( CE_PIX ),          // input ce_pix
 
-	.scanlines(0),							// input [1:0] scanlines
-	//.scandoubler(~interlace && (scale || forced_scandoubler)),
-	
+	.HDMI_FREEZE(0),
+	.freeze_sync(),
+
 	.scandoubler(1'b0),
-	
+
 	.hq2x(scale==1),
 
-	.mono(0),				// input mono
-	
 	.gamma_bus(gamma_bus),
 
-	.R(vga_r),				// Input [DW:0] R (set by HALF_DEPTH. is [7:0] here).
-	.G(vga_g),				// Input [DW:0] G (set by HALF_DEPTH. is [7:0] here).
-	.B(vga_b),				// Input [DW:0] B (set by HALF_DEPTH. is [7:0] here).
+	.R(vga_r),                  // Input [DW:0] R (set by HALF_DEPTH. is [7:0] here).
+	.G(vga_g),                  // Input [DW:0] G (set by HALF_DEPTH. is [7:0] here).
+	.B(vga_b),                  // Input [DW:0] B (set by HALF_DEPTH. is [7:0] here).
 
 	// Positive pulses.
-	.HSync(vga_hs_n),		// input HSync
-	.VSync(vga_vs_n),		// input VSync
-	.HBlank(hblank),		// input HBlank
-	.VBlank(vblank),		// input VBlank
-	
-//	.VGA_R( VGA_R ),		// output [7:0] VGA_R
-//	.VGA_G( VGA_G ),		// output [7:0] VGA_G
-//	.VGA_B( VGA_B ),		// output [7:0] VGA_B
-//	.VGA_VS( VGA_VS ),	// output VGA_VS
-//	.VGA_HS( VGA_HS ),	// output VGA_HS
-	.VGA_DE( VGA_DE )		// output VGA_DE
-);
+	.HSync(vga_hs_n),           // input HSync
+	.VSync(vga_vs_n),           // input VSync
+	.HBlank(hblank),            // input HBlank
+	.VBlank(vblank),            // input VBlank
 
+	// .VGA_R( VGA_R ),         // output [7:0] VGA_R
+	// .VGA_G( VGA_G ),         // output [7:0] VGA_G
+	// .VGA_B( VGA_B ),         // output [7:0] VGA_B
+	// .VGA_VS( VGA_VS ),       // output VGA_VS
+	// .VGA_HS( VGA_HS ),       // output VGA_HS
+	.VGA_DE( VGA_DE ),          // output VGA_DE
+	.CE_PIXEL(CE_PIXEL)
+);
 
 wire aud_l_pwm;
 wire aud_r_pwm;
-
-wire [15:0] aud_16_l;
-wire [15:0] aud_16_r;
 
 assign AUDIO_S = 1;
 assign AUDIO_MIX = 0;
 assign AUDIO_L = aud_16_l;
 assign AUDIO_R = aud_16_r;
-
 
 // Cart reading is from DDR now...
 assign DDRAM_CLK = clk_sys;
@@ -624,24 +619,21 @@ assign DDRAM_BURSTCNT = 1;
 
 // Jag DRAM is now mapped at 0x30000000 in DDR on MiSTer, hence the setting of the upper bits here.
 // The cart ROM is loaded at 0x30800000, as the Jag normally expects the cart to be mapped at offset 0x800000.
-assign DDRAM_ADDR = (loader_en)  ? {8'b0110000, loader_addr[23:3]} :
-						                 {8'b0110000, abus_out[23:3]};	// DRAM address is using "abus_out" here (byte address, so three LSB bits are ignored!)
-																						// so the MSB bit [23] will be set by the Jag core when reading the cart at 0x800000. TODO - confirm this is always the case!
+// DRAM address is using "abus_out" here (byte address, so three LSB bits are ignored!)
+// so the MSB bit [23] will be set by the Jag core when reading the cart at 0x800000. TODO - confirm this is always the case!
+assign DDRAM_ADDR = (loader_en)  ? {8'b0110000, loader_addr[23:3]} : {8'b0110000, abus_out[23:3]}; 
 assign DDRAM_RD = (loader_en) ? 1'b0 : cart_rd_trig;
-
 assign DDRAM_WE = (loader_en) ? loader_wr : 1'b0;
 
 // Byteswap...
 //
-// Needs this when loading the ROM on MiSTer, at least under Verilator simulation. ElectronAsh. 
+// Needs this when loading the ROM on MiSTer, at least under Verilator simulation. ElectronAsh.
 //
 wire [15:0] loader_data_bs = {loader_data[7:0], loader_data[15:8]};
-
 assign DDRAM_DIN = {loader_data_bs, loader_data_bs, loader_data_bs, loader_data_bs};
-
 assign DDRAM_BE = (loader_en) ? loader_be : 8'b11111111;	// IIRC, the DDR controller needs the byte enables to be High during READS! ElectronAsh.
 
-(*keep*) wire rom_wrack = 1'b1;	// TESTING!!
+wire rom_wrack = 1'b1;	// TESTING!!
 
 
 //wire [31:0] cart_q_8bit = (!abus_out[0]) ? {sdram_dout[15:8], sdram_dout[15:8]} :
@@ -661,8 +653,6 @@ assign DDRAM_BE = (loader_en) ? loader_be : 8'b11111111;	// IIRC, the DDR contro
 //					   (romwidth==2'd1) ? cart_q_16bit :
 //							   				 cart_q_32bit;c
 
-reg cart_ce_n_1 = 1;
-wire cart_ce_n_falling = (cart_ce_n_1 && !cart_ce_n);
 
 reg [23:0] old_abus_out;
 
@@ -685,11 +675,9 @@ end
 
 
 `ifndef VERILATOR
-wire [31:0] cart_q;
 wire [1:0] cart_oe;
 `endif
 
-wire cart_ce_n;
 //wire [1:0] cart_oe_n;
 
 // cart_oe signals (Active-High) just feed back to the core.
@@ -731,7 +719,7 @@ assign cart_q = ({abus_out[2:0]}==0) ? {DDRAM_DOUT[63:56],DDRAM_DOUT[63:56],DDRA
 // Main DRAM is in SDRAM now.
 //
 // Using a Burst Length of 4 (SDRAM is 16-bit wide), so the core can read/write full 64-bit words.
-// 
+//
 // Byte enable bits "ch1_be[7:0]" (active-High) are now used to control the SDRAM DQM_N pins during a write burst. eg...
 //
 // ch1_be bits [7:6] are used to mask bytes ch1_din[63:56] and ch1_din[55:48].
@@ -739,33 +727,26 @@ assign cart_q = ({abus_out[2:0]}==0) ? {DDRAM_DOUT[63:56],DDRAM_DOUT[63:56],DDRA
 // ch1_be bits [3:2] are used to mask bytes ch1_din[31:24] and ch1_din[23:16].
 // ch1_be bits [1:0] are used to mask bytes ch1_din[15:08] and ch1_din[07:00].
 //
-wire [9:0] dram_a;
-wire dram_ras_n;
-wire dram_cas_n;
-wire [3:0] dram_oe_n;
-wire [3:0] dram_uw_n;
-wire [3:0] dram_lw_n;
-wire [63:0] dram_d;
+
 
 // From the core into SDRAM.
 wire [63:0] ch1_din = r_dram_d[63:0];
-						  
-// From SDRAM to the core.
-wire [63:0] dram_q = ch1_dout[63:0];
-
-wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
-
+wire ch1_rnw = ! ({dram_uw_n, dram_lw_n} != 8'b11111111);
+wire [63:0] ch1_dout;
+reg [07:00] ch1_be;
+reg ch1_rd_req;
+reg ch1_wr_req;
 
 sdram sdram
 (
 	.init(~pll_locked),
-	
+
 	.clk( clk_sys ),				// Don't need the phase shift any more. DDIO is used to generate SDRAM_CLK instead (Sorg magic).
 
 	.SDRAM_DQ( SDRAM_DQ ),		// 16 bit bidirectional data bus
 	.SDRAM_A( SDRAM_A) ,			// 13 bit multiplexed address bus
 	.SDRAM_DQML( SDRAM_DQML ) ,// two byte masks
-	.SDRAM_DQMH( SDRAM_DQMH ) ,// 
+	.SDRAM_DQMH( SDRAM_DQMH ) ,//
 	.SDRAM_BA( SDRAM_BA ),		// two banks
 	.SDRAM_nCS( SDRAM_nCS ),	// a single chip select
 	.SDRAM_nWE( SDRAM_nWE ),	// write enable
@@ -773,14 +754,14 @@ sdram sdram
 	.SDRAM_nCAS( SDRAM_nCAS ),	// columns address select
 	.SDRAM_CKE( SDRAM_CKE ),	// clock enable
 	.SDRAM_CLK( SDRAM_CLK ),	// clock for chip
-	
+
 	// Port 1.
 //	.ch1_addr( {2'b00, ioctl_addr[24:1]} ),	// 16-bit WORD address!! [26:1]
 //	.ch1_dout(  ),										// output [63:0]
 //	.ch1_rnw( 1'b0 ),									// Write-only for cart loading.
 //	.ch1_be( 8'b11111111 ),							// Byte enable (bits [7:0]) for 64-bit burst writes. TODO
 //	.ch1_din( {ioctl_data[7:0], ioctl_data[15:8]} ),		// input [15:0]	- Data from HPS is BYTE swapped!
-//	.ch1_req( ioctl_download & ioctl_wr & ioctl_index>0 ),	
+//	.ch1_req( ioctl_download & ioctl_wr & ioctl_index>0 ),
 //	.ch1_ready( rom_wrack ),
 
 	// Port 1.
@@ -789,9 +770,9 @@ sdram sdram
 	.ch1_rnw( ch1_rnw ),									// Read when HIGH. Write when LOW.
 	.ch1_be( ch1_be ),									// Byte enable (bits [7:0]) for 64-bit burst writes.
 	.ch1_din( ch1_din ),									// input [63:0]
-	.ch1_req( ch1_rd_req | ch1_wr_req ),	
-	.ch1_ready( ch1_ready ),
-	
+	.ch1_req( ch1_rd_req | ch1_wr_req ),
+	.ch1_ready( ch1_ready )
+
 	// Port 2.
 //	.ch2_addr( sdram_word_addr ),					// 16-bit WORD address!! [26:1]
 //	.ch2_dout( sdram_dout ),						// output [31:0]
@@ -799,7 +780,7 @@ sdram sdram
 //	.ch2_din( 16'h0000 ),							// input [15:0]
 //	.ch2_req( !ioctl_download & cart_rd_trig ),
 //	.ch2_ready( sdram_ready ),
-	
+
 	// Port 3.
 	//.ch3_addr( {4'b0000, abus_out[22:1]} ),	// 16-bit WORD address!! [26:1]
 	//.ch3_dout( sdram_dout ),						// output [15:0]
@@ -815,9 +796,6 @@ sdram sdram
 //(*keep*) wire [31:0] sdram_dout;
 //wire [26:1] sdram_word_addr = {4'b0000, abus_out[22:1]};
 
-(*keep*) wire ch1_rnw = ! ({dram_uw_n, dram_lw_n} != 8'b11111111);
-
-(*keep*) wire [63:0] ch1_dout;
 
 
 
@@ -827,26 +805,16 @@ wire [00:63] r_dram_d = dram_d;
 wire ch1_rd_req = (startcas && (dram_oe_n != 4'b1111)) && mem_cyc==`RAM_IDLE;
 wire ch1_wr_req = (!dram_cas_n && ({dram_uw_n, dram_lw_n} != 8'b11111111)) && mem_cyc==`RAM_IDLE;
 wire ram_rdy = ch1_ready || (mem_cyc == `RAM_END);
-wire [07:00] ch1_be = ~{dram_uw_n[3], dram_lw_n[3], 
-								dram_uw_n[2], dram_lw_n[2], 
-								dram_uw_n[1], dram_lw_n[1], 
+wire [07:00] ch1_be = ~{dram_uw_n[3], dram_lw_n[3],
+								dram_uw_n[2], dram_lw_n[2],
+								dram_uw_n[1], dram_lw_n[1],
 								dram_uw_n[0], dram_lw_n[0] };
 */
 
-
-`define RAM_IDLE	4'b0000
-`define RDY_WAIT	4'b0001
-`define RAM_END	4'b1111
-
-(*noprune*) reg [3:0] mem_cyc;
-
-reg ch1_rd_req;
-reg ch1_wr_req;
-reg [07:00] ch1_be;
+reg [3:0] mem_cyc;
 reg [63:00] r_dram_d;
 
 //wire ram_rdy = mem_cyc == `RAM_END;
-wire ram_rdy = (mem_cyc == `RAM_END) || ch1_ready;	// Latency kludge.
 
 always @(posedge clk_sys or posedge reset)
 if (reset) begin
@@ -855,7 +823,7 @@ end
 else begin
 	ch1_rd_req <= 1'b0;
 	ch1_wr_req <= 1'b0;
-	
+
 	case (mem_cyc)
 		`RAM_IDLE: begin
 			//if (ch1_rd_req || ch1_wr_req) mem_cyc <= `RDY_WAIT;
@@ -863,22 +831,22 @@ else begin
 				ch1_rd_req <= 1'b1;
 				mem_cyc <= `RDY_WAIT;
 			end
-		
+
 			if (!dram_cas_n && ({dram_uw_n, dram_lw_n} != 8'b11111111)) begin
 				ch1_wr_req <= 1'b1;
 				r_dram_d <= dram_d;
-				ch1_be <= ~{dram_uw_n[3], dram_lw_n[3], 
-								dram_uw_n[2], dram_lw_n[2], 
-								dram_uw_n[1], dram_lw_n[1], 
+				ch1_be <= ~{dram_uw_n[3], dram_lw_n[3],
+								dram_uw_n[2], dram_lw_n[2],
+								dram_uw_n[1], dram_lw_n[1],
 								dram_uw_n[0], dram_lw_n[0] };
-				mem_cyc <= `RDY_WAIT;	 
+				mem_cyc <= `RDY_WAIT;
 			end
 		end
-		
+
 		`RDY_WAIT: begin
 			if (ch1_ready) mem_cyc <= `RAM_END;
 		end
-		
+
 		`RAM_END:
 			if (dram_cas_n) begin	// Have to wait for dram_cas_n to go high here.
 			//if (!startcas) begin		// Using startcas (low) causes a crash at the Jag logo.
