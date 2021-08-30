@@ -16,4 +16,4 @@ set_global_assignment -name QIP_FILE rtl/dsp_dbg_ram0.qip
 set_global_assignment -name QIP_FILE rtl/dsp_dbg_ram1.qip
 
 set_global_assignment -name QIP_FILE rtl/os_rom_bram.qip
-#set_global_assignment -name QIP_FILE           rtl/sdram.qip
+#set_global_assignment -name QIP_FILE           rtl/mem/sdram.qip

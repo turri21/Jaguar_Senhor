@@ -202,6 +202,8 @@ assign LED_USER  = ioctl_download;
 `define RDY_WAIT  4'b0001
 `define RAM_END   4'b1111
 
+`define FAST_CLOCK
+
 wire clk_106m, clk_26m;
 
 wire pll_locked;
@@ -214,7 +216,12 @@ pll pll
 	.locked(pll_locked)
 );
 
+`ifdef FAST_CLOCK
 wire clk_sys = clk_106m;
+`else
+wire clk_sys = clk_26m;
+`endif
+
 wire clk_ram = clk_106m;
 
 wire [1:0] scale = status[10:9];
@@ -324,7 +331,6 @@ reg       old_download;
 integer   timeout = 0;
 
 wire rom_index = ioctl_index[5:0] == 1;
-wire rom_download = ioctl_download && rom_index;
 
 always @(posedge clk_sys or posedge reset)
 if (reset) begin
@@ -354,7 +360,7 @@ else begin
 
 	if (loader_wr) loader_addr <= loader_addr + 2'd2; // Writing a 16-bit WORD at a time!
 
-	if (ioctl_wr && ioctl_index) begin
+	if (ioctl_wr && rom_index) begin
 		loader_wr <= 1;
 		ioctl_wait <= 1;
 	end
@@ -400,11 +406,6 @@ wire fdram;
 wire ram_rdy = (mem_cyc == `RAM_END) || ch1_ready;	// Latency kludge.
 wire [23:0] abus_out;
 wire [7:0] os_rom_q;
-wire cpu_clken_dbg;
-wire fx68k_as_n_dbg;
-wire [23:0] fx68k_addr_dbg;
-wire [15:0] fx68k_din_dbg;
-wire [15:0] fx68k_dout_dbg;
 
 wire pix_clk;
 wire hblank;
@@ -490,15 +491,6 @@ jaguar jaguar_inst
 
 	.ntsc( ~status[4] ) ,
 
-	.cpu_clken_dbg( cpu_clken_dbg ) ,
-
-	.fx68k_addr_dbg( fx68k_addr_dbg ) ,
-
-	.fx68k_as_n_dbg( fx68k_as_n_dbg ) ,
-
-	.fx68k_din_dbg( fx68k_din_dbg ) ,
-	.fx68k_dout_dbg( fx68k_dout_dbg ) ,
-
 	.ps2_mouse( ps2_mouse ) ,
 
 	.mouse_ena_1( status[6:5]==1 ) ,
@@ -520,17 +512,13 @@ jaguar jaguar_inst
 // assign bridge_m0_readdatavalid = bridge_m0_read;
 
 //wire [1:0] romwidth = status[5:4];
-wire [1:0] romwidth = 2'd2;
-
-assign cpu_clken_dbg = 1'b1;
-// assign bridge_m0_waitrequest = 1'b0;
-// assign bridge_m0_readdatavalid = bridge_m0_read;
+//wire [1:0] romwidth = 2'd2;
 
 //wire os_rom_ce_n;
 //wire os_rom_oe_n;
 //wire os_rom_oe = (~os_rom_ce_n & ~os_rom_oe_n);	// os_rom_oe feeds back TO the core, to enable the internal drivers.
 
-wire os_download = ioctl_download && (ioctl_index[5:0] == 0);
+wire os_download = ioctl_download && (ioctl_index[5:0] == 0 || ioctl_index[5:0] == 2);
 
 wire [16:0] os_rom_addr = (os_download) ? {ioctl_addr[16:1],os_lsb} : abus_out[16:0];
 
@@ -539,6 +527,7 @@ wire [7:0] os_rom_din = (!os_lsb) ? ioctl_data[7:0] : ioctl_data[15:8];
 reg os_wren;
 wire [7:0] os_rom_dout;
 
+// Ram for the bios
 spram #(.addr_width(17), .data_width(8), .mem_name("OS_R")) os_rom_bram_inst
 (
 	.clock   ( clk_sys ),
@@ -566,22 +555,11 @@ always @(posedge clk_sys) begin
 	end
 end
 
-reg vid_ce_div_2 = 0;
-
-always @(posedge clk_sys) begin
-	if (vid_ce)
-		vid_ce_div_2 <= ~vid_ce_div_2;
-	if (reset)
-		vid_ce_div_2 <= 0;
-end
-
 assign CLK_VIDEO = clk_sys;
-wire CE_PIX = vid_ce;
-
 
 //assign VGA_SL = {~interlace,~interlace} & sl[1:0];
 
-video_mixer #(.LINE_LENGTH(720), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
+video_mixer #(.LINE_LENGTH(1410), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 (
 	.CLK_VIDEO(CLK_VIDEO),      // input clk_sys
 	.ce_pix( vid_ce ),          // input ce_pix
@@ -745,6 +723,35 @@ wire [63:0] ch1_dout;
 reg [07:00] ch1_be;
 reg ch1_rd_req;
 reg ch1_wr_req;
+reg useless;
+
+// sdram sdram
+// (
+// 	.init(~pll_locked),
+// 	.clk( clk_ram ),
+
+// 	.SDRAM_DQ  ( SDRAM_DQ   ),   // 16 bit bidirectional data bus
+// 	.SDRAM_A   ( SDRAM_A    ),   // 13 bit multiplexed address bus
+// 	.SDRAM_DQML( SDRAM_DQML ),   // two byte masks
+// 	.SDRAM_DQMH( SDRAM_DQMH ),   //
+// 	.SDRAM_BA  ( SDRAM_BA   ),   // two banks
+// 	.SDRAM_nCS ( SDRAM_nCS  ),   // a single chip select
+// 	.SDRAM_nWE ( SDRAM_nWE  ),   // write enable
+// 	.SDRAM_nRAS( SDRAM_nRAS ),   // row address select
+// 	.SDRAM_nCAS( SDRAM_nCAS ),   // columns address select
+// 	.SDRAM_CKE ( SDRAM_CKE  ),   // clock enable
+// 	.SDRAM_CLK ( SDRAM_CLK  ),   // clock for chip
+// 	.SDRAM_EN  ( 1'b1 ),
+
+// 	.sel       ( ch1_rd_req | ch1_wr_req ),
+// 	.addr      ( {4'b0000, abus_out[22:3], 2'b00} ),  // 64-bit WORD address. Burst Length=4. On 64-bit boundaries when the lower two bits are b00!!
+// 	.dout      ( ch1_dout ),                          // output [63:0]
+// 	.din       ( ch1_din ),                           // input [63:0]
+// 	.wr        ( ~ch1_rnw ),                          // Read when HIGH. Write when LOW.
+// 	.bs        ( {|ch1_be[7:4], |ch1_be[3:0]} ),      // Byte enable (bits [7:0]) for 64-bit burst writes.
+// 	.burst     ( 1'b1),
+// 	.ready     ( ch1_ready )
+// );
 
 sdram sdram
 (
@@ -765,15 +772,6 @@ sdram sdram
 	.SDRAM_CLK( SDRAM_CLK ),	// clock for chip
 
 	// Port 1.
-//	.ch1_addr( {2'b00, ioctl_addr[24:1]} ),	// 16-bit WORD address!! [26:1]
-//	.ch1_dout(  ),										// output [63:0]
-//	.ch1_rnw( 1'b0 ),									// Write-only for cart loading.
-//	.ch1_be( 8'b11111111 ),							// Byte enable (bits [7:0]) for 64-bit burst writes. TODO
-//	.ch1_din( {ioctl_data[7:0], ioctl_data[15:8]} ),		// input [15:0]	- Data from HPS is BYTE swapped!
-//	.ch1_req( ioctl_download & ioctl_wr & ioctl_index>0 ),
-//	.ch1_ready( rom_wrack ),
-
-	// Port 1.
 	.ch1_addr( {4'b0000, abus_out[22:3], 2'b00} ),	// 64-bit WORD address. Burst Length=4. On 64-bit boundaries when the lower two bits are b00!!
 	.ch1_dout( ch1_dout ),								// output [63:0]
 	.ch1_rnw( ch1_rnw ),									// Read when HIGH. Write when LOW.
@@ -781,44 +779,7 @@ sdram sdram
 	.ch1_din( ch1_din ),									// input [63:0]
 	.ch1_req( ch1_rd_req | ch1_wr_req ),
 	.ch1_ready( ch1_ready )
-
-	// Port 2.
-//	.ch2_addr( sdram_word_addr ),					// 16-bit WORD address!! [26:1]
-//	.ch2_dout( sdram_dout ),						// output [31:0]
-//	.ch2_rnw( 1'b1 ),									// Read-only for cart ROM reading!
-//	.ch2_din( 16'h0000 ),							// input [15:0]
-//	.ch2_req( !ioctl_download & cart_rd_trig ),
-//	.ch2_ready( sdram_ready ),
-
-	// Port 3.
-	//.ch3_addr( {4'b0000, abus_out[22:1]} ),	// 16-bit WORD address!! [26:1]
-	//.ch3_dout( sdram_dout ),						// output [15:0]
-	//.ch3_rnw( 1'b1 ),								// Read-only for cart ROM reading!
-	//.ch3_din( 16'h0000 ),							// input [15:0]
-	//.ch3_udqm_n( 1'b0 ),
-	//.ch3_ldqm_n( 1'b0 ),
-	//.ch3_req( !ioctl_download & cart_rd_trig ),
-	//.ch3_ready( sdram_ready )
 );
-
-//(*keep*) wire sdram_ready;
-//(*keep*) wire [31:0] sdram_dout;
-//wire [26:1] sdram_word_addr = {4'b0000, abus_out[22:1]};
-
-
-
-
-
-/*
-wire [00:63] r_dram_d = dram_d;
-wire ch1_rd_req = (startcas && (dram_oe_n != 4'b1111)) && mem_cyc==`RAM_IDLE;
-wire ch1_wr_req = (!dram_cas_n && ({dram_uw_n, dram_lw_n} != 8'b11111111)) && mem_cyc==`RAM_IDLE;
-wire ram_rdy = ch1_ready || (mem_cyc == `RAM_END);
-wire [07:00] ch1_be = ~{dram_uw_n[3], dram_lw_n[3],
-								dram_uw_n[2], dram_lw_n[2],
-								dram_uw_n[1], dram_lw_n[1],
-								dram_uw_n[0], dram_lw_n[0] };
-*/
 
 reg [3:0] mem_cyc;
 reg [63:00] r_dram_d;

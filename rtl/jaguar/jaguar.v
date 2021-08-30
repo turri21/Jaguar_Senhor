@@ -71,20 +71,8 @@ module jaguar
 	
 	input turbo,
 	
-	input ntsc,
-	
-	input cpu_clken_dbg,
-	output fx68k_as_n_dbg,
-	output [23:0] fx68k_addr_dbg,
-	output [15:0] fx68k_din_dbg,
-	output [15:0] fx68k_dout_dbg
+	input ntsc
 );
-
-assign fx68k_addr_dbg = fx68k_byte_addr;
-assign fx68k_as_n_dbg = fx68k_as_n;
-assign fx68k_din_dbg = fx68k_din;
-assign fx68k_dout_dbg = fx68k_dout;
-
 
 wire [1:0] cart_oe_n;
 wire [1:0] cart_oe;
@@ -110,20 +98,27 @@ assign aud_16_r = r_aud_r;
 //assign aud_16_r[15:0] = w_aud_r[15:0];
 
 
-//reg [2:0] clkdiv;
 reg [3:0] clkdiv;
-(*noprune*) reg xpclk;			// Processor (Tom & Jerry) Clock.
-(*noprune*) reg xvclk;			// Video Clock.
-(*noprune*) reg tlw;				// Transparent Latch Write?
 
+`ifdef FAST_CLOCK
+reg xpclk;			// Processor (Tom & Jerry) Clock.
+reg xvclk;			// Video Clock.
+reg tlw;				// Transparent Latch Write?
 reg fx68k_enPhi1;
 reg fx68k_enPhi2;
-
+`else
+wire xpclk;			// Processor (Tom & Jerry) Clock.
+wire xvclk;			// Video Clock.
+wire tlw;				// Transparent Latch Write?
+reg fx68k_enPhi1;
+reg fx68k_enPhi2;
+`endif
 reg pix_ce;
 
 // Note: Turns out the custom chips use synchronous resets.
 // So these clocks need to be left running during reset, else the core won't start up correctly the next time the HPS resets it. ElectronAsh.
 
+`ifdef FAST_CLOCK
 `ifndef VERILATOR
 always @(posedge sys_clk) begin
 	xpclk <= 1'b0;
@@ -148,8 +143,8 @@ always @(posedge sys_clk) begin
 	fx68k_enPhi1 <= 1'b0;
 	fx68k_enPhi2 <= 1'b0;
 	
-	if ( clkdiv==4'd0 || (clkdiv==4'd4 && turbo) ) fx68k_enPhi1 <= 1'b1;
-	if ( clkdiv==4'd1 || (clkdiv==4'd5 && turbo) ) fx68k_enPhi2 <= 1'b1;
+	if ( clkdiv==4'd3 ) fx68k_enPhi1 <= 1'b1;
+	if ( clkdiv==4'd0 ) fx68k_enPhi2 <= 1'b1;
 	
 	//if (clkdiv==3'd0) pix_ce <= 1'b1;
 	//else pix_ce <= 1'b0;
@@ -181,7 +176,26 @@ always @(posedge sys_clk) begin
 	if (clkdiv==4'd1) fx68k_enPhi2 <= 1'b1;
 end
 `endif
+`else
+reg fx68k_toggle = 0;
+reg pclk_toggle = 0;
 
+always @(posedge sys_clk) begin
+	fx68k_enPhi1 <= 0;
+	fx68k_enPhi2 <= 0;
+	pclk_toggle <= ~pclk_toggle;
+	if (pclk_toggle) begin
+		fx68k_enPhi1 <= fx68k_toggle;
+		fx68k_enPhi2 <= ~fx68k_toggle;
+		fx68k_toggle <= ~fx68k_toggle;
+	end
+end
+
+assign xpclk = pclk_toggle;
+assign xvclk = xpclk;
+assign tlw = ~xpclk;
+
+`endif
 
 //assign vid_ce = pix_ce;
 assign vid_ce = xvclk;
@@ -1504,7 +1518,7 @@ j_jerry jerry_inst
 
 wire [15:0] dspwd;
 
-(*keep*) wire fx68k_clk = sys_clk & cpu_clken_dbg;
+(*keep*) wire fx68k_clk = sys_clk;
 (*keep*) wire fx68k_rst = !xresetl;
 
 (*keep*) wire fx68k_rw;
@@ -1540,7 +1554,7 @@ wire fx68k_berr_n = 1'b1;	// The real Jag has BERR_N on the 68K tied High.
 
 (*keep*) wire [23:1] fx68k_address;
 
-
+wire fx68k_bg_n;
 assign fx68k_byte_addr = {fx68k_address, 1'b0};
 
 wire fx68k_br_n = xbrl_in;		// Bus Request.
