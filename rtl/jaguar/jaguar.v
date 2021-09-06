@@ -73,6 +73,8 @@ module jaguar
 	
 	input ntsc
 );
+wire oRESETn;
+wire ext_reset = xresetl;
 
 wire [1:0] cart_oe_n;
 wire [1:0] cart_oe;
@@ -104,26 +106,27 @@ reg [3:0] clkdiv;
 reg xpclk;			// Processor (Tom & Jerry) Clock.
 reg xvclk;			// Video Clock.
 reg tlw;				// Transparent Latch Write?
-reg fx68k_enPhi1;
-reg fx68k_enPhi2;
 `else
 wire xpclk;			// Processor (Tom & Jerry) Clock.
 wire xvclk;			// Video Clock.
 wire tlw;				// Transparent Latch Write?
-reg fx68k_enPhi1;
-reg fx68k_enPhi2;
 `endif
 reg pix_ce;
 
 // Note: Turns out the custom chips use synchronous resets.
 // So these clocks need to be left running during reset, else the core won't start up correctly the next time the HPS resets it. ElectronAsh.
 
+reg fx68k_phi1r;
+reg fx68k_phi2r;
+
 `ifdef FAST_CLOCK
 `ifndef VERILATOR
 always @(posedge sys_clk) begin
 	xpclk <= 1'b0;
 	xvclk <= 1'b0;
-	  tlw <= 1'b0;
+	tlw <= 1'b1;
+	fx68k_phi1r <= 1'b0;
+	fx68k_phi2r <= 1'b0;
 	
 	clkdiv <= clkdiv + 4'd1;
 	if (clkdiv==4'd7) begin
@@ -132,22 +135,17 @@ always @(posedge sys_clk) begin
 
 	if ((clkdiv==4'd0) || (clkdiv==4'd4)) begin
 		tlw <= 1'b1;
+		fx68k_phi1r <= 1'b1;
 	end
 
 	if ((clkdiv==4'd1) || (clkdiv==4'd5)) begin
 		xpclk <= 1'b1;
 		xvclk <= 1'b1;
 	end
-
 	
-	fx68k_enPhi1 <= 1'b0;
-	fx68k_enPhi2 <= 1'b0;
-	
-	if ( clkdiv==4'd3 ) fx68k_enPhi1 <= 1'b1;
-	if ( clkdiv==4'd0 ) fx68k_enPhi2 <= 1'b1;
-	
-	//if (clkdiv==3'd0) pix_ce <= 1'b1;
-	//else pix_ce <= 1'b0;
+	if ((clkdiv==4'd2) || (clkdiv==4'd6)) begin
+		fx68k_phi2r <= 1'b1;
+	end
 end
 `else
 always @(posedge sys_clk) begin
@@ -168,37 +166,26 @@ always @(posedge sys_clk) begin
 	if (clkdiv==4'd1) begin
 		tlw <= 1'b1;
 	end
-	
-	fx68k_enPhi1 <= 1'b0;
-	fx68k_enPhi2 <= 1'b0;
-	
-	if (clkdiv==4'd0) fx68k_enPhi1 <= 1'b1;
-	if (clkdiv==4'd1) fx68k_enPhi2 <= 1'b1;
+
 end
 `endif
 `else
-reg fx68k_toggle = 0;
 reg pclk_toggle = 0;
 
 always @(posedge sys_clk) begin
-	fx68k_enPhi1 <= 0;
-	fx68k_enPhi2 <= 0;
 	pclk_toggle <= ~pclk_toggle;
-	if (pclk_toggle) begin
-		fx68k_enPhi1 <= fx68k_toggle;
-		fx68k_enPhi2 <= ~fx68k_toggle;
-		fx68k_toggle <= ~fx68k_toggle;
-	end
 end
 
-assign xpclk = pclk_toggle;
-assign xvclk = xpclk;
-assign tlw = ~xpclk;
+assign xvclk = pclk_toggle;
+assign xpclk = xvclk;
+assign tlw = ~xvclk;
+
 
 `endif
 
 //assign vid_ce = pix_ce;
 assign vid_ce = xvclk;
+//assign vid_ce = j_xvclkdiv;
 //assign vid_cd = j_xvclkdiv;
 
 
@@ -435,21 +422,21 @@ begin
 
 	cycle <= cycle + 1;
 	
-//	if (~j68_rd_ena_prev & j68_rd_ena) begin
-//		$display("%x 68K RD $%x", cycle, fx68k_byte_addr);
-//	end
-//	if (~j68_wr_ena_prev & j68_wr_ena) begin
-//		$display("%x 68K WR $%x #%x", cycle, fx68k_byte_addr, fx68k_dout);
-//	end
+	if (~j68_rd_ena_prev & j68_rd_ena) begin
+		$display("%x 68K RD $%x", cycle, fx68k_byte_addr);
+	end
+	if (~j68_wr_ena_prev & j68_wr_ena) begin
+		$display("%x 68K WR $%x #%x", cycle, fx68k_byte_addr, fx68k_dout);
+	end
 	
-//	if (~xba_in) begin
-//		if ((xoel != 3'b111) & ((xoel != xoel_prev) || (xa_r != xa_r_prev))) begin
-//			$display("%x JAG RD REF=%x OB=%x BLT=%x GPU=%x $%x", cycle, refreq, obbreq, bbreq, gbreq, xa_r);
-//		end
-//		if ((xwel != 8'b11111111) & ((xwel != xwel_prev) || (xa_r != xa_r_prev))) begin
-//			$display("%x JAG WR xwel=%x REF=%x OB=%x BLT=%x GPU=%x $%x #%x", cycle, xwel, refreq, obbreq, bbreq, gbreq, xa_r, xd_r);
-//		end
-//	end
+	if (~xba_in) begin
+		if ((xoel != 3'b111) & ((xoel != xoel_prev) || (xa_r != xa_r_prev))) begin
+			$display("%x JAG RD REF=%x OB=%x BLT=%x GPU=%x $%x", cycle, refreq, obbreq, bbreq, gbreq, xa_r);
+		end
+		if ((xwel != 8'b11111111) & ((xwel != xwel_prev) || (xa_r != xa_r_prev))) begin
+			$display("%x JAG WR xwel=%x REF=%x OB=%x BLT=%x GPU=%x $%x #%x", cycle, xwel, refreq, obbreq, bbreq, gbreq, xa_r, xd_r);
+		end
+	end
 end
 */
 
@@ -601,7 +588,9 @@ assign j_xd_in[31:16] = 16'b11111111_11111111;	// Data bus bits [31:16] on Jerry
 //assign xfc_in = 3'b101;
 
 // FX68K directly supports vectored interrupts. ElectronAsh.
-assign xfc_in[2:0] = fx68k_fc[2:0];
+assign xfc_in[0] = xfc_oe[0] ? xfc_out[0] : fx68k_fc[0];
+assign xfc_in[1] = xfc_oe[1] ? xfc_out[1] : fx68k_fc[1];
+assign xfc_in[2] = xfc_oe[2] ? xfc_out[2] : fx68k_fc[2];
 
 // Wire-ORed with pullup (?)
 assign xba_in = xba_oe ? xba_out : 1'b1;		// Bus Acknoledge.
@@ -639,14 +628,14 @@ assign j_xgpiol_in[3] = (j_xgpiol_oe[3]) ? j_xgpiol_out[3] : 1'b1;
 
 assign j_xsck_in = j_xsck_oe ? j_xsck_out : 1'b1;
 assign j_xws_in = j_xws_oe ? j_xws_out : 1'b1;
-assign j_xvclk_in = j_xvclk_oe ? j_xvclk_out : 1'b1;
+assign j_xvclk_in = j_xvclk_oe ? (j_xvclk_out & j_xchrdiv) : j_xchrdiv;
 
 ps2_mouse mouse
 (
 	.reset(~xresetl),
 
 	.clk(sys_clk),
-	.ce(xpclk),
+	.ce(xvclk),
 
 	.ps2_mouse(ps2_mouse),		// 25-bit bus, from hps_io.
 
@@ -789,10 +778,10 @@ always @(posedge sys_clk) begin
 end
 
 assign joy_bus[7:0] = (~j_xjoy_in[0]) ? joy[7:0] : 		// j_xjoy_in[0]. Output enables the 16 joystick input pins onto the bus. (lower byte).
-							 (~j_xjoy_in[1]) ? b[7:0] : 			// j_xjoy_in[1]. Active low output enables the four button inputs onto the data bus.
+	(~j_xjoy_in[1]) ? b[7:0] : 			// j_xjoy_in[1]. Active low output enables the four button inputs onto the data bus.
 																			// Pulled high during reset for big endian (Motorola) operation, low for little endian (Intel) operation.
-							 (~j_xjoy_in[3]) ? u374_reg[7:0] : 	// j_xjoy_in[3]. Active low output enables the outputs of the joystick output latch.
-													 8'b11111111;		// Default.
+	(~j_xjoy_in[3]) ? u374_reg[7:0] : 	// j_xjoy_in[3]. Active low output enables the outputs of the joystick output latch.
+	8'b11111111;		// Default.
 
 assign joy_bus[15:8] = (~j_xjoy_in[0]) ? joy[15:8] : 		// j_xjoy_in[0]. Output enables the 16 joystick input pins onto the bus. (upper byte).
 													  8'b11111111;
@@ -820,9 +809,6 @@ assign fx68k_rd_data[15:0] = dbus[15:0];
 assign abus_out[23:0] = {abus[23:3], xmaska[2:0]};
 
 // OS ROM
-/*
-assign os_rom_a[16:0] = {abus[16:3], xmaska[2:0]};
-*/ 
 assign os_rom_ce_n = xromcsl[0];
 assign os_rom_oe_n = xoel[0];
 
@@ -843,10 +829,10 @@ tom tom_inst
 	.xlp(xlp),
 	.xdint(xdint),
 	.xtest(xtest),
-	.xpclk(xpclk),
+	.xpclk(j_xpclkout),
 	.xvclk(xvclk),
 	.xwaitl(xwaitl),
-	.xresetl(xresetl),
+	.xresetl(ext_reset),
 	.xd_0_out(xd_out[0]),
 	.xd_0_oe(xd_oe[0]),
 	.xd_0_in(xd_in[0]),
@@ -1253,8 +1239,8 @@ tom tom_inst
 j_jerry jerry_inst
 (
 	.xdspcsl(j_xdspcsl),
-	.xpclkosc(j_xpclkosc),
-	.xpclkin(j_xpclkin),
+	.xpclkosc(xvclk),
+	.xpclkin(j_xpclkout),
 	.xdbgl(j_xdbgl),
 	.xoel_0(j_xoel_0),
 	.xwel_0(j_xwel_0),
@@ -1264,8 +1250,8 @@ j_jerry jerry_inst
 	.xeint_0(j_xeint[0]),
 	.xeint_1(j_xeint[1]),
 	.xtest(j_xtest),
-	.xchrin(j_xchrin),
-	.xresetil(j_xresetil),
+	.xchrin(1'b1),
+	.xresetil(ext_reset),
 	.xd_0_out(j_xd_out[0]),
 	.xd_0_oe(j_xd_oe[0]),
 	.xd_0_in(j_xd_in[0]),
@@ -1513,44 +1499,30 @@ j_jerry jerry_inst
 	.sys_clk(sys_clk)
 );
 
-(*keep*) wire hsl;
-(*keep*) wire vsl;
+wire hsl;
+wire vsl;
 
 wire [15:0] dspwd;
 
-(*keep*) wire fx68k_clk = sys_clk;
-(*keep*) wire fx68k_rst = !xresetl;
+wire fx68k_clk = sys_clk;
+wire fx68k_rst = !xresetl;
 
-(*keep*) wire fx68k_rw;
-(*keep*) wire fx68k_as_n;
-(*keep*) wire fx68k_lds_n;
-(*keep*) wire fx68k_uds_n;
-(*keep*) wire fx68k_e;
-(*keep*) wire fx68k_vma_n;
-
-(*keep*) wire [2:0] fx68k_fc;
+wire fx68k_rw;
+wire fx68k_as_n;
+wire fx68k_lds_n;
+wire fx68k_uds_n;
+wire fx68k_e;
+wire fx68k_vma_n;
+wire [2:0] fx68k_fc;
 
 //(*keep*) wire fx68k_dtack_n = ! (!xdtackl & xba_in);	// xba_in is Bus (Grant) Acknowledge to the 68K, and was used to inhibit DTACK_N to j68 while Tom or Jerry has bus access. ElectronAsh.
-(*keep*) wire fx68k_dtack_n = xdtackl;							// Should be able to just use xdtackl directly now, as the Bus Request signals are hooked up to FX68K.
+wire fx68k_dtack_n = xdtackl;							// Should be able to just use xdtackl directly now, as the Bus Request signals are hooked up to FX68K.
 
-wire fx68k_vpa_n = 1'b1;	// The real Jag has VPA_N on the 68K tied High.
-									// Which means it's NOT using auto-vector for the interrupt. ElectronAsh.
-
+wire fx68k_vpa_n = 1'b1;	// The real Jag has VPA_N on the 68K tied High. Which means it's NOT using auto-vector for the interrupt. ElectronAsh.
 wire fx68k_berr_n = 1'b1;	// The real Jag has BERR_N on the 68K tied High.
-
-																							// NOTE: Old logic for j68!
-//(*keep*) wire [15:0] fx68k_din = (fx68k_fc==7) ? (16'h0100>>2) :	// Point to vector 0x100 during the Interrupt Acknowledge cycle! (value has to be shifted right by two bits!).
-//																   j68_rd_data;		// Else, route the normal bus data from the chipset.
-
-(*keep*) wire [2:0] fx68k_ipl_n = {1'b1, xintl, 1'b1};	// The Jag only uses Interrupt level 2 on the 68000.
-																			// But also uses a Vectored interrupt, by supplying the vector value on the data bus during FC==7.
-
-(*keep*) wire [15:0] fx68k_din = fx68k_rd_data;	// VECTORED Interrupt seems to be working now that fx68k_fc is routed to Tom.
-
-//(*keep*) wire [15:0] fx68k_din = (fx68k_byte_addr>=24'h050236 && fx68k_byte_addr<=24'h050237) ? 16'h6000 :	// Patch the BEQ instruction to a BRA, for the JagCD 0x12345678 checksum.
-//																												   fx68k_rd_data;	// VECTORED Interrupt seems to be working now that fx68k_fc is routed to Tom.
-
-(*keep*) wire [15:0] fx68k_dout;
+wire [2:0] fx68k_ipl_n = {1'b1, xintl, 1'b1};	// The Jag only uses Interrupt level 2 on the 68000.
+wire [15:0] fx68k_din = fx68k_rd_data;	// VECTORED Interrupt seems to be working now that fx68k_fc is routed to Tom.
+wire [15:0] fx68k_dout;
 
 (*keep*) wire [23:1] fx68k_address;
 
@@ -1561,16 +1533,30 @@ wire fx68k_br_n = xbrl_in;		// Bus Request.
 assign xbgl = fx68k_bg_n;		// Bus Grant.
 wire fx68k_bgack_n = xba_in;	// Bus Grant Acknowledge.
 
+reg old_cpuclk;
+reg oRESETn_old;
+
+wire fx68k_phi1 = ~old_cpuclk && j_xcpuclk;
+wire fx68k_phi2 = old_cpuclk && ~j_xcpuclk;
+
+// wire fx68k_phi1 = fx68k_phi1r;
+// wire fx68k_phi2 = fx68k_phi2r;
+
+always @(posedge sys_clk) begin
+	old_cpuclk <= j_xcpuclk;
+	oRESETn_old <= oRESETn;
+end
 
 fx68k fx68k_inst
 (
-	.clk( fx68k_clk ) ,			// input  clk
+	.clk( sys_clk ) ,			// input  clk
+	.HALTn(1'b1),
 	
 	.extReset( fx68k_rst ) ,	// input  extReset
 	.pwrUp( fx68k_rst ) ,		// input  pwrUp
 	
-	.enPhi1( fx68k_enPhi1 ) ,	// input  enPhi1
-	.enPhi2( fx68k_enPhi2 ) ,	// input  enPhi2
+	.enPhi1( fx68k_phi1 ) ,	// input  enPhi1
+	.enPhi2( fx68k_phi2 ) ,	// input  enPhi2
 	
 	.eRWn( fx68k_rw ) ,			// output  eRWn
 	.ASn( fx68k_as_n ) ,			// output  ASn
@@ -1583,7 +1569,7 @@ fx68k fx68k_inst
 	.FC1( fx68k_fc[1] ) ,		// output  FC1
 	.FC2( fx68k_fc[2] ) ,		// output  FC2
 	
-//	.oRESETn(oRESETn) ,			// output  oRESETn
+	.oRESETn(oRESETn) ,			// output  oRESETn
 //	.oHALTEDn(oHALTEDn) ,		// output  oHALTEDn
 	
 	.DTACKn( fx68k_dtack_n ) ,	// input  DTACKn
@@ -1637,42 +1623,52 @@ assign vblank = !my_v_de;
 //assign hblank = blank;
 //assign vblank = blank;
 
-//always @(posedge sys_clk)
-always @(posedge pix_clk)
+always @(posedge sys_clk)
 begin
-	hs_o_prev <= hs_o;
-	hhs_o_prev <= hhs_o;
-	vs_o_prev <= vs_o;
-	
-	if (xresetl == 1'b0) begin
-		vc <= 16'h0000;
-		hc <= 16'h0000;
-		vga_hc <= 16'h0000;
-	end else begin
-		if (vs_o == 1'b1) begin
-			vc <= 16'h0000;
-		end else if (!hs_o_prev && hs_o) begin
-			vc <= vc + 16'd1;
-		end
+	if (pix_clk) begin
+		hs_o_prev <= hs_o;
+		hhs_o_prev <= hhs_o;
+		vs_o_prev <= vs_o;
 		
-		if (hs_o == 1'b1) begin
+		if (xresetl == 1'b0) begin
+			vc <= 16'h0000;
 			hc <= 16'h0000;
-		end else begin
-			hc <= hc + 16'd1;
-		end
-
-		if (hhs_o == 1'b1) begin
 			vga_hc <= 16'h0000;
 		end else begin
-			vga_hc <= vga_hc + 16'd1;
+			if (vs_o == 1'b1) begin
+				vc <= 16'h0000;
+			end else if (!hs_o_prev && hs_o) begin
+				vc <= vc + 16'd1;
+			end
+			
+			if (hs_o == 1'b1) begin
+				hc <= 16'h0000;
+			end else begin
+				hc <= hc + 16'd1;
+			end
+	
+			if (hhs_o == 1'b1) begin
+				vga_hc <= 16'h0000;
+			end else begin
+				vga_hc <= vga_hc + 16'd1;
+			end
+	
 		end
-
 	end
 end
 
+reg [15:0] aud_l;
+reg [15:0] aud_r;
 
-assign w_aud_l[15:0] = snd_l[15:0];
-assign w_aud_r[15:0] = snd_r[15:0];
+always @(posedge sys_clk) begin
+	if (snd_l_en) aud_l <= snd_l;
+	if (snd_r_en) aud_r <= snd_r;
+end
+
+// assign w_aud_l[15:0] = snd_l[15:0];
+// assign w_aud_r[15:0] = snd_r[15:0];
+assign w_aud_l[15:0] = aud_l[15:0];
+assign w_aud_r[15:0] = aud_r[15:0];
 
 reg j_xws_prev = 1'b1;
 reg j_xsck_prev = 1'b1;

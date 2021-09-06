@@ -149,7 +149,7 @@ module mem
 	input ram_rdy,
 	input sys_clk, // Generated
 	
-	output startcas
+	output startcas_out
 );
 wire notreadt;
 wire intbm;
@@ -1242,7 +1242,8 @@ assign oeti = ~(oet0 & oet1 & oet2 & oet3 & oet4 & oet5 & oet6 & oet7);
 assign oet_obuf = oeti;
 
 // MEM.NET (473) - startcas : an2
-assign startcas = q3a & dram;
+wire startcas = q3a & dram;
+assign startcas_out = d3a & dram;	// Saving one clock cycle for SDRAM reads, using d3a. ElectronAsh.
 
 // MEM.NET (475) - dinl0 : nd2
 assign dinl0 = ~(q3b & reads_obuf);

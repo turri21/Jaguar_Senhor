@@ -6,7 +6,6 @@
 
 // altera message_off 10230
 
-
 `timescale 1 ns / 1 ns
 
 `define NMA_BITS   10

@@ -204,7 +204,7 @@ assign LED_USER  = ioctl_download;
 
 `define FAST_CLOCK
 
-wire clk_106m, clk_26m;
+wire clk_106m, clk_26m, clk_53m;
 
 wire pll_locked;
 pll pll
@@ -213,13 +213,14 @@ pll pll
 	.rst(0),
 	.outclk_0(clk_106m),
 	.outclk_1(clk_26m),
+	.outclk_2(clk_53m),
 	.locked(pll_locked)
 );
 
 `ifdef FAST_CLOCK
 wire clk_sys = clk_106m;
 `else
-wire clk_sys = clk_26m;
+wire clk_sys = clk_53m;
 `endif
 
 wire clk_ram = clk_106m;
@@ -227,8 +228,8 @@ wire clk_ram = clk_106m;
 wire [1:0] scale = status[10:9];
 wire [1:0] ar = status[8:7];
 
-assign VIDEO_ARX = (!ar) ? 12'd4 : (ar - 1'd1);
-assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
+assign VIDEO_ARX = (!ar) ? 12'd2776 : (ar - 1'd1);
+assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 
 // Status Bit Map:
 //              Upper                          Lower
@@ -497,19 +498,7 @@ jaguar jaguar_inst
 	.mouse_ena_2( status[6:5]==2 )
 );
 
-	// output  wire         bridge_m0_waitrequest,
-	// output  wire [31:0]  bridge_m0_readdata,
-	// output  reg          bridge_m0_readdatavalid,
-	// input   wire [6:0]   bridge_m0_burstcount,
-	// input   wire [31:0]  bridge_m0_writedata,
-	// input   wire [19:0]  bridge_m0_address,
-	// input   wire         bridge_m0_write,
-	// input   wire         bridge_m0_read,
-	// input   wire         bridge_m0_byteenable,
-	// output  wire         bridge_m0_clk
-// assign cpu_clken_dbg = 1'b1;
-// assign bridge_m0_waitrequest = 1'b0;
-// assign bridge_m0_readdatavalid = bridge_m0_read;
+
 
 //wire [1:0] romwidth = status[5:4];
 //wire [1:0] romwidth = 2'd2;
@@ -601,7 +590,7 @@ assign AUDIO_L = aud_16_l;
 assign AUDIO_R = aud_16_r;
 
 // Cart reading is from DDR now...
-assign DDRAM_CLK = clk_ram;
+assign DDRAM_CLK = clk_sys;
 assign DDRAM_BURSTCNT = 1;
 
 // Jag DRAM is now mapped at 0x30000000 in DDR on MiSTer, hence the setting of the upper bits here.
@@ -717,41 +706,21 @@ assign cart_q = ({abus_out[2:0]}==0) ? {DDRAM_DOUT[63:56],DDRAM_DOUT[63:56],DDRA
 
 
 // From the core into SDRAM.
-wire [63:0] ch1_din = r_dram_d[63:0];
-wire ch1_rnw = ! ({dram_uw_n, dram_lw_n} != 8'b11111111);
-wire [63:0] ch1_dout;
-reg [07:00] ch1_be;
-reg ch1_rd_req;
-reg ch1_wr_req;
-reg useless;
+wire ram_read_req = startcas && (dram_oe_n != 4'b1111);								// The use of "startcas" lets us get a bit lower latency for READ requests. (dram_oe_n bits only asserted for reads? - confirm!")
+wire ram_write_req = !dram_cas_n && ({dram_uw_n, dram_lw_n} != 8'b11111111);	// Can (currently) only tell a WRITE request when any of the dram byte enables are asserted.
 
-// sdram sdram
-// (
-// 	.init(~pll_locked),
-// 	.clk( clk_ram ),
+wire ch1_rnw = !ram_write_req;
 
-// 	.SDRAM_DQ  ( SDRAM_DQ   ),   // 16 bit bidirectional data bus
-// 	.SDRAM_A   ( SDRAM_A    ),   // 13 bit multiplexed address bus
-// 	.SDRAM_DQML( SDRAM_DQML ),   // two byte masks
-// 	.SDRAM_DQMH( SDRAM_DQMH ),   //
-// 	.SDRAM_BA  ( SDRAM_BA   ),   // two banks
-// 	.SDRAM_nCS ( SDRAM_nCS  ),   // a single chip select
-// 	.SDRAM_nWE ( SDRAM_nWE  ),   // write enable
-// 	.SDRAM_nRAS( SDRAM_nRAS ),   // row address select
-// 	.SDRAM_nCAS( SDRAM_nCAS ),   // columns address select
-// 	.SDRAM_CKE ( SDRAM_CKE  ),   // clock enable
-// 	.SDRAM_CLK ( SDRAM_CLK  ),   // clock for chip
-// 	.SDRAM_EN  ( 1'b1 ),
+wire ch1_req = (mem_cyc==`RAM_IDLE) && (ram_read_req || ram_write_req);	// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 
-// 	.sel       ( ch1_rd_req | ch1_wr_req ),
-// 	.addr      ( {4'b0000, abus_out[22:3], 2'b00} ),  // 64-bit WORD address. Burst Length=4. On 64-bit boundaries when the lower two bits are b00!!
-// 	.dout      ( ch1_dout ),                          // output [63:0]
-// 	.din       ( ch1_din ),                           // input [63:0]
-// 	.wr        ( ~ch1_rnw ),                          // Read when HIGH. Write when LOW.
-// 	.bs        ( {|ch1_be[7:4], |ch1_be[3:0]} ),      // Byte enable (bits [7:0]) for 64-bit burst writes.
-// 	.burst     ( 1'b1),
-// 	.ready     ( ch1_ready )
-// );
+wire [63:0] ch1_din = dram_d;	// Write data, from core to SDRAM.
+
+wire [7:0] ch1_be = ~{dram_uw_n[3], dram_lw_n[3],	// Byte Enable bits from the core to SDRAM.
+							 dram_uw_n[2], dram_lw_n[2],	// (Note the 16-bit upper/lower interleaving, due to the 16-bit DRAM chips used on the Jag.)
+							 dram_uw_n[1], dram_lw_n[1],
+							 dram_uw_n[0], dram_lw_n[0]};
+
+wire [63:0] ch1_dout;	// Read data, TO the core.
 
 sdram sdram
 (
@@ -773,57 +742,26 @@ sdram sdram
 
 	// Port 1.
 	.ch1_addr( {4'b0000, abus_out[22:3], 2'b00} ),	// 64-bit WORD address. Burst Length=4. On 64-bit boundaries when the lower two bits are b00!!
-	.ch1_dout( ch1_dout ),								// output [63:0]
-	.ch1_rnw( ch1_rnw ),									// Read when HIGH. Write when LOW.
-	.ch1_be( ch1_be ),									// Byte enable (bits [7:0]) for 64-bit burst writes.
-	.ch1_din( ch1_din ),									// input [63:0]
-	.ch1_req( ch1_rd_req | ch1_wr_req ),
-	.ch1_ready( ch1_ready )
+	.ch1_dout( ch1_dout ),									// output [63:0]
+	.ch1_rnw( ch1_rnw ),										// Read when HIGH. Write when LOW.
+	.ch1_be( ch1_be ),										// Byte enable (bits [7:0]) for 64-bit burst writes.
+	.ch1_din( ch1_din ),										// input [63:0]
+	.ch1_req( ch1_req ),										// input (read or write request pulse)
+	.ch1_ready( ch1_ready )									// output (read data ready pulse, or write complete pulse.)
 );
 
 reg [3:0] mem_cyc;
-reg [63:00] r_dram_d;
-
-//wire ram_rdy = mem_cyc == `RAM_END;
 
 always @(posedge clk_sys or posedge reset)
 if (reset) begin
 	mem_cyc <= `RAM_IDLE;
 end
 else begin
-	ch1_rd_req <= 1'b0;
-	ch1_wr_req <= 1'b0;
-
 	case (mem_cyc)
-		`RAM_IDLE: begin
-			//if (ch1_rd_req || ch1_wr_req) mem_cyc <= `RDY_WAIT;
-			if (startcas && (dram_oe_n != 4'b1111)) begin
-				ch1_rd_req <= 1'b1;
-				mem_cyc <= `RDY_WAIT;
-			end
-
-			if (!dram_cas_n && ({dram_uw_n, dram_lw_n} != 8'b11111111)) begin
-				ch1_wr_req <= 1'b1;
-				r_dram_d <= dram_d;
-				ch1_be <= ~{dram_uw_n[3], dram_lw_n[3],
-								dram_uw_n[2], dram_lw_n[2],
-								dram_uw_n[1], dram_lw_n[1],
-								dram_uw_n[0], dram_lw_n[0] };
-				mem_cyc <= `RDY_WAIT;
-			end
-		end
-
-		`RDY_WAIT: begin
-			if (ch1_ready) mem_cyc <= `RAM_END;
-		end
-
-		`RAM_END:
-			if (dram_cas_n) begin	// Have to wait for dram_cas_n to go high here.
-			//if (!startcas) begin		// Using startcas (low) causes a crash at the Jag logo.
-				mem_cyc <= `RAM_IDLE;
-			end
+		`RAM_IDLE: if (ram_read_req || ram_write_req) mem_cyc <= `RDY_WAIT;
+		`RDY_WAIT: if (ch1_ready) mem_cyc <= `RAM_END;
+		`RAM_END: if (dram_cas_n) mem_cyc <= `RAM_IDLE;	// Have to wait for dram_cas_n to go high here.
 	endcase
 end
-
 
 endmodule

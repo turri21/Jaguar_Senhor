@@ -12,8 +12,8 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/keyboard.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/ddram.sv
 set_global_assignment -name VHDL_FILE          rtl/bram.vhd
 
-set_global_assignment -name QIP_FILE rtl/dsp_dbg_ram0.qip
-set_global_assignment -name QIP_FILE rtl/dsp_dbg_ram1.qip
+set_global_assignment -name QIP_FILE           rtl/dsp_dbg_ram0.qip
+set_global_assignment -name QIP_FILE           rtl/dsp_dbg_ram1.qip
 
-set_global_assignment -name QIP_FILE rtl/os_rom_bram.qip
+set_global_assignment -name QIP_FILE           rtl/os_rom_bram.qip
 #set_global_assignment -name QIP_FILE           rtl/mem/sdram.qip

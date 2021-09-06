@@ -5900,7 +5900,7 @@ mem mem_inst
 	.tlw /* IN */ (tlw),
 	.ram_rdy /* IN */ (ram_rdy),
 	.sys_clk(sys_clk), // Generated
-	.startcas(startcas)
+	.startcas_out(startcas)
 );
 
 // TOM.NET (412) - ob : ob
