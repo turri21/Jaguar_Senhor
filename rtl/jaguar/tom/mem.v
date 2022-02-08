@@ -1244,6 +1244,7 @@ assign oet_obuf = oeti;
 // MEM.NET (473) - startcas : an2
 wire startcas = q3a & dram;
 assign startcas_out = d3a & dram;	// Saving one clock cycle for SDRAM reads, using d3a. ElectronAsh.
+//assign startcas_out = q3a & dram;
 
 // MEM.NET (475) - dinl0 : nd2
 assign dinl0 = ~(q3b & reads_obuf);

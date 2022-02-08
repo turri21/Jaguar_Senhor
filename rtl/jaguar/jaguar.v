@@ -7,6 +7,7 @@ module jaguar
 	// input xpclk,
 	// input xvclk,
 	input sys_clk,
+	input orig_clk,
 
 	output [9:0] 	dram_a,
 	output			dram_ras_n,
@@ -102,15 +103,15 @@ assign aud_16_r = r_aud_r;
 
 reg [3:0] clkdiv;
 
-`ifdef FAST_CLOCK
+// `ifdef FAST_CLOCK
+// reg xpclk;			// Processor (Tom & Jerry) Clock.
+// reg xvclk;			// Video Clock.
+// reg tlw;				// Transparent Latch Write?
+// `else
 reg xpclk;			// Processor (Tom & Jerry) Clock.
 reg xvclk;			// Video Clock.
-reg tlw;				// Transparent Latch Write?
-`else
-wire xpclk;			// Processor (Tom & Jerry) Clock.
-wire xvclk;			// Video Clock.
 wire tlw;				// Transparent Latch Write?
-`endif
+//`endif
 reg pix_ce;
 
 // Note: Turns out the custom chips use synchronous resets.
@@ -119,72 +120,76 @@ reg pix_ce;
 reg fx68k_phi1r;
 reg fx68k_phi2r;
 
-`ifdef FAST_CLOCK
-`ifndef VERILATOR
+// `ifdef FAST_CLOCK
+// `ifndef VERILATOR
+// always @(posedge sys_clk) begin
+// 	xpclk <= 1'b0;
+// 	xvclk <= 1'b0;
+// 	tlw <= 1'b0;
+// 	fx68k_phi1r <= 1'b0;
+// 	fx68k_phi2r <= 1'b0;
+	
+// 	clkdiv <= clkdiv + 4'd1;
+// 	if (clkdiv==4'd7) begin
+// 		clkdiv <= 4'd0;
+// 	end
+
+// 	if ((clkdiv==4'd0) || (clkdiv==4'd4)) begin
+// 		fx68k_phi1r <= 1'b1;
+// 	end
+
+// 	if ((clkdiv==4'd1) || (clkdiv==4'd5)) begin
+// 		xpclk <= 1'b1;
+// 		xvclk <= 1'b1;
+// 	end else begin
+// 		tlw <= 1'b1;
+// 	end
+	
+// 	if ((clkdiv==4'd2) || (clkdiv==4'd6)) begin
+// 		fx68k_phi2r <= 1'b1;
+// 	end
+// end
+// `else
+reg cpu_toggle;
 always @(posedge sys_clk) begin
 	xpclk <= 1'b0;
 	xvclk <= 1'b0;
-	tlw <= 1'b1;
-	fx68k_phi1r <= 1'b0;
-	fx68k_phi2r <= 1'b0;
-	
-	clkdiv <= clkdiv + 4'd1;
-	if (clkdiv==4'd7) begin
-		clkdiv <= 4'd0;
-	end
-
-	if ((clkdiv==4'd0) || (clkdiv==4'd4)) begin
-		tlw <= 1'b1;
-		fx68k_phi1r <= 1'b1;
-	end
-
-	if ((clkdiv==4'd1) || (clkdiv==4'd5)) begin
-		xpclk <= 1'b1;
-		xvclk <= 1'b1;
-	end
-	
-	if ((clkdiv==4'd2) || (clkdiv==4'd6)) begin
-		fx68k_phi2r <= 1'b1;
-	end
-end
-`else
-always @(posedge sys_clk) begin
-	xpclk <= 1'b0;
-	xvclk <= 1'b0;
-	  tlw <= 1'b0;
 
 	clkdiv <= clkdiv + 4'd1;
-	if (clkdiv==4'd1) begin
-		clkdiv <= 4'd0;
-	end
 
-	if (clkdiv==4'd0) begin
+	if (clkdiv == 4'd3) begin
 		xpclk <= 1'b1;
+		cpu_toggle <= ~cpu_toggle;
 		xvclk <= 1'b1;
-	end
-	
-	if (clkdiv==4'd1) begin
-		tlw <= 1'b1;
-	end
-
-end
-`endif
-`else
-reg pclk_toggle = 0;
-
-always @(posedge sys_clk) begin
-	pclk_toggle <= ~pclk_toggle;
+		clkdiv <= 4'd0;
+	end 
+	// if (~xresetl) begin
+	// 	clkdiv <= 0;
+	// 	cpu_toggle <= 0;
+	// 	xpclk <= 1'b0;
+	// 	xvclk <= 1'b0;
+	// end
 end
 
-assign xvclk = pclk_toggle;
-assign xpclk = xvclk;
 assign tlw = ~xvclk;
 
+// `endif
+// `else
+// reg pclk_toggle = 0;
 
-`endif
+// always @(posedge sys_clk) begin
+// 	pclk_toggle <= ~pclk_toggle;
+// end
+
+// assign xvclk = pclk_toggle;
+// assign xpclk = xvclk;
+// assign tlw = ~xvclk;
+
+
+// `endif
 
 //assign vid_ce = pix_ce;
-assign vid_ce = xvclk;
+assign vid_ce = j_xpclkout;
 //assign vid_ce = j_xvclkdiv;
 //assign vid_cd = j_xvclkdiv;
 
@@ -553,8 +558,8 @@ assign dbus[47:32] = (den[2]) ? xd_out[47:32] :		// Tom.
 // Note: The den[2]  signal is used twice.
 // This is true for the Jag schematic too.
 assign dbus[63:48] = (den[2]) ? xd_out[63:48] :		// Tom.
-							(dram_oe[3]) ? dram_q[63:48] :// DRAM.
-													16'hzzzz;
+							(dram_oe[2]) ? dram_q[63:48] :// DRAM.
+													16'hzzzz; // FIXME: Open bus?
 
 
 assign xd_in[63:0] = dbus[63:0];
@@ -832,7 +837,7 @@ tom tom_inst
 	.xpclk(j_xpclkout),
 	.xvclk(xvclk),
 	.xwaitl(xwaitl),
-	.xresetl(ext_reset),
+	.xresetl(j_xresetl),
 	.xd_0_out(xd_out[0]),
 	.xd_0_oe(xd_oe[0]),
 	.xd_0_in(xd_in[0]),
@@ -1236,6 +1241,8 @@ tom tom_inst
 	.vsl(vsl)
 );
 
+wire audio_clk;
+
 j_jerry jerry_inst
 (
 	.xdspcsl(j_xdspcsl),
@@ -1250,8 +1257,8 @@ j_jerry jerry_inst
 	.xeint_0(j_xeint[0]),
 	.xeint_1(j_xeint[1]),
 	.xtest(j_xtest),
-	.xchrin(1'b1),
-	.xresetil(ext_reset),
+	.xchrin(1'b1), // Should be 14.3mhz, ntsc clock?
+	.xresetil(xresetl),
 	.xd_0_out(j_xd_out[0]),
 	.xd_0_oe(j_xd_oe[0]),
 	.xd_0_in(j_xd_in[0]),
@@ -1494,6 +1501,7 @@ j_jerry jerry_inst
 	.snd_r(snd_r),
 	.snd_l_en(snd_l_en),
 	.snd_r_en(snd_r_en),
+	.snd_clk(audio_clk),
 	.dspwd( dspwd ),
 	
 	.sys_clk(sys_clk)
@@ -1536,8 +1544,8 @@ wire fx68k_bgack_n = xba_in;	// Bus Grant Acknowledge.
 reg old_cpuclk;
 reg oRESETn_old;
 
-wire fx68k_phi1 = ~old_cpuclk && j_xcpuclk;
-wire fx68k_phi2 = old_cpuclk && ~j_xcpuclk;
+wire fx68k_phi2 = xvclk & cpu_toggle;//~old_cpuclk && j_xcpuclk;
+wire fx68k_phi1 = xvclk & ~cpu_toggle;//old_cpuclk && ~j_xcpuclk;
 
 // wire fx68k_phi1 = fx68k_phi1r;
 // wire fx68k_phi2 = fx68k_phi2r;
@@ -1552,7 +1560,7 @@ fx68k fx68k_inst
 	.clk( sys_clk ) ,			// input  clk
 	.HALTn(1'b1),
 	
-	.extReset( fx68k_rst ) ,	// input  extReset
+	.extReset( ~j_xresetl ) ,	// input  extReset
 	.pwrUp( fx68k_rst ) ,		// input  pwrUp
 	
 	.enPhi1( fx68k_phi1 ) ,	// input  enPhi1
@@ -1660,9 +1668,9 @@ end
 reg [15:0] aud_l;
 reg [15:0] aud_r;
 
-always @(posedge sys_clk) begin
-	if (snd_l_en) aud_l <= snd_l;
-	if (snd_r_en) aud_r <= snd_r;
+always @(posedge sys_clk) if (audio_clk) begin
+	if (snd_l_en) r_aud_l <= snd_l;
+	if (snd_r_en) r_aud_r <= snd_r;
 end
 
 // assign w_aud_l[15:0] = snd_l[15:0];
@@ -1673,36 +1681,86 @@ assign w_aud_r[15:0] = aud_r[15:0];
 reg j_xws_prev = 1'b1;
 reg j_xsck_prev = 1'b1;
 
-always @(posedge sys_clk) 
-begin
-	j_xws_prev <= j_xws_in;
-	j_xsck_prev <= j_xsck_in;
-	
-  if (rst) begin
-    r_aud_l <= 16'd0;
-    r_aud_r <= 16'd0;
-  end else begin
-		//if (snd_l_en) r_aud_l <= w_aud_l;	// TESTING. ElectronAsh.
-		//if (snd_r_en) r_aud_r <= w_aud_r;
-  
-		if (snd_clk) begin
-			r_aud_l <= w_aud_l;
-			r_aud_r <= w_aud_r;
-			
-			/*if (w_aud_l[15]) begin
-				r_aud_l <= {1'b0, ~w_aud_l[14:0]};
-			end else begin
-				r_aud_l <= {1'b1, w_aud_l[14:0]};
-			end
+//
+// i2s receiver
+//
 
-			if (w_aud_r[15]) begin
-				r_aud_r <= {1'b0, ~w_aud_r[14:0]};
-			end else begin
-				r_aud_r <= {1'b1, w_aud_r[14:0]};
-			end*/
-		end
-	end
-end
+// wire   i2s_ws   = j_xws_in;
+// wire   i2s_data = j_xi2stxd;
+// wire   i2s_bclk = j_xsck_in;
+
+// always @(posedge sys_clk) begin : i2s_proc
+// 	reg [15:0] i2s_buf = 0;
+// 	reg  [4:0] i2s_cnt = 0;
+// 	reg        clk_sr;
+// 	reg        i2s_clk = 0;
+// 	reg        old_clk, old_ws;
+// 	reg        i2s_next = 0;
+
+// 	// Debounce clock
+// 	clk_sr <= i2s_bclk;
+// 	if (clk_sr == i2s_bclk) i2s_clk <= clk_sr;
+
+// 	// Latch data and ws on rising edge
+// 	old_clk <= i2s_clk;
+// 	if (i2s_clk && ~old_clk) begin
+
+// 		if (~i2s_cnt[4]) begin
+// 			i2s_cnt <= i2s_cnt + 1'd1;
+// 			i2s_buf[~i2s_cnt[3:0]] <= i2s_data;
+// 		end
+
+// 		// Word Select will change 1 clock before the new word starts
+// 		old_ws <= i2s_ws;
+// 		if (old_ws != i2s_ws) i2s_next <= 1;
+// 	end
+
+// 	if (i2s_next) begin
+// 		i2s_next <= 0;
+// 		i2s_cnt <= 0;
+// 		i2s_buf <= 0;
+
+// 		if (i2s_ws) r_aud_l <= i2s_buf;
+// 		else        r_aud_r <= i2s_buf;
+// 	end
+	
+// 	if (~xresetl) begin
+// 		i2s_buf    <= 0;
+// 		r_aud_l <= 0;
+// 		r_aud_r <= 0;
+// 	end
+// end
+
+// always @(posedge sys_clk) 
+// begin
+// 	j_xws_prev <= j_xws_in;
+// 	j_xsck_prev <= j_xsck_in;
+	
+//   if (rst) begin
+//     r_aud_l <= 16'd0;
+//     r_aud_r <= 16'd0;
+//   end else begin
+// 		//if (snd_l_en) r_aud_l <= w_aud_l;	// TESTING. ElectronAsh.
+// 		//if (snd_r_en) r_aud_r <= w_aud_r;
+  
+// 		if (snd_clk) begin
+// 			r_aud_l <= w_aud_l;
+// 			r_aud_r <= w_aud_r;
+			
+// 			/*if (w_aud_l[15]) begin
+// 				r_aud_l <= {1'b0, ~w_aud_l[14:0]};
+// 			end else begin
+// 				r_aud_l <= {1'b1, w_aud_l[14:0]};
+// 			end
+
+// 			if (w_aud_r[15]) begin
+// 				r_aud_r <= {1'b0, ~w_aud_r[14:0]};
+// 			end else begin
+// 				r_aud_r <= {1'b1, w_aud_r[14:0]};
+// 			end*/
+// 		end
+// 	end
+// end
 
 wire snd_clk;
 wire dac_clk;

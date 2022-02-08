@@ -404,7 +404,13 @@ wire [63:0] dram_q = ch1_dout[63:0];
 
 wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
 wire fdram;
-wire ram_rdy = (mem_cyc == `RAM_END) || ch1_ready;	// Latency kludge.
+reg old_ch1_ready;
+
+always @(posedge clk_sys) begin
+	old_ch1_ready <= ch1_ready;
+end
+
+wire ram_rdy = ((mem_cyc == `RAM_END) || (~old_ch1_ready && ch1_ready));// && ~(ram_read_req || ram_write_req);// Latency kludge.
 wire [23:0] abus_out;
 wire [7:0] os_rom_q;
 
@@ -436,6 +442,7 @@ jaguar jaguar_inst
 	.xresetl( xresetl ) ,		// input  xresetl
 
 	.sys_clk( clk_sys ) ,		// input  clk_sys
+	.orig_clk(clk_26m),
 
 	.dram_a( dram_a ) ,			// output [9:0] dram_a
 	.dram_ras_n( dram_ras_n ) ,// output  dram_ras_n
@@ -633,10 +640,11 @@ wire rom_wrack = 1'b1;	// TESTING!!
 reg [23:0] old_abus_out;
 
 wire cart_rd_trig = !cart_ce_n && (cart_ce_n_falling || (abus_out != old_abus_out));
+logic xwaitl_latch;
 
 always @(posedge clk_sys or posedge reset)
 if (reset) begin
-	xwaitl <= 1'b1;	// De-assert on reset!
+	xwaitl_latch <= 1'b1;	// De-assert on reset!
 	old_abus_out <= 24'h112233;
 end
 else begin
@@ -644,11 +652,12 @@ else begin
 	old_abus_out <= abus_out;
 
 	if (cart_rd_trig) begin
-		xwaitl <= 1'b0;	// Assert this (low) until the Cart data is ready.
+		xwaitl_latch <= 1'b0;	// Assert this (low) until the Cart data is ready.
 	end
-	else if (DDRAM_DOUT_READY) xwaitl <= 1'b1;		// De-assert, to let the core know.
+	else if (DDRAM_DOUT_READY) xwaitl_latch <= 1'b1;		// De-assert, to let the core know.
 end
 
+assign xwaitl = ~cart_rd_trig && (DDRAM_DOUT_READY || xwaitl_latch);
 
 `ifndef VERILATOR
 wire [1:0] cart_oe;
@@ -706,8 +715,10 @@ assign cart_q = ({abus_out[2:0]}==0) ? {DDRAM_DOUT[63:56],DDRAM_DOUT[63:56],DDRA
 
 
 // From the core into SDRAM.
-wire ram_read_req = startcas && (dram_oe_n != 4'b1111);								// The use of "startcas" lets us get a bit lower latency for READ requests. (dram_oe_n bits only asserted for reads? - confirm!")
-wire ram_write_req = !dram_cas_n && ({dram_uw_n, dram_lw_n} != 8'b11111111);	// Can (currently) only tell a WRITE request when any of the dram byte enables are asserted.
+wire ram_write = ~&{dram_uw_n, dram_lw_n};
+wire ram_read = ~&dram_oe_n[2:0];
+wire ram_read_req = startcas && ram_read && ~ram_write; // The use of "startcas" lets us get a bit lower latency for READ requests. (dram_oe_n bits only asserted for reads? - confirm!")
+wire ram_write_req = !dram_cas_n && ram_write; // Can (currently) only tell a WRITE request when any of the dram byte enables are asserted.
 
 wire ch1_rnw = !ram_write_req;
 

@@ -72,7 +72,7 @@ localparam BURST_CODE          = (BURST_LENGTH == 8) ? 3'b011 : (BURST_LENGTH ==
 localparam ACCESS_TYPE         = 1'b0;     // 0=sequential, 1=interleaved
 localparam CAS_LATENCY         = 3'd2;     // 2 for < 100MHz, 3 for >100MHz
 localparam OP_MODE             = 2'b00;    // only 00 (standard operation) allowed
-localparam NO_WRITE_BURST      = 1'b0;     // 0=write burst enabled, 1=only single access write
+localparam NO_WRITE_BURST      = 1'b1;     // 0=write burst enabled, 1=only single access write
 localparam MODE                = {3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_CODE};
 
 localparam sdram_startup_cycles= 14'd12100;// 100us, plus a little more, @ 100MHz
@@ -147,9 +147,9 @@ always @(posedge clk) begin
 	if(data_ready_delay2[2]) ch2_ready <= 1;
 
 	//if(data_ready_delay3[3]) ch3_dout[07:00] <= dq_reg[7:0];
-	//if(data_ready_delay3[2]) ch3_dout[15:08] <= dq_reg[7:0];
-	if(data_ready_delay3[3]) ch3_dout <= dq_reg;
-	if(data_ready_delay3[3]) ch3_ready <= 1;
+	//if(data_ready_delay3[1]) ch3_dout[15:08] <= dq_reg[7:0];
+	if(data_ready_delay3[1]) ch3_dout <= dq_reg;
+	if(data_ready_delay3[1]) ch3_ready <= 1;
 
 	SDRAM_DQ <= 16'bZ;
 
@@ -218,46 +218,40 @@ always @(posedge clk) begin
 				// Priority is to issue a refresh if one is outstanding
 				state <= STATE_IDLE_1;
 			end
-			else if(ch1_rq | ch1_req) begin	// Trying to save one clock cycle, by checking for ch1_req here.
-														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
+			else if(ch1_rq) begin
 				{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, 1'b1, ch1_addr[25:1]};
 				chip       <= ch1_addr[26];
 				saved_data <= ch1_din;
 				saved_wr   <= ~ch1_rnw;
 				ch         <= 0;
-				//ch1_rq     <= 0;
+				ch1_rq     <= 0;
 				command    <= CMD_ACTIVE;
 				state      <= STATE_WAIT;
 			end
-			else if(ch2_rq | ch2_req) begin
+			else if(ch2_rq) begin
 				{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, ch2_rnw, ch2_addr[25:1]};
 				chip       <= ch2_addr[26];
 				saved_data <= ch2_din;
 				saved_wr   <= ~ch2_rnw;
 				ch         <= 1;
-				//ch2_rq     <= 0;
+				ch2_rq     <= 0;
 				command    <= CMD_ACTIVE;
 				state      <= STATE_WAIT;
 			end
-			else if(ch3_rq | ch3_req) begin
+			else if(ch3_rq) begin
 				{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, ch3_rnw, ch3_addr[25:1]};
 				chip       <= ch3_addr[26];
 				saved_data <= ch3_din;
 				saved_wr   <= ~ch3_rnw;
 				ch         <= 2;
-				//ch3_rq     <= 0;
+				ch3_rq     <= 0;
 				command    <= CMD_ACTIVE;
 				state      <= STATE_WAIT;
 			end
 		end
 
-		STATE_WAIT: begin
-			if (ch==0) ch1_rq <= 0;
-			if (ch==1) ch2_rq <= 0;
-			if (ch==2) ch3_rq <= 0;
-			state <= STATE_RW1;	// Wait state (NOP) for CL=2.
-										// CL=3 would need an extra wait state here, I think? ElectronAsh.
-		end
+		STATE_WAIT: state <= STATE_RW1;	// Wait state (NOP) for CL=2.
+													// CL=3 would need an extra wait state here, I think? ElectronAsh.
 		
 		STATE_RW1: begin
 			SDRAM_A <= cas_addr;
@@ -283,9 +277,9 @@ always @(posedge clk) begin
 			else begin
 				command <= CMD_READ;
 				state   <= STATE_IDLE_5;
-				if(ch == 0) data_ready_delay1[CAS_LATENCY+BURST_LENGTH] <= 1;
-				if(ch == 1) data_ready_delay2[CAS_LATENCY+BURST_LENGTH] <= 1;
-				if(ch == 2) data_ready_delay3[CAS_LATENCY+BURST_LENGTH] <= 1;
+				     if(ch == 0) data_ready_delay1[CAS_LATENCY+BURST_LENGTH] <= 1;
+				else if(ch == 1) data_ready_delay2[CAS_LATENCY+BURST_LENGTH] <= 1;
+				else             data_ready_delay3[CAS_LATENCY+BURST_LENGTH] <= 1;
 			end
 		end
 

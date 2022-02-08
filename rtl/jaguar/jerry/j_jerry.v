@@ -259,6 +259,7 @@ module j_jerry
 	output [15:0] snd_r,
 	output snd_l_en,
 	output snd_r_en,
+	output snd_clk,
 	
 	output [15:0] dspwd,
 	
@@ -1067,6 +1068,7 @@ assign aen = aen_obuf;
 assign den = den_obuf;
 assign ainen = ainen_obuf;
 
+assign snd_clk = clk_1;
 
 // JERRY.NET (115) - d[0] : bd8t
 bd d_index_0_inst
