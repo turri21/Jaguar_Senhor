@@ -506,6 +506,8 @@ wire [0:23] address_in;
 wire [0:31] gpu_data_out;
 wire [0:31] gpu_data_oe;
 wire [0:31] gpu_data_in;
+wire gateway_addr_oe; // Added by EA presumably to simplify;
+wire blit_addr_oe; // Added by EA presumably to simplify;
 wire gpu_dout_0_out;
 wire gpu_dout_0_oe;
 wire gpu_dout_0_in;
@@ -3133,6 +3135,8 @@ gateway gateway_inst
 	.sys_clk(sys_clk) // Generated
 );
 
+assign {ts_local_pe_140_a0_oe,ts_local_pe_141_a0_oe,ts_local_pe_142_a0_oe,ts_local_pe_143_a0_oe,ts_local_pe_144_a0_oe,ts_local_pe_145_a0_oe,ts_local_pe_146_a0_oe,ts_local_pe_147_a0_oe,ts_local_pe_148_a0_oe,ts_local_pe_149_a0_oe,ts_local_pe_150_a0_oe,ts_local_pe_151_a0_oe,ts_local_pe_152_a0_oe,ts_local_pe_153_a0_oe,ts_local_pe_154_a0_oe,ts_local_pe_155_a0_oe,ts_local_pe_156_a0_oe,ts_local_pe_157_a0_oe,ts_local_pe_158_a0_oe,ts_local_pe_159_a0_oe,ts_local_pe_160_a0_oe,ts_local_pe_161_a0_oe,ts_local_pe_162_a0_oe,ts_local_pe_163_a0_oe} = {24{gateway_addr_oe}};
+
 // GRAPHICS.NET (205) - blit : blit
 blit blit_inst
 (
@@ -3530,6 +3534,8 @@ blit blit_inst
 	.xreset_n /* IN */ (resetl_12),
 	.sys_clk(sys_clk) // Generated
 );
+
+assign {ts_local_pe_140_a1_oe,ts_local_pe_141_a1_oe,ts_local_pe_142_a1_oe,ts_local_pe_143_a1_oe,ts_local_pe_144_a1_oe,ts_local_pe_145_a1_oe,ts_local_pe_146_a1_oe,ts_local_pe_147_a1_oe,ts_local_pe_148_a1_oe,ts_local_pe_149_a1_oe,ts_local_pe_150_a1_oe,ts_local_pe_151_a1_oe,ts_local_pe_152_a1_oe,ts_local_pe_153_a1_oe,ts_local_pe_154_a1_oe,ts_local_pe_155_a1_oe,ts_local_pe_156_a1_oe,ts_local_pe_157_a1_oe,ts_local_pe_158_a1_oe,ts_local_pe_159_a1_oe,ts_local_pe_160_a1_oe,ts_local_pe_161_a1_oe,ts_local_pe_162_a1_oe,ts_local_pe_163_a1_oe} = {24{blit_addr_oe}};
 
 // GRAPHICS.NET (214) - gpu_dout : join_bus
 assign ts_local_pe_164_a5_out = gpu_dout_0_out;

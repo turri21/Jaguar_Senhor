@@ -859,26 +859,26 @@ assign wsp2 = ~(msb & everyword);
 // I2S.NET (116) - wsp : nd3
 assign wsp = ~(wsp0 & wsp1 & wsp2);
 
-// I2S.NET (117) - i2sint : fd1q
-//fd1q i2sint_inst
-//(
-//	.q /* OUT */ (i2int),
-//	.d /* IN */ (wsp),
-//	.cp /* IN */ (clk),
-//	.sys_clk(sys_clk) // Generated
-//);
-reg i2int_reg;
-always @(posedge sys_clk)
-if (!resetl) begin
-	i2int_reg <= 1'b0;
-end
-else begin
-	if (wsp) i2int_reg <= 1'b1;
+//I2S.NET (117) - i2sint : fd1q
+fd1q i2sint_inst
+(
+	.q /* OUT */ (i2int),
+	.d /* IN */ (wsp),
+	.cp /* IN */ (clk),
+	.sys_clk(sys_clk) // Generated
+);
+// reg i2int_reg;
+// always @(posedge sys_clk)
+// if (!resetl) begin
+// 	i2int_reg <= 1'b0;
+// end
+// else begin
+// 	if (wsp) i2int_reg <= 1'b1;
 	
-	if (clk && i2int_reg) i2int_reg <= 1'b0;
-end
+// 	if (clk && i2int_reg) i2int_reg <= 1'b0;
+// end
 
-assign i2int = i2int_reg;	// TESTING !! ElectronAsh.
+// assign i2int = i2int_reg;	// TESTING !! ElectronAsh.
 
 
 // I2S.NET (118) - wsu[1] : dummy

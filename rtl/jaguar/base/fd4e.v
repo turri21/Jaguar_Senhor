@@ -16,11 +16,15 @@ reg	fd_data = 1'b1;
 
 assign q = fd_data;
 assign qn = ~fd_data;
+reg old_cp, old_sd;
 
 // always @(posedge cp or negedge sd)
 always @(posedge sys_clk)
 begin
-	if (cp | (~sd)) begin
+	old_cp <= cp;
+	old_sd <= sd;
+
+	if ((~old_cp && cp) | (old_sd && ~sd)) begin
 		if (~sd) begin
 			fd_data <= 1'b1;
 		end else begin

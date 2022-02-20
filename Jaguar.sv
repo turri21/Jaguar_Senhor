@@ -34,7 +34,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [45:0] HPS_BUS,
+	inout  [48:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        CLK_VIDEO,
@@ -184,8 +184,6 @@ assign ADC_BUS  = 'Z;
 assign USER_OUT = '1;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
-//assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
-//assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;
 
 assign VGA_SL = 0;
 assign VGA_F1 = 0;
@@ -326,17 +324,15 @@ wire [7:0] loader_be = (loader_en && loader_addr[2:0]==0) ? 8'b11000000 :
 							  (loader_en && loader_addr[2:0]==6) ? 8'b00000011 :
 																				8'b11111111;
 
-reg [7:0] cnt = 0;
 reg [1:0] status_reg = 0;
 reg       old_download;
 integer   timeout = 0;
 
 wire rom_index = ioctl_index[5:0] == 1;
 
-always @(posedge clk_sys or posedge reset)
+always @(posedge clk_sys)
 if (reset) begin
 	ioctl_wait <= 0;
-	cnt <= 0;
 	status_reg <= 0;
 	old_download <= 0;
 	timeout <= 0;
@@ -356,7 +352,6 @@ else begin
 		status_reg <= 0;
 		ioctl_wait <= 0;
 		timeout <= 3000000;
-		cnt <= 0;
 	end
 
 	if (loader_wr) loader_addr <= loader_addr + 2'd2; // Writing a 16-bit WORD at a time!
@@ -402,15 +397,7 @@ wire ch1_ready;
 // From SDRAM to the core.
 wire [63:0] dram_q = ch1_dout[63:0];
 
-wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
-wire fdram;
-reg old_ch1_ready;
 
-always @(posedge clk_sys) begin
-	old_ch1_ready <= ch1_ready;
-end
-
-wire ram_rdy = ((mem_cyc == `RAM_END) || (~old_ch1_ready && ch1_ready));// && ~(ram_read_req || ram_write_req);// Latency kludge.
 wire [23:0] abus_out;
 wire [7:0] os_rom_q;
 
@@ -442,7 +429,6 @@ jaguar jaguar_inst
 	.xresetl( xresetl ) ,		// input  xresetl
 
 	.sys_clk( clk_sys ) ,		// input  clk_sys
-	.orig_clk(clk_26m),
 
 	.dram_a( dram_a ) ,			// output [9:0] dram_a
 	.dram_ras_n( dram_ras_n ) ,// output  dram_ras_n
@@ -619,32 +605,13 @@ assign DDRAM_BE = (loader_en) ? loader_be : 8'b11111111;	// IIRC, the DDR contro
 wire rom_wrack = 1'b1;	// TESTING!!
 
 
-//wire [31:0] cart_q_8bit = (!abus_out[0]) ? {sdram_dout[15:8], sdram_dout[15:8]} :
-//															{sdram_dout[7:0],  sdram_dout[7:0]};
-
-//wire [31:0] cart_q_16bit = {sdram_dout[15:0], sdram_dout[15:0]};
-
-// With MEMCON1 in 32-bit wide mode, abus_out seems to increment by ONE when reading each 32-bit word.
-// So we need to add an extra LSB bit to the address sent to the SDRAM controller (because 16-bit).
-//
-// Then route bits [22:0] of abus_out as well, since the SDRAM controller address is in 16-bit WORDs,
-// but also does burst reads, so will output full 32-bit data. Phew.
-//
-//wire [31:0] cart_q_32bit = {sdram_dout[15:0], sdram_dout[31:16]};
-
-//assign cart_q = (romwidth==2'd0) ? cart_q_8bit :
-//					   (romwidth==2'd1) ? cart_q_16bit :
-//							   				 cart_q_32bit;c
-
-
 reg [23:0] old_abus_out;
 
 wire cart_rd_trig = !cart_ce_n && (cart_ce_n_falling || (abus_out != old_abus_out));
-logic xwaitl_latch;
 
 always @(posedge clk_sys or posedge reset)
 if (reset) begin
-	xwaitl_latch <= 1'b1;	// De-assert on reset!
+	xwaitl <= 1'b1;	// De-assert on reset!
 	old_abus_out <= 24'h112233;
 end
 else begin
@@ -652,126 +619,131 @@ else begin
 	old_abus_out <= abus_out;
 
 	if (cart_rd_trig) begin
-		xwaitl_latch <= 1'b0;	// Assert this (low) until the Cart data is ready.
+		xwaitl <= 1'b0;	// Assert this (low) until the Cart data is ready.
 	end
-	else if (DDRAM_DOUT_READY) xwaitl_latch <= 1'b1;		// De-assert, to let the core know.
+	else if (DDRAM_DOUT_READY) xwaitl <= 1'b1;		// De-assert, to let the core know.
 end
 
-assign xwaitl = ~cart_rd_trig && (DDRAM_DOUT_READY || xwaitl_latch);
 
-`ifndef VERILATOR
 wire [1:0] cart_oe;
-`endif
-
-//wire [1:0] cart_oe_n;
-
-// cart_oe signals (Active-High) just feed back to the core.
-//assign cart_oe[0] = (~cart_oe_n[0] & ~cart_ce_n);
-//assign cart_oe[1] = (~cart_oe_n[1] & ~cart_ce_n);
 
 // 32-bit cart mode...
 //
 assign cart_q = (!abus_out[2]) ? DDRAM_DOUT[63:32] : DDRAM_DOUT[31:00];
 
+reg [3:0] ram_count;
 
-// 16-bit cart mode...
-//
-//
-//assign cart_q = cart_q_16bit;
-//assign cart_q = (abus_out>=24'h800400 && abus_out<=24'h800403) ? 16'h0202 :	// Patch the cart header to force 16-bit ROMWIDTH.
-//																				 SDRAM_DQ;
-//
-//assign cart_q = ({abus_out[2:1],1'b0}==0) ? {DDRAM_DOUT[63:48],DDRAM_DOUT[63:48]} :
-//					 ({abus_out[2:1],1'b0}==2) ? {DDRAM_DOUT[47:32],DDRAM_DOUT[47:32]} :
-//					 ({abus_out[2:1],1'b0}==4) ? {DDRAM_DOUT[31:16],DDRAM_DOUT[31:16]} :
-//														{DDRAM_DOUT[15:00],DDRAM_DOUT[15:00]};
-
-
-/*
-// 8-bit cart mode... WORKING in Verilator! ElectronAsh.
-//
-assign cart_q = ({abus_out[2:0]}==0) ? {DDRAM_DOUT[63:56],DDRAM_DOUT[63:56],DDRAM_DOUT[63:56],DDRAM_DOUT[63:56]} :
-					 ({abus_out[2:0]}==1) ? {DDRAM_DOUT[55:48],DDRAM_DOUT[55:48],DDRAM_DOUT[55:48],DDRAM_DOUT[55:48]} :
-					 ({abus_out[2:0]}==2) ? {DDRAM_DOUT[47:40],DDRAM_DOUT[47:40],DDRAM_DOUT[47:40],DDRAM_DOUT[47:40]} :
-					 ({abus_out[2:0]}==3) ? {DDRAM_DOUT[39:32],DDRAM_DOUT[39:32],DDRAM_DOUT[39:32],DDRAM_DOUT[39:32]} :
-					 ({abus_out[2:0]}==4) ? {DDRAM_DOUT[31:24],DDRAM_DOUT[31:24],DDRAM_DOUT[31:24],DDRAM_DOUT[31:24]} :
-					 ({abus_out[2:0]}==5) ? {DDRAM_DOUT[23:16],DDRAM_DOUT[23:16],DDRAM_DOUT[23:16],DDRAM_DOUT[23:16]} :
-					 ({abus_out[2:0]}==6) ? {DDRAM_DOUT[15:08],DDRAM_DOUT[15:08],DDRAM_DOUT[15:08],DDRAM_DOUT[15:08]} :
-												 {DDRAM_DOUT[07:00],DDRAM_DOUT[07:00],DDRAM_DOUT[07:00],DDRAM_DOUT[07:00]};
-*/
-
-
-// Main DRAM is in SDRAM now.
-//
-// Using a Burst Length of 4 (SDRAM is 16-bit wide), so the core can read/write full 64-bit words.
-//
-// Byte enable bits "ch1_be[7:0]" (active-High) are now used to control the SDRAM DQM_N pins during a write burst. eg...
-//
-// ch1_be bits [7:6] are used to mask bytes ch1_din[63:56] and ch1_din[55:48].
-// ch1_be bits [5:4] are used to mask bytes ch1_din[47:40] and ch1_din[39:32].
-// ch1_be bits [3:2] are used to mask bytes ch1_din[31:24] and ch1_din[23:16].
-// ch1_be bits [1:0] are used to mask bytes ch1_din[15:08] and ch1_din[07:00].
-//
-
+wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
+wire fdram;
+wire ram_rdy = ~ch1_req && ((mem_cyc == `RAM_IDLE) || ch1_ready);	// Latency kludge.
 
 // From the core into SDRAM.
-wire ram_write = ~&{dram_uw_n, dram_lw_n};
-wire ram_read = ~&dram_oe_n[2:0];
-wire ram_read_req = startcas && ram_read && ~ram_write; // The use of "startcas" lets us get a bit lower latency for READ requests. (dram_oe_n bits only asserted for reads? - confirm!")
-wire ram_write_req = !dram_cas_n && ram_write; // Can (currently) only tell a WRITE request when any of the dram byte enables are asserted.
+wire ram_read_req = (dram_oe_n != 4'b1111); // The use of "startcas" lets us get a bit lower latency for READ requests. (dram_oe_n bits only asserted for reads? - confirm!")
+wire ram_write_req = ({dram_uw_n, dram_lw_n} != 8'b11111111);	// Can (currently) only tell a WRITE request when any of the dram byte enables are asserted.
 
 wire ch1_rnw = !ram_write_req;
 
-wire ch1_req = (mem_cyc==`RAM_IDLE) && (ram_read_req || ram_write_req);	// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
+wire ch1_req = (mem_cyc==`RAM_IDLE) && (ram_read_req || ram_write_req) && dram_cas_edge;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 
 wire [63:0] ch1_din = dram_d;	// Write data, from core to SDRAM.
 
-wire [7:0] ch1_be = ~{dram_uw_n[3], dram_lw_n[3],	// Byte Enable bits from the core to SDRAM.
-							 dram_uw_n[2], dram_lw_n[2],	// (Note the 16-bit upper/lower interleaving, due to the 16-bit DRAM chips used on the Jag.)
-							 dram_uw_n[1], dram_lw_n[1],
-							 dram_uw_n[0], dram_lw_n[0]};
+wire [7:0] ch1_be = ~{
+	dram_uw_n[3], dram_lw_n[3], // Byte Enable bits from the core to SDRAM.
+	dram_uw_n[2], dram_lw_n[2], // (Note the 16-bit upper/lower interleaving, due to the 16-bit DRAM chips used on the Jag.)
+	dram_uw_n[1], dram_lw_n[1],
+	dram_uw_n[0], dram_lw_n[0]
+};
 
 wire [63:0] ch1_dout;	// Read data, TO the core.
+reg [9:0] ras_latch;
+reg old_cas_n;
+
+wire dram_cas_edge = old_cas_n && ~dram_cas_n;
+
+wire [19:0] dram_addr = {ras_latch, dram_a};//abus_out[22:3];//{ras_latch, dram_a};
+wire ch1a_ready, ch1b_ready;
+
+assign ch1_ready = ch1a_ready || ch1b_ready;//~|ram_count[3:2];
 
 sdram sdram
 (
-	.init(~pll_locked),
+	.init               (~pll_locked),
 
-	.clk( clk_ram ),				// Don't need the phase shift any more. DDIO is used to generate SDRAM_CLK instead (Sorg magic).
+	.clk                (clk_ram),
 
-	.SDRAM_DQ( SDRAM_DQ ),		// 16 bit bidirectional data bus
-	.SDRAM_A( SDRAM_A) ,			// 13 bit multiplexed address bus
-	.SDRAM_DQML( SDRAM_DQML ) ,// two byte masks
-	.SDRAM_DQMH( SDRAM_DQMH ) ,//
-	.SDRAM_BA( SDRAM_BA ),		// two banks
-	.SDRAM_nCS( SDRAM_nCS ),	// a single chip select
-	.SDRAM_nWE( SDRAM_nWE ),	// write enable
-	.SDRAM_nRAS( SDRAM_nRAS ),	// row address select
-	.SDRAM_nCAS( SDRAM_nCAS ),	// columns address select
-	.SDRAM_CKE( SDRAM_CKE ),	// clock enable
-	.SDRAM_CLK( SDRAM_CLK ),	// clock for chip
+	.SDRAM_DQ           (SDRAM_DQ),
+	.SDRAM_A            (SDRAM_A),
+	.SDRAM_DQML         (SDRAM_DQML),
+	.SDRAM_DQMH         (SDRAM_DQMH),
+	.SDRAM_BA           (SDRAM_BA),
+	.SDRAM_nCS          (SDRAM_nCS),
+	.SDRAM_nWE          (SDRAM_nWE),
+	.SDRAM_nRAS         (SDRAM_nRAS),
+	.SDRAM_nCAS         (SDRAM_nCAS),
+	.SDRAM_CKE          (SDRAM_CKE),
+	.SDRAM_CLK          (SDRAM_CLK),
 
-	// Port 1.
-	.ch1_addr( {4'b0000, abus_out[22:3], 2'b00} ),	// 64-bit WORD address. Burst Length=4. On 64-bit boundaries when the lower two bits are b00!!
-	.ch1_dout( ch1_dout ),									// output [63:0]
-	.ch1_rnw( ch1_rnw ),										// Read when HIGH. Write when LOW.
-	.ch1_be( ch1_be ),										// Byte enable (bits [7:0]) for 64-bit burst writes.
-	.ch1_din( ch1_din ),										// input [63:0]
-	.ch1_req( ch1_req ),										// input (read or write request pulse)
-	.ch1_ready( ch1_ready )									// output (read data ready pulse, or write complete pulse.)
+	// Port 2
+	.ch1_addr           ({5'b00000, dram_addr, 2'b00}),
+	.ch1_dout           ({ch1_dout[47:32], ch1_dout[15:0]}),
+	.ch1_din            ({ch1_din[47:32], ch1_din[15:0]}),
+	.ch1_req            (ch1_req),
+	.ch1_rnw            (ch1_rnw),
+	.ch1_be             ({ch1_be[5:4], ch1_be[1:0]}),
+	.ch1_ready          (ch1a_ready)
+);
+
+sdram sdram2
+(
+	.init               (~pll_locked),
+	.clk                (clk_ram),
+
+	.SDRAM_DQ           (SDRAM2_DQ),
+	.SDRAM_A            (SDRAM2_A),
+	.SDRAM_DQML         (),
+	.SDRAM_DQMH         (),
+	.SDRAM_BA           (SDRAM2_BA),
+	.SDRAM_nCS          (SDRAM2_nCS),
+	.SDRAM_nWE          (SDRAM2_nWE),
+	.SDRAM_nRAS         (SDRAM2_nRAS),
+	.SDRAM_nCAS         (SDRAM2_nCAS),
+	.SDRAM_CKE          (),
+	.SDRAM_CLK          (SDRAM2_CLK),
+
+	// Port 2
+	.ch1_addr           ({5'b00000, dram_addr, 2'b00}),
+	.ch1_dout           ({ch1_dout[63:48], ch1_dout[31:16]}),
+	.ch1_din            ({ch1_din[63:48], ch1_din[31:16]}),
+	.ch1_req            (ch1_req),
+	.ch1_rnw            (ch1_rnw),
+	.ch1_be             ({ch1_be[7:6], ch1_be[3:2]}),
+	.ch1_ready          (ch1b_ready)
 );
 
 reg [3:0] mem_cyc;
 
-always @(posedge clk_sys or posedge reset)
+always @(posedge clk_ram)
 if (reset) begin
 	mem_cyc <= `RAM_IDLE;
+	ram_count <= 0;
+	ras_latch <= 10'd0;
+	old_cas_n <= 1;
 end
 else begin
+	reg old_ras_n;
+	old_cas_n <= dram_cas_n;
+	old_ras_n <= dram_ras_n;
+	if (old_ras_n && ~dram_ras_n)
+		ras_latch <= dram_a;
+
+	if (|ram_count)
+		ram_count <= ram_count - 1'd1;
+	if (ch1_req)
+		ram_count <= 4'd10;
 	case (mem_cyc)
-		`RAM_IDLE: if (ram_read_req || ram_write_req) mem_cyc <= `RDY_WAIT;
-		`RDY_WAIT: if (ch1_ready) mem_cyc <= `RAM_END;
-		`RAM_END: if (dram_cas_n) mem_cyc <= `RAM_IDLE;	// Have to wait for dram_cas_n to go high here.
+		`RAM_IDLE: if (ch1_req) mem_cyc <= `RDY_WAIT;
+		`RDY_WAIT: if (ch1_ready) mem_cyc <= `RAM_IDLE;//`RAM_END;
+		`RAM_END: if (dram_cas_n) mem_cyc <= `RAM_IDLE;// Have to wait for dram_cas_n to go high here.
 	endcase
 end
 

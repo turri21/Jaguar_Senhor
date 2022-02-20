@@ -20,7 +20,7 @@ module jaguar
 	input	 [3:0]	dram_oe,
 
 	input				ram_rdy,
-	
+
 	output	[23:0]	abus_out,	// Main address bus output, used for DRAM, OS ROM (BIOS), cart etc.
 
 	//output				os_rom_ce_n,
@@ -34,48 +34,47 @@ module jaguar
 	//input		[1:0]		cart_oe,
 
 	output	fdram,
-	
+
 	output vga_bl,
 	output vga_vs_n,
 	output vga_hs_n,
 	output [7:0] vga_r,
 	output [7:0] vga_g,
 	output [7:0] vga_b,
-	
+
 	output pix_clk,
-	
+
 	//output	aud_l_pwm,
 	//output	aud_r_pwm,
-	
+
 	output   [15:0] aud_16_l,
 	output   [15:0] aud_16_r,
-	
+
 	output wire	snd_l_en,
 	output wire	snd_r_en,
-	
+
 	output	hblank,
 	output	vblank,
-	
+
 	input xwaitl,		// Assert (LOW) to pause cart ROM reading until the data is ready!
-	
+
 	output vid_ce,
 
 	input [31:0] joystick_0,
 	input [31:0] joystick_1,
-	
+
 	input [24:0] ps2_mouse,
-	
+
 	input mouse_ena_1,
 	input mouse_ena_2,
-	
+
 	output startcas,
-	
+
 	input turbo,
-	
+
 	input ntsc
 );
 wire oRESETn;
-wire ext_reset = xresetl;
 
 wire [1:0] cart_oe_n;
 wire [1:0] cart_oe;
@@ -88,8 +87,6 @@ wire os_rom_oe_n;
 wire os_rom_oe = (~os_rom_ce_n & ~os_rom_oe_n);	// os_rom_oe feeds back TO the core, to enable the internal drivers.
 
 assign pix_clk = xvclk;
-
-wire rst = ~xresetl;
 
 //assign aud_16_l = r_acc_l[22:7];
 //assign aud_16_r = r_acc_r[22:7];
@@ -110,7 +107,7 @@ reg [3:0] clkdiv;
 // `else
 reg xpclk;			// Processor (Tom & Jerry) Clock.
 reg xvclk;			// Video Clock.
-wire tlw;				// Transparent Latch Write?
+reg tlw, tlw1, tlw2;				// Transparent Latch Write?
 //`endif
 reg pix_ce;
 
@@ -120,93 +117,41 @@ reg pix_ce;
 reg fx68k_phi1r;
 reg fx68k_phi2r;
 
-// `ifdef FAST_CLOCK
-// `ifndef VERILATOR
-// always @(posedge sys_clk) begin
-// 	xpclk <= 1'b0;
-// 	xvclk <= 1'b0;
-// 	tlw <= 1'b0;
-// 	fx68k_phi1r <= 1'b0;
-// 	fx68k_phi2r <= 1'b0;
-	
-// 	clkdiv <= clkdiv + 4'd1;
-// 	if (clkdiv==4'd7) begin
-// 		clkdiv <= 4'd0;
-// 	end
-
-// 	if ((clkdiv==4'd0) || (clkdiv==4'd4)) begin
-// 		fx68k_phi1r <= 1'b1;
-// 	end
-
-// 	if ((clkdiv==4'd1) || (clkdiv==4'd5)) begin
-// 		xpclk <= 1'b1;
-// 		xvclk <= 1'b1;
-// 	end else begin
-// 		tlw <= 1'b1;
-// 	end
-	
-// 	if ((clkdiv==4'd2) || (clkdiv==4'd6)) begin
-// 		fx68k_phi2r <= 1'b1;
-// 	end
-// end
-// `else
 reg cpu_toggle;
 always @(posedge sys_clk) begin
 	xpclk <= 1'b0;
 	xvclk <= 1'b0;
-
+	tlw <= 0;
+	tlw1 <= 0;
+	tlw2 <= 0;
 	clkdiv <= clkdiv + 4'd1;
 
-	if (clkdiv == 4'd3) begin
+`ifdef FAST_CLOCK
+	if (&clkdiv[1:0]) begin
+`else
+	if (clkdiv[0]) begin
+`endif
 		xpclk <= 1'b1;
 		cpu_toggle <= ~cpu_toggle;
 		xvclk <= 1'b1;
-		clkdiv <= 4'd0;
-	end 
-	// if (~xresetl) begin
-	// 	clkdiv <= 0;
-	// 	cpu_toggle <= 0;
-	// 	xpclk <= 1'b0;
-	// 	xvclk <= 1'b0;
-	// end
+	end
+	
+	if (clkdiv[1:0] == 2'b10)
+		tlw <= 1;
+	if (clkdiv[1:0] == 2'b01)
+		tlw2 <= 1;
+	if (clkdiv[1:0] == 2'b00)
+		tlw1 <= 1;
+	
 end
 
-assign tlw = ~xvclk;
-
-// `endif
-// `else
-// reg pclk_toggle = 0;
-
-// always @(posedge sys_clk) begin
-// 	pclk_toggle <= ~pclk_toggle;
-// end
-
-// assign xvclk = pclk_toggle;
-// assign xpclk = xvclk;
-// assign tlw = ~xvclk;
+//assign tlw = ~xvclk;
 
 
-// `endif
-
-//assign vid_ce = pix_ce;
-assign vid_ce = j_xpclkout;
+assign vid_ce = pix_clk;
+//assign vid_ce = j_xpclkout;
 //assign vid_ce = j_xvclkdiv;
 //assign vid_cd = j_xvclkdiv;
-
-
-
-// `ifndef verilator3
-// reg						xpclk;
-// reg						xvclk;
-// reg						xresetl;
-// reg						sys_clk;
-
-// wire 					vga_vs_n;
-// wire					vga_hs_n;
-// wire [7:0] 		vga_r;
-// wire [7:0] 		vga_g;
-// wire [7:0] 		vga_b;
-// `endif
 
 // TOM
 
@@ -416,34 +361,7 @@ wire refreq;
 wire obbreq;
 wire [1:0] gbreq;
 wire [1:0] bbreq;
-/*
-always @(posedge sys_clk)
-begin
-	j68_rd_ena_prev <= j68_rd_ena;
-	j68_wr_ena_prev <= j68_wr_ena;
-	xoel_prev <= xoel;
-	xwel_prev <= xwel;
-	xa_r_prev <= xa_r;
 
-	cycle <= cycle + 1;
-	
-	if (~j68_rd_ena_prev & j68_rd_ena) begin
-		$display("%x 68K RD $%x", cycle, fx68k_byte_addr);
-	end
-	if (~j68_wr_ena_prev & j68_wr_ena) begin
-		$display("%x 68K WR $%x #%x", cycle, fx68k_byte_addr, fx68k_dout);
-	end
-	
-	if (~xba_in) begin
-		if ((xoel != 3'b111) & ((xoel != xoel_prev) || (xa_r != xa_r_prev))) begin
-			$display("%x JAG RD REF=%x OB=%x BLT=%x GPU=%x $%x", cycle, refreq, obbreq, bbreq, gbreq, xa_r);
-		end
-		if ((xwel != 8'b11111111) & ((xwel != xwel_prev) || (xa_r != xa_r_prev))) begin
-			$display("%x JAG WR xwel=%x REF=%x OB=%x BLT=%x GPU=%x $%x #%x", cycle, xwel, refreq, obbreq, bbreq, gbreq, xa_r, xd_r);
-		end
-	end
-end
-*/
 
 
 // TOM - Inputs
@@ -482,11 +400,11 @@ assign j_xresetil = xresetl;
 // --- assign xsiz_in[0] = (xba_in) ? ~j68_byte_ena[0] : xsiz_out[0];
 // --- assign xsiz_in[1] = (xba_in) ? ~j68_byte_ena[1] : xsiz_out[1];
 
-assign rw = 
-	(aen)   ? xrw_out : 
+assign rw =
+	(aen)   ? xrw_out :
 	(j_aen) ? j_xrw_out :
 	          fx68k_rw;
-	
+
 assign xrw_in = rw;
 assign j_xrw_in = rw;
 
@@ -499,12 +417,12 @@ assign siz[1:0] =
 assign xsiz_in = siz;
 assign j_xsiz_in = siz;
 
-		
-assign dreql = 
-	(aen) ? xdreql_out 
-	: (j_aen) ? j_xdreql_out
-	: fx68k_as_n;
-		
+
+assign dreql =
+	((aen) ? xdreql_out : 1'd1) & 
+	((j_aen) ? j_xdreql_out : 1'd1) &
+	fx68k_as_n;
+
 assign xdreql_in = dreql;
 assign j_xdreql_in = dreql;
 
@@ -516,7 +434,7 @@ assign abus[23:0] =
 	(aen) ? xa_out[23:0]				// Tom.
 	: (j_aen) ? j_xa_out[23:0]		// Jerry.
 	: fx68k_byte_addr[23:0];		// 68000.
-			
+
 assign xa_in[23:0] = abus[23:0];
 
 // assign j_xa_in = abus;
@@ -565,16 +483,16 @@ assign dbus[63:48] = (den[2]) ? xd_out[63:48] :		// Tom.
 assign xd_in[63:0] = dbus[63:0];
 
 
-assign j_xd_in[7:0] = (den[0]) ? xd_out[7:0] : 
-							 (dram_oe[0]) ? dram_q[7:0] : 
-							 (os_rom_oe) ? os_rom_q[7:0] : 
-							 (!fx68k_as_n & !fx68k_rw & !fx68k_lds_n & xba_in) ? fx68k_dout[7:0] : 
-							 (cart_oe[0]) ? cart_q[7:0] : 
+assign j_xd_in[7:0] = (den[0]) ? xd_out[7:0] :
+							 (dram_oe[0]) ? dram_q[7:0] :
+							 (os_rom_oe) ? os_rom_q[7:0] :
+							 (!fx68k_as_n & !fx68k_rw & !fx68k_lds_n & xba_in) ? fx68k_dout[7:0] :
+							 (cart_oe[0]) ? cart_q[7:0] :
 							 (joy_bus_oe) ? joy_bus[7:0] :
 														8'hzz;
 
 
-assign j_xd_in[15:8] = 	(den[0]) ? xd_out[15:8] : 
+assign j_xd_in[15:8] = 	(den[0]) ? xd_out[15:8] :
 								(dram_oe[0]) ? dram_q[15:8] :
 								(!fx68k_as_n & !fx68k_rw & !fx68k_uds_n & xba_in) ? fx68k_dout[15:8] :
 								(cart_oe[0]) ? cart_q[15:8] :
@@ -593,9 +511,9 @@ assign j_xd_in[31:16] = 16'b11111111_11111111;	// Data bus bits [31:16] on Jerry
 //assign xfc_in = 3'b101;
 
 // FX68K directly supports vectored interrupts. ElectronAsh.
-assign xfc_in[0] = xfc_oe[0] ? xfc_out[0] : fx68k_fc[0];
-assign xfc_in[1] = xfc_oe[1] ? xfc_out[1] : fx68k_fc[1];
-assign xfc_in[2] = xfc_oe[2] ? xfc_out[2] : fx68k_fc[2];
+assign xfc_in[0] = (xfc_oe[0] ? xfc_out[0] : 1'd1) & fx68k_fc[0];
+assign xfc_in[1] = (xfc_oe[1] ? xfc_out[1] : 1'd1) & fx68k_fc[1];
+assign xfc_in[2] = (xfc_oe[2] ? xfc_out[2] : 1'd1) & fx68k_fc[2];
 
 // Wire-ORed with pullup (?)
 assign xba_in = xba_oe ? xba_out : 1'b1;		// Bus Acknoledge.
@@ -633,7 +551,7 @@ assign j_xgpiol_in[3] = (j_xgpiol_oe[3]) ? j_xgpiol_out[3] : 1'b1;
 
 assign j_xsck_in = j_xsck_oe ? j_xsck_out : 1'b1;
 assign j_xws_in = j_xws_oe ? j_xws_out : 1'b1;
-assign j_xvclk_in = j_xvclk_oe ? (j_xvclk_out & j_xchrdiv) : j_xchrdiv;
+assign j_xvclk_in = j_xvclk_oe ? j_xvclk_out : j_xchrdiv;
 
 ps2_mouse mouse
 (
@@ -665,7 +583,7 @@ jag_controller_mux controller_mux_1
 (
 	.col_n( u374_reg[3:0] ) ,	// input [3:0] col_n
 	.row_n( joy1_row_n ) ,		// output [5:0] row_n
-	
+
 	.but_right	( joystick_0[0] ) ,
 	.but_left	( joystick_0[1] ) ,
 	.but_down	( joystick_0[2] ) ,
@@ -695,7 +613,7 @@ jag_controller_mux controller_mux_2
 (
 	.col_n( u374_reg[7:4] ) ,	// input [3:0] col_n
 	.row_n( joy2_row_n ) ,		// output [5:0] row_n
-	
+
 	.but_right	( joystick_1[0] ) ,
 	.but_left	( joystick_1[1] ) ,
 	.but_down	( joystick_1[2] ) ,
@@ -724,7 +642,7 @@ wire [5:0] joy2_row_n;
 //
 // There are two joystick connectors each of which is a 15 pin high
 // density 'D' socket. The pinouts are as follows:
-// 
+//
 // PIN	J5			J6
 // 1		JOY3		JOY4		/COL0 out
 // 2		JOY2		JOY5		/COL1 out
@@ -809,7 +727,7 @@ eeprom eeprom_inst
 );
 
 
-assign fx68k_rd_data[15:0] = dbus[15:0]; 
+assign fx68k_rd_data[15:0] = dbus[15:0];
 
 assign abus_out[23:0] = {abus[23:3], xmaska[2:0]};
 
@@ -1229,6 +1147,10 @@ tom tom_inst
 	.gbreq_1(gbreq[1]),
 	.dram(fdram),	// /!\
 	.blank(blank),
+	.hblank(hblank),
+	.vblank(vblank),
+	.hsync(vga_hs_n),
+	.vsync(vga_vs_n),
 	.tlw(tlw),
 	.ram_rdy(ram_rdy),
 	.aen(aen),
@@ -1257,7 +1179,7 @@ j_jerry jerry_inst
 	.xeint_0(j_xeint[0]),
 	.xeint_1(j_xeint[1]),
 	.xtest(j_xtest),
-	.xchrin(1'b1), // Should be 14.3mhz, ntsc clock?
+	.xchrin(cpu_toggle), // Should be 14.3mhz, ntsc clock?
 	.xresetil(xresetl),
 	.xd_0_out(j_xd_out[0]),
 	.xd_0_oe(j_xd_oe[0]),
@@ -1493,6 +1415,9 @@ j_jerry jerry_inst
 	.xi2stxd(j_xi2stxd),
 	.xcpuclk(j_xcpuclk),
 	.tlw(tlw),
+	.tlw_0(tlw),
+	.tlw_1(tlw),
+	.tlw_2(tlw),
 	//.tlw(xpclk), // /!\
 	.aen(j_aen),
 	.den(j_den),
@@ -1503,7 +1428,7 @@ j_jerry jerry_inst
 	.snd_r_en(snd_r_en),
 	.snd_clk(audio_clk),
 	.dspwd( dspwd ),
-	
+
 	.sys_clk(sys_clk)
 );
 
@@ -1544,11 +1469,13 @@ wire fx68k_bgack_n = xba_in;	// Bus Grant Acknowledge.
 reg old_cpuclk;
 reg oRESETn_old;
 
-wire fx68k_phi2 = xvclk & cpu_toggle;//~old_cpuclk && j_xcpuclk;
-wire fx68k_phi1 = xvclk & ~cpu_toggle;//old_cpuclk && ~j_xcpuclk;
+//FIXME: The cpu is overclocked by 100%. It should be running at 1/2 the frequency as Tom & Jerry,
+// however I believe because of how those chips end up latching data on the bus, doubling the frequency
+// is required to make them work harmoniously with fx68k in a clocked design. This almost certainly
+// needs more attention for true stability.
 
-// wire fx68k_phi1 = fx68k_phi1r;
-// wire fx68k_phi2 = fx68k_phi2r;
+wire fx68k_phi1 = tlw1;//xvclk;// & ~j_xcpuclk;//*/~old_cpuclk && j_xcpuclk;
+wire fx68k_phi2 = tlw2;//tlw;// = xvclk & j_xcpuclk;//old_cpuclk && ~j_xcpuclk;
 
 always @(posedge sys_clk) begin
 	old_cpuclk <= j_xcpuclk;
@@ -1559,44 +1486,44 @@ fx68k fx68k_inst
 (
 	.clk( sys_clk ) ,			// input  clk
 	.HALTn(1'b1),
-	
+
 	.extReset( ~j_xresetl ) ,	// input  extReset
 	.pwrUp( fx68k_rst ) ,		// input  pwrUp
-	
+
 	.enPhi1( fx68k_phi1 ) ,	// input  enPhi1
 	.enPhi2( fx68k_phi2 ) ,	// input  enPhi2
-	
+
 	.eRWn( fx68k_rw ) ,			// output  eRWn
 	.ASn( fx68k_as_n ) ,			// output  ASn
 	.LDSn( fx68k_lds_n ) ,		// output  LDSn
 	.UDSn( fx68k_uds_n ) ,		// output  UDSn
 	.E( fx68k_e ) ,				// output  E
 	.VMAn( fx68k_vma_n ) ,		// output  VMAn
-	
+
 	.FC0( fx68k_fc[0] ) ,		// output  FC0
 	.FC1( fx68k_fc[1] ) ,		// output  FC1
 	.FC2( fx68k_fc[2] ) ,		// output  FC2
-	
+
 	.oRESETn(oRESETn) ,			// output  oRESETn
 //	.oHALTEDn(oHALTEDn) ,		// output  oHALTEDn
-	
+
 	.DTACKn( fx68k_dtack_n ) ,	// input  DTACKn
-	
+
 	.VPAn( fx68k_vpa_n ) ,		// input  VPAn - Tied HIGH on the real Jag.
-	
+
 	.BERRn( fx68k_berr_n ) ,	// input  BERRn - Tied HIGH on the real Jag.
-	
+
 	.BRn( fx68k_br_n ) ,			// input  BRn
 	.BGn( fx68k_bg_n ) ,			// output  BGn
 	.BGACKn( fx68k_bgack_n ) ,	// input  BGACKn
-	
+
 	.IPL0n( fx68k_ipl_n[0] ) ,	// input  IPL0n
 	.IPL1n( fx68k_ipl_n[1] ) ,	// input  IPL1n
 	.IPL2n( fx68k_ipl_n[2] ) ,	// input  IPL2n
-	
+
 	.iEdb( fx68k_din ) ,			// input [15:0] iEdb
 	.oEdb( fx68k_dout ) ,		// output [15:0] oEdb
-	
+
 	.eab( fx68k_address ) 		// output [23:1] eab
 );
 
@@ -1615,18 +1542,18 @@ assign vga_r = xr[7:0];
 assign vga_g = xg[7:0];
 assign vga_b = xb[7:0];
 
-assign vga_hs_n = (hc>=16'd40 && hc<=16'd120);
-assign vga_vs_n = !(vc < 2);
+// assign vga_hs_n = (hc>=16'd40 && hc<=16'd120);
+// assign vga_vs_n = (vc < 2);
 
-//assign vga_hs_n = hsl;
-//assign vga_vs_n = vsl;
+// assign vga_hs_n = hsl;
+// assign vga_vs_n = vsl;
 
 assign vga_bl = 1'b0;
 
 (*keep*) wire my_h_de = (hc>=252) && (hc<=1661);
 (*keep*) wire my_v_de = (vc>2+17) && (vc<240+2+17);
-assign hblank = !my_h_de;
-assign vblank = !my_v_de;
+// assign hblank = !my_h_de;
+// assign vblank = !my_v_de;
 
 //assign hblank = blank;
 //assign vblank = blank;
@@ -1637,7 +1564,7 @@ begin
 		hs_o_prev <= hs_o;
 		hhs_o_prev <= hhs_o;
 		vs_o_prev <= vs_o;
-		
+
 		if (xresetl == 1'b0) begin
 			vc <= 16'h0000;
 			hc <= 16'h0000;
@@ -1648,35 +1575,35 @@ begin
 			end else if (!hs_o_prev && hs_o) begin
 				vc <= vc + 16'd1;
 			end
-			
+
 			if (hs_o == 1'b1) begin
 				hc <= 16'h0000;
 			end else begin
 				hc <= hc + 16'd1;
 			end
-	
+
 			if (hhs_o == 1'b1) begin
 				vga_hc <= 16'h0000;
 			end else begin
 				vga_hc <= vga_hc + 16'd1;
 			end
-	
+
 		end
 	end
 end
 
-reg [15:0] aud_l;
-reg [15:0] aud_r;
+// reg [15:0] aud_l;
+// reg [15:0] aud_r;
 
-always @(posedge sys_clk) if (audio_clk) begin
-	if (snd_l_en) r_aud_l <= snd_l;
-	if (snd_r_en) r_aud_r <= snd_r;
-end
+// always @(posedge sys_clk) begin
+// 	if (snd_l_en) r_aud_l <= snd_l;
+// 	if (snd_r_en) r_aud_r <= snd_r;
+// end
 
 // assign w_aud_l[15:0] = snd_l[15:0];
 // assign w_aud_r[15:0] = snd_r[15:0];
-assign w_aud_l[15:0] = aud_l[15:0];
-assign w_aud_r[15:0] = aud_r[15:0];
+// assign w_aud_l[15:0] = aud_l[15:0];
+// assign w_aud_r[15:0] = aud_r[15:0];
 
 reg j_xws_prev = 1'b1;
 reg j_xsck_prev = 1'b1;
@@ -1685,428 +1612,55 @@ reg j_xsck_prev = 1'b1;
 // i2s receiver
 //
 
-// wire   i2s_ws   = j_xws_in;
-// wire   i2s_data = j_xi2stxd;
-// wire   i2s_bclk = j_xsck_in;
+wire   i2s_ws   = j_xws_in;
+wire   i2s_data = j_xi2stxd;
+wire   i2s_clk = j_xsck_in;
 
-// always @(posedge sys_clk) begin : i2s_proc
-// 	reg [15:0] i2s_buf = 0;
-// 	reg  [4:0] i2s_cnt = 0;
-// 	reg        clk_sr;
-// 	reg        i2s_clk = 0;
-// 	reg        old_clk, old_ws;
-// 	reg        i2s_next = 0;
+reg [15:0] aud_l_buff;
+reg [15:0] aud_r_buff;
 
-// 	// Debounce clock
-// 	clk_sr <= i2s_bclk;
-// 	if (clk_sr == i2s_bclk) i2s_clk <= clk_sr;
 
-// 	// Latch data and ws on rising edge
-// 	old_clk <= i2s_clk;
-// 	if (i2s_clk && ~old_clk) begin
+always @(posedge sys_clk) begin : i2s_proc
+	reg [15:0] i2s_buf = 0;
+	reg  [4:0] i2s_cnt = 0;
+	reg        old_clk, old_ws;
+	reg        i2s_next = 0;
 
-// 		if (~i2s_cnt[4]) begin
-// 			i2s_cnt <= i2s_cnt + 1'd1;
-// 			i2s_buf[~i2s_cnt[3:0]] <= i2s_data;
-// 		end
+	// Avoid latching the buffer while send is in progress
+	if (snd_l_en && i2s_ws) aud_l_buff <= snd_l;
+	if (snd_r_en && ~i2s_ws) aud_r_buff <= snd_r;
 
-// 		// Word Select will change 1 clock before the new word starts
-// 		old_ws <= i2s_ws;
-// 		if (old_ws != i2s_ws) i2s_next <= 1;
-// 	end
+	// Latch data and ws on rising edge
+	old_clk <= i2s_clk;
+	if (i2s_clk && ~old_clk) begin
 
-// 	if (i2s_next) begin
-// 		i2s_next <= 0;
-// 		i2s_cnt <= 0;
-// 		i2s_buf <= 0;
+		if (~i2s_cnt[4]) begin
+			i2s_cnt <= i2s_cnt + 1'd1;
+			i2s_buf[~i2s_cnt[3:0]] <= i2s_data;
+		end
 
-// 		if (i2s_ws) r_aud_l <= i2s_buf;
-// 		else        r_aud_r <= i2s_buf;
-// 	end
-	
-// 	if (~xresetl) begin
-// 		i2s_buf    <= 0;
-// 		r_aud_l <= 0;
-// 		r_aud_r <= 0;
-// 	end
-// end
+		// Word Select will change 1 clock before the new word starts
+		old_ws <= i2s_ws;
+		if (old_ws != i2s_ws) i2s_next <= 1;
+	end
 
-// always @(posedge sys_clk) 
-// begin
-// 	j_xws_prev <= j_xws_in;
-// 	j_xsck_prev <= j_xsck_in;
-	
-//   if (rst) begin
-//     r_aud_l <= 16'd0;
-//     r_aud_r <= 16'd0;
-//   end else begin
-// 		//if (snd_l_en) r_aud_l <= w_aud_l;	// TESTING. ElectronAsh.
-// 		//if (snd_r_en) r_aud_r <= w_aud_r;
-  
-// 		if (snd_clk) begin
-// 			r_aud_l <= w_aud_l;
-// 			r_aud_r <= w_aud_r;
-			
-// 			/*if (w_aud_l[15]) begin
-// 				r_aud_l <= {1'b0, ~w_aud_l[14:0]};
-// 			end else begin
-// 				r_aud_l <= {1'b1, w_aud_l[14:0]};
-// 			end
+	if (i2s_next) begin
+		i2s_next <= 0;
+		i2s_cnt <= 0;
+		i2s_buf <= 0;
 
-// 			if (w_aud_r[15]) begin
-// 				r_aud_r <= {1'b0, ~w_aud_r[14:0]};
-// 			end else begin
-// 				r_aud_r <= {1'b1, w_aud_r[14:0]};
-// 			end*/
-// 		end
-// 	end
-// end
+		if (i2s_ws) r_aud_l <= aud_l_buff;
+		else        r_aud_r <= aud_r_buff;
+	end
 
-wire snd_clk;
-wire dac_clk;
-//assign snd_clk = ~j_xws_prev & j_xws_out;
-assign snd_clk = j_xws_prev & ~j_xws_in;
-//assign snd_clk = xpclk;
-//assign dac_clk = j_xsck_prev ^ j_xsck_in;
-
-reg [3:0] dac_clkdiv = 4'd0;
-always @(posedge sys_clk)
-begin
-	dac_clkdiv <= dac_clkdiv + 4'd1;
-end 
-assign dac_clk = (dac_clkdiv == 4'd0);
-
-////////////////////////////////////
-// Interpolator / low-pass filter //
-////////////////////////////////////
-
-wire [15:0] w_rd_smp_l;
-wire  [6:0] w_rd_smp_hi_l;
-wire [15:0] w_rd_smp_r;
-wire  [6:0] w_rd_smp_hi_r;
-
-reg  [22:0] r_smp_l;
-reg  [22:0] r_smp_r;
-reg  [22:0] r_acc_l;
-reg  [22:0] r_acc_r;
-
-// FIFO storing 256 samples for left and right
-sample_fifo U_sample_fifo
-(
-  .reset(rst),
-  .clk(sys_clk),
-  .wr_ena(snd_clk),
-  .wr_smp_l(r_aud_l),
-  .wr_smp_r(r_aud_r),
-  .rd_smp_l(w_rd_smp_l),
-  .rd_smp_r(w_rd_smp_r)
-);
-assign w_rd_smp_hi_l = {7{w_rd_smp_l[15]}};
-assign w_rd_smp_hi_r = {7{w_rd_smp_r[15]}};
-
-// 248-tap moving average filter
-// It has a gain of : 248/256 = 0.96875
-always @(posedge rst or posedge sys_clk) begin
-  if (rst) begin
-    r_smp_l <= 23'd0;
-    r_smp_r <= 23'd0;
-    r_acc_l <= 23'd0;
-    r_acc_r <= 23'd0;
-  end
-  else if (snd_clk) begin
-    // Delay current sample by one CCK cycle
-    r_smp_l <= { {7{r_aud_l[15]}}, r_aud_l };
-    r_smp_r <= { {7{r_aud_r[15]}}, r_aud_r };
-    // Add sample (n), subtract sample (n-248)
-    r_acc_l <= r_acc_l + r_smp_l - { w_rd_smp_hi_l, w_rd_smp_l };
-    r_acc_r <= r_acc_r + r_smp_r - { w_rd_smp_hi_r, w_rd_smp_r };
-  end
-end
-
-/*
-s2_hq_dac dac_l
-(
-	.reset(rst),
-	.clk(sys_clk),
-	.clk_ena(dac_clk),
-	.pcm_in(r_acc_l[22:3]),
-	//.pcm_in({r_aud_l[15:0], r_aud_l[3:0]}),
-	.dac_out(aud_l_pwm)
-);
-
-s2_hq_dac dac_r
-(
-	.reset(rst),
-	.clk(sys_clk),
-	.clk_ena(dac_clk),
-	.pcm_in(r_acc_r[22:3]),
-	//.pcm_in({r_aud_r[15:0], r_aud_r[3:0]}),
-	.dac_out(aud_r_pwm)
-);
-*/
-
-/*reg [15:0] acc_l;
-reg [15:0] acc_r;
-reg	r_dac_l;
-reg	r_dac_r;
-
-always @(posedge rst or posedge sys_clk) 
-begin
-  if (rst) begin
-		acc_l <= 16'd0;
-		acc_r <= 16'd0;
-	end else if (xpclk) begin
-		{ r_dac_l, acc_l } <= { 2'b00, ~r_aud_l[15], r_aud_l[14:1] } + { 1'b0, acc_l };
-		{ r_dac_r, acc_r } <= { 2'b00, ~r_aud_r[15], r_aud_r[14:1] } + { 1'b0, acc_r };
+	if (~xresetl) begin
+		i2s_buf <= 0;
+		r_aud_l <= 0;
+		r_aud_r <= 0;
 	end
 end
 
-assign aud_l = r_dac_l;
-assign aud_r = r_dac_r;*/
-
-
 endmodule
-
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-
-
-module sample_fifo
-(
-  input         reset,
-  input         clk,
-  input         wr_ena,
-  input  [15:0] wr_smp_l,
-  input  [15:0] wr_smp_r,
-  output [15:0] rd_smp_l,
-  output [15:0] rd_smp_r
-);
-
-wire [31:0] w_wr_data;
-wire [31:0] w_rd_data;
-reg   [7:0] r_wr_addr;
-reg   [7:0] r_rd_addr;
-reg         r_rd_ena;
-
-assign w_wr_data[31:16] = wr_smp_l;
-assign w_wr_data[15:0]  = wr_smp_r;
-assign rd_smp_l = w_rd_data[31:16];
-assign rd_smp_r = w_rd_data[15:0];
-
-always @(posedge reset or posedge clk) begin
-  if (reset) begin
-    r_wr_addr <= 8'd0;
-    //r_rd_addr <= 8'd8;
-		r_rd_addr <= 8'd20;
-    r_rd_ena  <= 1'b0;
-  end
-  else if (wr_ena) begin
-    r_wr_addr <= r_wr_addr + 8'd1;
-    r_rd_addr <= r_rd_addr + 8'd1;
-    if (r_rd_addr == 8'd255) r_rd_ena <= 1'b1;
-  end
-end
-
-`ifdef SIMULATION
-
-// Infered block RAM
-reg  [31:0] r_mem_blk [0:255];
-
-// Write side
-always@(posedge clk) begin
-  if (wr_ena)
-    r_mem_blk[r_wr_addr] <= w_wr_data;
-end
-
-reg  [31:0] r_q_p0;
-reg  [31:0] r_q_p1;
-
-// Read side
-always@(posedge reset or posedge clk) begin
-  if (reset) begin
-    r_q_p0 <= 32'h0000_0000;
-    r_q_p1 <= 32'h0000_0000;
-  end else begin
-    if (wr_ena & r_rd_ena)
-      r_q_p0 <= r_mem_blk[r_rd_addr];
-    r_q_p1 <= r_q_p0;
-  end
-end
-
-assign w_rd_data = r_q_p1;
-
-`else
-
-// Declared Altera block RAM
-altsyncram U_altsyncram_256x32
-(
-    // Write side
-    .clock0     (clk),
-    .wren_a     (wr_ena),
-    .address_a  (r_wr_addr),
-    .data_a     (w_wr_data),
-    // Read side
-    .aclr1      (reset),
-    .clock1     (clk),
-    .rden_b     (wr_ena & r_rd_ena),
-    .address_b  (r_rd_addr),
-    .q_b        (w_rd_data)
-);
-defparam 
-    U_altsyncram_256x32.operation_mode      = "DUAL_PORT",
-    U_altsyncram_256x32.width_a             = 32,
-    U_altsyncram_256x32.widthad_a           = 8,
-    U_altsyncram_256x32.width_b             = 32,
-    U_altsyncram_256x32.widthad_b           = 8,
-    U_altsyncram_256x32.outdata_aclr_b      = "CLEAR1",
-    U_altsyncram_256x32.outdata_reg_b       = "CLOCK1";
-
-`endif
-
-endmodule
-
-
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-
-
-`ifdef SIMULATION
-module os_rom
-(
-	input 	[16:0]	a,
-	input						ce_n,
-	input						oe_n,
-	output	[7:0]		q,
-	output					oe
-);
-
-reg	[7:0]	rom_blk [0:(1<<17)-1];
-// reg	[7:0] r_q;
-
-initial
-begin
-	$readmemh("os.mem", rom_blk);
-end
-
-// assign q = (ce_n | oe_n) ? 8'bzzzzzzzz : r_q;
-// assign q = r_q;
-assign oe = (~ce_n & ~oe_n);
-assign q = rom_blk[a][7:0];
-
-endmodule
-`endif
-///////////////////////////////////////////////////////////////////////
-
-
-`ifdef SIMULATION
-module dram
-(
-	input		[0:9] 	a,
-	input						ras_n,
-	input						cas_n,
-	input		[0:3]		oe_n,
-	input		[0:3]		uw_n,
-	input		[0:3]		lw_n,
-	output	[0:63]	q,
-	input		[0:63]	d,
-	output	[0:3]		oe,
-	input sys_clk
-);
-
-reg [0:63] ram_blk[0:(1<<18)-1];
-
-wire [9:0] a_r;
-reg [17:0] ea;
-
-wire [0:3] w_oe;
-
-reg ras_n_prev = 1'b0;
-reg cas_n_prev = 1'b0;
-
-wire [63:0] d_r;
-
-initial
-begin
-	$readmemb("dram.mem", ram_blk);
-end
-
-assign a_r = { a[9], a[8], a[7], a[6], a[5], a[4], a[3], a[2], a[1], a[0] };
-assign d_r[63:0] = { 
-	d[63], d[62], d[61], d[60], d[59], d[58], d[57], d[56], 
-	d[55], d[54], d[53], d[52], d[51], d[50], d[49], d[48], 
-	d[47], d[46], d[45], d[44], d[43], d[42], d[41], d[40], 
-	d[39], d[38], d[37], d[36], d[35], d[34], d[33], d[32], 
-	d[31], d[30], d[29], d[28], d[27], d[26], d[25], d[24], 
-	d[23], d[22], d[21], d[20], d[19], d[18], d[17], d[16], 
-	d[15], d[14], d[13], d[12], d[11], d[10], d[9], d[8], 
-	d[7], d[6], d[5], d[4], d[3], d[2], d[1], d[0]
-};
-
-always @(posedge sys_clk)
-begin
-	ras_n_prev <= ras_n;
-	cas_n_prev <= cas_n;
-	if (ras_n_prev & ~ras_n) begin
-		ea[17:8] <= a_r[9:0];
-		$display("RAS ma=%x ma_r=%x", a, a_r );
-	end
-	if (cas_n_prev & ~cas_n) begin
-		ea[7:0] <= a_r[7:0];
-		$display("  CAS ma=%x ma_r=%x", a, a_r );
-		if (~uw_n[0]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][8:15] <= d[8:15];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b110 }, d_r[15:8] );
-		end
-		if (~lw_n[0]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][0:7] <= d[0:7];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b111 }, d_r[7:0] );
-		end	
-		if (~uw_n[1]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][24:31] <= d[24:31];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b100 }, d_r[31:24]);
-		end
-		if (~lw_n[1]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][16:23] <= d[16:23];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b101 }, d_r[23:16] );
-		end	
-		if (~uw_n[2]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][40:47] <= d[40:47];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b010 }, d_r[47:40] );
-		end
-		if (~lw_n[2]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][32:39] <= d[32:39];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b011 }, d_r[39:32] );			
-		end	
-		if (~uw_n[3]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][56:63] <= d[56:63];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b000 }, d_r[63:56] );
-		end
-		if (~lw_n[3]) begin
-			ram_blk[ { ea[17:8], a_r[7:0] } ][48:55] <= d[48:55];
-			$display("  DRAM WR %x #%x", { ea[17:8], a_r[7:0], 3'b001 }, d_r[55:48] );
-		end
-	end	
-end
-
-assign oe = w_oe;
-assign w_oe[0] = (~oe_n[0] & ~cas_n & (uw_n[0] | lw_n[0]));
-assign w_oe[1] = (~oe_n[1] & ~cas_n & (uw_n[1] | lw_n[1]));
-assign w_oe[2] = (~oe_n[2] & ~cas_n & (uw_n[2] | lw_n[2]));
-assign w_oe[3] = (~oe_n[3] & ~cas_n & (uw_n[3] | lw_n[3]));
-
-assign q = ram_blk[ ea ][0:63];
-
-endmodule
-`endif
 
 module eeprom
 (
@@ -2124,8 +1678,6 @@ module eeprom
 `define EE_WR_WRITE		3'b101
 `define EE_WR_LOOP		3'b110
 `define EE_WR_END			3'b111
-
-
 
 reg sk_prev = 1'b0;
 
@@ -2157,17 +1709,17 @@ begin
 		ir <= 9'd0;
 		dr <= 16'd0;
 		r_dout <= 1'b0;
-		
+
 		wraddr <= 6'b000000;
 		wrdata <= 16'hFFFF;
 		wrloop <= 1'b0;
-		
+
 	end else if (~sk_prev & sk) begin
 		$display("EEPROM SK - DI=%x STATUS=%x", din, status);
 		if (status == `EE_IDLE) begin
 			ir <= { ir[7:0], din };
 			if (ir[7]) begin // Instruction complete
-				$display("EEPROM OPCODE=%x", { ir[6:0], din }); 
+				$display("EEPROM OPCODE=%x", { ir[6:0], din });
 				if (ir[6:5] == 2'b10) begin
 					// READ
 					$display("EEPROM OP=READ $%x #%x", { ir[4:0], din }, mem[{ ir[4:0], din }][15:0]);
@@ -2199,7 +1751,7 @@ begin
 					// EWEN
 					$display("EEPROM OP=EWDS");
 					ewen <= 1'b0;
-					status <= `EE_IDLE;					
+					status <= `EE_IDLE;
 				end
 			end // Instruction complete
 		end else if (status == `EE_DATA) begin
@@ -2237,7 +1789,7 @@ begin
 				// WRAL
 				wraddr <= 6'b000000;
 				wrloop <= 1'b1;
-				wrdata <= dr;				
+				wrdata <= dr;
 			end
 		end else if (status == `EE_WR_WRITE) begin
 			if (ewen) begin
@@ -2266,5 +1818,3 @@ begin
 end
 
 endmodule
-
-/* verilator lint_on LITENDIAN */

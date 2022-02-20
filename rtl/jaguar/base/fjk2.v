@@ -15,11 +15,15 @@ reg	data = 1'b0;
 
 assign q = data;
 assign qn = ~data;
+reg old_cp, old_cd;
 
 // always @(posedge cp or negedge cd)
 always @(posedge sys_clk)
 begin
-	if (cp | (~cd)) begin
+	old_cp <= cp;
+	old_cd <= cd;
+
+	if ((~old_cp && cp) | (old_cd && ~cd)) begin
 		if (~cd) begin
 			data <= 1'b0;
 		end else begin

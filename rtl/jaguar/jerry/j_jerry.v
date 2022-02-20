@@ -252,6 +252,9 @@ module j_jerry
 	output xi2stxd,
 	output xcpuclk,
 	input tlw,
+	input tlw_0,
+	input tlw_1,
+	input tlw_2,
 	output aen,
 	output den,
 	output ainen,
@@ -2231,6 +2234,9 @@ j_dsp dsp_inst
 	.iord /* IN */ (dspread),			// Look-ahead I/O read strobe for GPU.
 	.iowr /* IN */ (dspwrite),			// Look-ahead I/O write strobe for GPU.
 	.tlw /* IN */ (tlw),					// Transparent latch write enable timing.
+	.tlw_a        (tlw_0),
+	.tlw_b        (tlw_1),
+	.tlw_c        (tlw_2),
 	.gpu_breq /* OUT */ (dbrl_0),		// GPU normal bus request.
 	.dma_breq /* OUT */ (dbrl_1),		// GPU high-priority bus request.
 	.cpu_int /* OUT */ (dint),			// GPU interrupt to CPU.

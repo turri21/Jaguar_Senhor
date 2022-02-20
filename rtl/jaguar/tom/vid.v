@@ -64,6 +64,10 @@ module vid
 	output vint,
 	output vactive,
 	output blank,
+	output vblank_out,
+	output hblank_out,
+	output hsync_out,
+	output vsync_out,
 	output nextpixa,
 	output nextpixd,
 	output cry16,
@@ -3293,6 +3297,10 @@ assign lbaactive = ~lbaai;
 // VID.NET (286) - lbbactive : ivu
 assign lbbactive = ~lbbai;
 
+// Kitrinx - add some signals
+assign vblank_out = vblank;
+assign hblank_out = hblank;
+
 // VID.NET (288) - vblank : fjkr
 fjkr vblank_inst
 (
@@ -3354,6 +3362,9 @@ fjkr vvsync_inst
 
 // VID.NET (305) - hvstart : an2
 assign hvstart = hvsb & vvs;
+
+assign vsync_out = hvs;
+assign hsync_out = hes;
 
 // VID.NET (306) - hvsync : fjkr
 fjkr hvsync_inst

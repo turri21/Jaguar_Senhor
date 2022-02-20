@@ -51,6 +51,9 @@ module j_dsp
 	input dout_29,
 	input dout_30,
 	input dout_31,
+	input tlw_a,
+	input tlw_b,
+	input tlw_c,
 	input ack,
 	input gpu_back,
 	input reset_n,
@@ -1433,9 +1436,9 @@ assign clk_7 = clk;
 assign clk_8 = clk;
 
 // DSP.NET (75) - tlw[0-2] : nivu
-assign tlw_0 = tlw;
-assign tlw_1 = tlw;
-assign tlw_2 = tlw;
+assign tlw_0 = tlw_a;
+assign tlw_1 = tlw_b;
+assign tlw_2 = tlw_c;
 
 // DSP.NET (77) - io_addr : join
 assign io_addr[0] = ima_0;
