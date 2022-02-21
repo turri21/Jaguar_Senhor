@@ -12,8 +12,11 @@ reg r_z = 1'b0;
 
 assign z = r_z;
 
+`ifdef FAST_CLOCK
 always @(posedge sys_clk)
-//always @(negedge sys_clk) // /!\
+`else
+always @(negedge sys_clk) // /!\
+`endif
 begin
 	r_z <= a;
 end

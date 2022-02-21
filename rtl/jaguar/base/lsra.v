@@ -13,7 +13,11 @@ reg	data = 1'b1;
 assign q = data;
 
 // always @(rn or sn)
+`ifdef FAST_CLOCK
 always @(posedge sys_clk)
+`else
+always @(negedge sys_clk) // /!\
+`endif
 begin
 	if (~rn & sn) begin
 		data <= 1'b0;

@@ -16,7 +16,11 @@ assign q = data;
 assign qn = ~data;
 
 // always @(d or g or cd)
+`ifdef FAST_CLOCK
 always @(posedge sys_clk)
+`else
+always @(negedge sys_clk) // /!\
+`endif
 begin
 	if (~cd) begin
 		data <= 1'b0;

@@ -136,8 +136,12 @@ always @(posedge sys_clk) begin
 		xvclk <= 1'b1;
 	end
 	
-	if (clkdiv[1:0] == 2'b10)
-		tlw <= 1;
+`ifdef FAST_CLOCK
+	if (clkdiv[1:0] == 2'b10) tlw <= 1;
+`else
+	if (~clkdiv[0]) tlw <= 1;
+`endif
+
 	if (clkdiv[1:0] == 2'b01)
 		tlw2 <= 1;
 	if (clkdiv[1:0] == 2'b00)
@@ -149,9 +153,6 @@ end
 
 
 assign vid_ce = pix_clk;
-//assign vid_ce = j_xpclkout;
-//assign vid_ce = j_xvclkdiv;
-//assign vid_cd = j_xvclkdiv;
 
 // TOM
 
