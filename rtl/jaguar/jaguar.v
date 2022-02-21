@@ -86,7 +86,7 @@ wire os_rom_ce_n;
 wire os_rom_oe_n;
 wire os_rom_oe = (~os_rom_ce_n & ~os_rom_oe_n);	// os_rom_oe feeds back TO the core, to enable the internal drivers.
 
-assign pix_clk = xvclk;
+assign pix_clk = xvclk & cpu_toggle;
 
 //assign aud_16_l = r_acc_l[22:7];
 //assign aud_16_r = r_acc_r[22:7];
@@ -1474,8 +1474,8 @@ reg oRESETn_old;
 // is required to make them work harmoniously with fx68k in a clocked design. This almost certainly
 // needs more attention for true stability.
 
-wire fx68k_phi1 = tlw1;//xvclk;// & ~j_xcpuclk;//*/~old_cpuclk && j_xcpuclk;
-wire fx68k_phi2 = tlw2;//tlw;// = xvclk & j_xcpuclk;//old_cpuclk && ~j_xcpuclk;
+wire fx68k_phi1 = xvclk & (~j_xcpuclk || turbo);// & ~j_xcpuclk;//*/~old_cpuclk && j_xcpuclk;
+wire fx68k_phi2 = tlw & (j_xcpuclk || turbo);// = xvclk & j_xcpuclk;//old_cpuclk && ~j_xcpuclk;
 
 always @(posedge sys_clk) begin
 	old_cpuclk <= j_xcpuclk;
@@ -1649,8 +1649,8 @@ always @(posedge sys_clk) begin : i2s_proc
 		i2s_cnt <= 0;
 		i2s_buf <= 0;
 
-		if (i2s_ws) r_aud_l <= aud_l_buff;
-		else        r_aud_r <= aud_r_buff;
+		if (i2s_ws) r_aud_l <= i2s_buf;
+		else        r_aud_r <= i2s_buf;
 	end
 
 	if (~xresetl) begin

@@ -6,17 +6,8 @@ set_global_assignment -name QIP_FILE           rtl/fx68k/fx68k.qip
 
 set_global_assignment -name VERILOG_FILE       rtl/jag_controller_mux.v
 set_global_assignment -name VERILOG_FILE       rtl/ps2_mouse.v
-#set_global_assignment -name SYSTEMVERILOG_FILE rtl/sdram.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/sdram_dual.sv
-#set_global_assignment -name SYSTEMVERILOG_FILE rtl/sdram-psx.sv
-
-
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/keyboard.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/ddram.sv
-set_global_assignment -name VHDL_FILE          rtl/bram.vhd
 
-set_global_assignment -name QIP_FILE           rtl/dsp_dbg_ram0.qip
-set_global_assignment -name QIP_FILE           rtl/dsp_dbg_ram1.qip
-
-set_global_assignment -name QIP_FILE           rtl/os_rom_bram.qip
-#set_global_assignment -name QIP_FILE           rtl/mem/sdram.qip
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/mem/ddram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/mem/sdram_dual.sv
+set_global_assignment -name VHDL_FILE          rtl/mem/bram.vhd

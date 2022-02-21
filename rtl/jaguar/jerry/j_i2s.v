@@ -867,19 +867,6 @@ fd1q i2sint_inst
 	.cp /* IN */ (clk),
 	.sys_clk(sys_clk) // Generated
 );
-// reg i2int_reg;
-// always @(posedge sys_clk)
-// if (!resetl) begin
-// 	i2int_reg <= 1'b0;
-// end
-// else begin
-// 	if (wsp) i2int_reg <= 1'b1;
-	
-// 	if (clk && i2int_reg) i2int_reg <= 1'b0;
-// end
-
-// assign i2int = i2int_reg;	// TESTING !! ElectronAsh.
-
 
 // I2S.NET (118) - wsu[1] : dummy
 

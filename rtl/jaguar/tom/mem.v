@@ -472,6 +472,7 @@ assign wet = wet_obuf;
 assign oet = oet_obuf;
 assign ba = ba_obuf;
 
+//`define ORIGINAL_RAM
 
 // MEM.NET (117) - arb : arb
 arb arb_inst
@@ -730,7 +731,11 @@ fd2q q3a_inst
 fd2q q3b_inst
 (
 	.q /* OUT */ (q3b),
+`ifdef ORIGINAL_RAM
+	.d /* IN */ (q3a),
+`else
 	.d /* IN */ (d3b),
+`endif
 	.cp /* IN */ (clk),
 	.cd /* IN */ (resetl),
 	.sys_clk(sys_clk) // Generated
@@ -925,7 +930,11 @@ assign q5a = q5ai;
 assign mtb0 = ~d0;
 
 // MEM.NET (320) - mtb1 : nd2
+`ifdef ORIGINAL_RAM
+assign mtb1 = ~(q3a & lastcycle); // was d3b
+`else
 assign mtb1 = ~(d3b & lastcycle);
+`endif
 
 // MEM.NET (322) - mtb2 : iv
 assign mtb2 = ~q4h;

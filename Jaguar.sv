@@ -608,20 +608,20 @@ wire rom_wrack = 1'b1;	// TESTING!!
 reg [23:0] old_abus_out;
 
 wire cart_rd_trig = !cart_ce_n && (cart_ce_n_falling || (abus_out != old_abus_out));
-
-always @(posedge clk_sys or posedge reset)
+reg xwaitl_latch;
+assign xwaitl = DDRAM_DOUT_READY | xwaitl_latch;
+always @(posedge clk_sys)
 if (reset) begin
-	xwaitl <= 1'b1;	// De-assert on reset!
+	xwaitl_latch <= 1'b1; // De-assert on reset!
 	old_abus_out <= 24'h112233;
-end
-else begin
+end else begin
 	cart_ce_n_1 <= cart_ce_n;
 	old_abus_out <= abus_out;
 
 	if (cart_rd_trig) begin
-		xwaitl <= 1'b0;	// Assert this (low) until the Cart data is ready.
-	end
-	else if (DDRAM_DOUT_READY) xwaitl <= 1'b1;		// De-assert, to let the core know.
+		xwaitl_latch <= 1'b0; // Assert this (low) until the Cart data is ready.
+	end else if (DDRAM_DOUT_READY)
+		xwaitl_latch <= 1'b1; // De-assert, to let the core know.
 end
 
 
