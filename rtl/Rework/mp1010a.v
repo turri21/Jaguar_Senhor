@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module mp1010a
@@ -20,4 +19,4 @@ assign qi = ai * bi;
 assign q = qi;
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -229,23 +228,17 @@ wire mt8a1;
 wire mt8b0;
 wire mt8b1;
 wire wait1;
-wire iospeed2;
 wire wait2;
-wire romspeed3;
 wire wait30;
-wire romspeed2;
 wire wait31;
-wire iospeed3;
 wire wait3;
 wire wait5;
-wire romspeed1;
 wire wait70;
-wire romspeed0;
+wire [3:0] romspeed;
 wire wait71;
-wire iospeed1;
 wire wait7;
 wire wait15;
-wire iospeed0;
+wire [3:0] iospeed;
 wire [2:1] rasoffl;
 wire rason;
 wire muxi;
@@ -284,9 +277,6 @@ wire wcen;
 wire wld;
 wire _wait;
 wire waitdonei;
-wire [1:0] dspdl;
-wire [1:0] iospdl;
-wire [1:0] romspdl;
 wire clkl;
 wire pclkl;
 wire [1:0] casd;
@@ -376,12 +366,12 @@ assign dreqlout = dreqlout_;
 // MEM.NET (117) - arb : arb
 arb arb_inst
 (
-	.bbreq /* IN */ (bbreq),
-	.gbreq /* IN */ (gbreq),
+	.bbreq /* IN */ (bbreq[1:0]),
+	.gbreq /* IN */ (gbreq[1:0]),
 	.obbreq /* IN */ (obbreq),
 	.bglin /* IN */ (bglin),
 	.brlin /* IN */ (brlin),
-	.dbrl /* IN */ (dbrl),
+	.dbrl /* IN */ (dbrl[1:0]),
 	.refreq /* IN */ (refreq),
 	.ihandler /* IN */ (ihandler),
 	.ack /* IN */ (ack_obuf),
@@ -407,19 +397,19 @@ arb arb_inst
 // MEM.NET (124) - mw : memwidth
 memwidth mw_inst
 (
-	.w /* IN */ (w_in),
-	.ba /* IN */ (a),
-	.mw /* IN */ (mwt),
+	.w /* IN */ (w_in[3:0]),
+	.ba /* IN */ (a[2:0]),
+	.mw /* IN */ (mwt[1:0]),
 	.ack /* IN */ (ack_obuf),
 	.nextc /* IN */ (nextc),
 	.clk /* IN */ (clk),
 	.bigend /* IN */ (bigend),
-	.maskw /* OUT */ (maskw),
-	.maska /* OUT */ (maska_obuf),
-	.at /* OUT */ (at),
+	.maskw /* OUT */ (maskw[3:0]),
+	.maska /* OUT */ (maska_obuf[2:0]),
+	.at /* OUT */ (at[2:0]),
 	.lastcycle /* OUT */ (lastcycle),
 	.lastc /* OUT */ (lastc),
-	.bm /* OUT */ (bm),
+	.bm /* OUT */ (bm[7:0]),
 	.sys_clk(sys_clk) // Generated
 );
 
@@ -430,13 +420,13 @@ bus bus_inst
 	.ack /* IN */ (ack_obuf),
 	.intdev /* IN */ (intdev),
 	.cpu32 /* IN */ (cpu32),
-	.ba /* IN */ (ba_),
+	.ba /* IN */ (ba_[2:0]),
 	.mws64 /* IN */ (mws64),
 	.mws16 /* IN */ (mws16),
 	.mws8 /* IN */ (mws8),
 	.notdbg /* IN */ (dbgl_obuf),
 	.ourack /* IN */ (ourack),
-	.w /* IN */ (w_in),
+	.w /* IN */ (w_in[3:0]),
 	.erd /* IN */ (erd),
 	.justify /* IN */ (justify_in),
 	.intbm /* IN */ (intbm),
@@ -447,10 +437,10 @@ bus bus_inst
 	.intbmw /* IN */ (intbmw),
 	.resetl /* IN */ (resetl),
 	.idle /* IN */ (idle),
-	.den /* OUT */ (den),
+	.den /* OUT */ (den[2:0]),
 	.aen /* OUT */ (aen),
-	.dmuxu /* OUT */ (dmuxu),
-	.dmuxd /* OUT */ (dmuxd),
+	.dmuxu /* OUT */ (dmuxu[2:0]),
+	.dmuxd /* OUT */ (dmuxd[2:0]),
 	.dren /* OUT */ (dren),
 	.xdsrc /* OUT */ (xdsrc),
 	.ainen /* OUT */ (ainen),
@@ -460,7 +450,7 @@ bus bus_inst
 // MEM.NET (140) - cpu : cpu
 cpu cpu_inst
 (
-	.sizin /* IN */ (sizin),
+	.sizin /* IN */ (sizin[1:0]),
 	.rwin /* IN */ (rwin),
 	.notack /* IN */ (notack),
 	.ack /* IN */ (ack_obuf),
@@ -474,9 +464,9 @@ cpu cpu_inst
 	.dbgl /* IN */ (dbgl_obuf),
 	.dtackl /* OUT */ (dtackl),
 	.erd /* OUT */ (erd),
-	.w_out /* BUS */ (w_out),
+	.w_out /* BUS */ (w_out[3:0]),
 	.w_oe /* BUS */ (w_oe),
-	.w_in /* BUS */ (w_in),
+	.w_in /* BUS */ (w_in[3:0]),
 	.rw_out /* BUS */ (rw_out),
 	.rw_oe /* BUS */ (rw_oe),
 	.rw_in /* BUS */ (rw_in),
@@ -854,34 +844,34 @@ assign d8c = q8b & waitdone;
 assign d10 = ack_obuf & mreqb & ourack & notrefack;
 
 // MEM.NET (428) - wait1 : an2
-assign wait1 = iospeed2 & q8a;
+assign wait1 = iospeed[2] & q8a;
 
 // MEM.NET (430) - wait2 : an3
-assign wait2 = romspeed3 & q5a & slowrom;
+assign wait2 = romspeed[3] & q5a & slowrom;
 
 // MEM.NET (432) - wait30 : nd3
-assign wait30 = ~(romspeed2 & q5a & slowrom);
+assign wait30 = ~(romspeed[2] & q5a & slowrom);
 
 // MEM.NET (433) - wait31 : nd2
-assign wait31 = ~(iospeed3 & q8a);
+assign wait31 = ~(iospeed[3] & q8a);
 
 // MEM.NET (434) - wait3 : nd2
 assign wait3 = ~(wait30 & wait31);
 
 // MEM.NET (436) - wait5 : an3
-assign wait5 = romspeed1 & q5a & slowrom;
+assign wait5 = romspeed[1] & q5a & slowrom;
 
 // MEM.NET (438) - wait70 : nd3
-assign wait70 = ~(romspeed0 & q5a & slowrom);
+assign wait70 = ~(romspeed[0] & q5a & slowrom);
 
 // MEM.NET (439) - wait71 : nd2
-assign wait71 = ~(iospeed1 & q8a);
+assign wait71 = ~(iospeed[1] & q8a);
 
 // MEM.NET (440) - wait7 : nd2
 assign wait7 = ~(wait70 & wait71);
 
 // MEM.NET (442) - wait15 : an2
-assign wait15 = iospeed0 & q8a;
+assign wait15 = iospeed[0] & q8a;
 
 // MEM.NET (446) - rasoffl[1-2] : nd2
 assign rasoffl[2:1] = ~({d1a,d1a} & abs[3:2]);
@@ -1013,11 +1003,11 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin // fd2q always @(posedge cp or negedge cd)
 		if (~resetl) begin
-			wq <= 4'h0;
-		end else	if (wld) begin
-			wq <= {wait15,wd};
-		end else	if (wcen) begin
-			wq <= wq - 4'h1;
+			wq[3:0] <= 4'h0;
+		end else if (wld) begin
+			wq[3:0] <= {wait15,wd[2:0]};
+		end else if (wcen) begin
+			wq[3:0] <= wq[3:0] - 4'h1;
 		end
 	end
 end
@@ -1049,50 +1039,23 @@ assign wd[1] = wait2 | wait3 | wait7 | wait15;
 // MEM.NET (528) - wd[2] : or3
 assign wd[2] = wait5 | wait7 | wait15;
 
-// MEM.NET (530) - dspdl[0-1] : iv
-assign dspdl = ~dspd;
-
-// MEM.NET (531) - iospdl[0-1] : iv
-assign iospdl = ~iospd;
-
-// MEM.NET (532) - romspdl[0-1] : iv
-assign romspdl = ~romspd;
-
 // MEM.NET (534) - dramspeed0 : an2
-assign dramspeed[0] = &dspdl;
-
 // MEM.NET (535) - dramspeed1 : an2
-assign dramspeed[1] = dspdl[1] & dspd[0];
-
 // MEM.NET (536) - dramspeed2 : an2
-assign dramspeed[2] = dspd[1] & dspdl[0];
-
 // MEM.NET (537) - dramspeed3 : an2
-assign dramspeed[3] = dspd[1] & dspd[0];
+assign dramspeed[3:0] = 4'h1 << dspd[1:0];
 
 // MEM.NET (539) - iospeed0 : an2
-assign iospeed0 = iospdl[1] & iospdl[0];
-
 // MEM.NET (540) - iospeed1 : an2
-assign iospeed1 = iospdl[1] & iospd[0];
-
 // MEM.NET (541) - iospeed2 : an2
-assign iospeed2 = iospd[1] & iospdl[0];
-
 // MEM.NET (542) - iospeed3 : an2
-assign iospeed3 = iospd[1] & iospd[0];
+assign iospeed[3:0] = 4'h1 << iospd[1:0];
 
 // MEM.NET (544) - romspeed0 : an2
-assign romspeed0 = romspdl[1] & romspdl[0];
-
 // MEM.NET (545) - romspeed1 : an2
-assign romspeed1 = romspdl[1] & romspd[0];
-
 // MEM.NET (546) - romspeed2 : an2
-assign romspeed2 = romspd[1] & romspdl[0];
-
 // MEM.NET (547) - romspeed3 : an2
-assign romspeed3 = romspd[1] & romspd[0];
+assign romspeed[3:0] = 4'h1 << romspd[1:0];
 
 // MEM.NET (552) - rasl[0] : rasgen
 rasgen rasl_index_0_inst
@@ -1190,10 +1153,10 @@ assign intwe = ~int_wel;
 assign intswe = q7a & notreads;
 
 // MEM.NET (586) - ba[0-2] : eo
-assign ba_ = maska_obuf ^ {bigend,bigend,bigend};
+assign ba_[2:0] = maska_obuf[2:0] ^ {bigend,bigend,bigend};
 
 // MEM.NET (599) - mwsl[0-1] : iv
-assign mwsl = ~mws;
+assign mwsl[1:0] = ~mws[1:0];
 
 // MEM.NET (601) - wet0 : fd2
 always @(posedge sys_clk)
@@ -1296,7 +1259,7 @@ assign we32 = ~(mws64 & bm[3]);
 assign we[3] = ~(we30 & we31 & we32);
 
 // MEM.NET (666) - wel[0-3] : nd2
-assign wel[3:0] = wet_obuf ? ~(we) : 4'b1111;
+assign wel[3:0] = wet_obuf ? ~(we[3:0]) : 4'b1111;
 
 // MEM.NET (667) - wel[4-7] : nd3
 assign wel[7:4] = (wet_obuf & mws64) ? ~(bm[7:4]) : 4'b1111;
@@ -1359,10 +1322,10 @@ assign oe23 = ~(oet_obuf & mws64 & bm[7]);
 assign oel[2] = oe20 & oe21 & oe22 & oe23;
 
 // MEM.NET (715) - dinlatchl[0-7] : nd2p
-assign dinlatchl[7:0] = dinlatch_ ? ~(bm) : 8'hff;
+assign dinlatchl[7:0] = dinlatch_ ? ~(bm[7:0]) : 8'hff;
 
 // MEM.NET (716) - dinlatch[0-7] : nd2p
-assign dinlatch[7:0] = lwdl ? ~(dinlatchl) : 8'hff;
+assign dinlatch[7:0] = lwdl ? ~(dinlatchl[7:0]) : 8'hff;
 
 // MEM.NET (720) - sizout[0-2] : niv
 assign sizout[2:0] = maskw[2:0];
@@ -1382,18 +1345,18 @@ assign readt_obuf = (ack_obuf) ? rw_in : readsi;
 assign reads_obuf = readsi;
 
 // MEM.NET (729) - mwti[0-1] : mx2p
-assign mwti = (ack_obuf) ? mw : mws;
+assign mwti[1:0] = (ack_obuf) ? mw[1:0] : mws[1:0];
 
 // MEM.NET (730) - mws[0-1] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		mws <= mwti;
+		mws[1:0] <= mwti[1:0];
 	end
 end
 
 // MEM.NET (731) - mwt[0-1] : nivh
-assign mwt = mwti;
+assign mwt[1:0] = mwti[1:0];
 
 // MEM.NET (733) - mreqb : nivh
 assign mreqb = mreq_in;
@@ -1433,4 +1396,4 @@ begin
 	end
 end
 endmodule
-/* verilator lint_on LITENDIAN */
+

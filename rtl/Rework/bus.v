@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module bus
@@ -115,7 +114,7 @@ assign den20 = ~(extbms & busy & notreads & testen & resetl);
 assign deni[2] = ~(den03 & den20 & den05);
 
 // BUS.NET (66) - den[0-2] : nivu2
-assign den = deni;
+assign den[2:0] = deni[2:0];
 
 // BUS.NET (74) - host16 : an2
 assign host16 = cpubm & cpu16;
@@ -177,7 +176,7 @@ assign notpws64 = ~pws64;
 assign pws816 = pws8 | pws16;
 
 // BUS.NET (117) - wsl[0-3] : iv
-assign wl = ~w;
+assign wl[3:0] = ~w[3:0];
 
 // BUS.NET (126) - aen : nivu
 assign aen = intbms;
@@ -296,4 +295,4 @@ assign xdsrci = intbmw & xdsrc1 & ourackl;
 // BUS.NET (236) - xdsrc : nivu2
 assign xdsrc = xdsrci;
 endmodule
-/* verilator lint_on LITENDIAN */
+

@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module cryrgb
@@ -187,4 +186,4 @@ begin
 end
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

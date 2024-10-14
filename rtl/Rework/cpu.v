@@ -87,7 +87,7 @@ assign sizin_2 = ~(|sizin[1:0]);
 // CPU.NET (38) - xw[0] : mx2
 // CPU.NET (39) - xw[1] : mx2
 // CPU.NET (40) - xw[2] : mx2
-assign xw = (bm68k) ? {1'b0,w68k} : {sizin_2,sizin};
+assign xw[2:0] = (bm68k) ? {1'b0,w68k[1:0]} : {sizin_2,sizin[1:0]};
 
 // CPU.NET (42) - xp : ivm
 assign xp = ~intbm;
@@ -100,7 +100,7 @@ assign dbg = ~dbgl;
 
 // CPU.NET (46) - w[0-2] : ts
 // CPU.NET (47) - w[3] : ts
-assign w_out = {1'b0,xw};
+assign w_out[3:0] = {1'b0,xw[2:0]};
 assign w_oe = xp;
 
 // CPU.NET (48) - rw : ts
@@ -122,15 +122,15 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin
 		if (~resetl) begin
-			q <= 1'b0;
+			q[13:11] <= 3'h0;
 		end else begin
-			q <= d;
+			q[13:11] <= d[13:11];
 		end
 	end
 end
 
 // CPU.NET (78) - idlei : nr3
-assign idlei = ~(|q);
+assign idlei = ~(|q[13:11]);
 
 // CPU.NET (79) - idle : niv
 assign idle = idlei;
@@ -206,4 +206,4 @@ assign {uds,lds} = ~sizin[1:0];
 // CPU.NET (111) - not68k : iv
 assign not68k = ~m68k;
 endmodule
-/* verilator lint_on LITENDIAN */
+

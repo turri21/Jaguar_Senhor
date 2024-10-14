@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -160,7 +159,7 @@ begin
 end
 
 // MISC.NET (51) - ack[0-4] : an2
-assign ack_ = int1w ? din[12:8] : 5'h00;
+assign ack_[4:0] = int1w ? din[12:8] : 5'h00;
 
 // MISC.NET (55) - lvint : lsrb
 // always @(r or s)
@@ -250,20 +249,20 @@ assign dip = di1 & di2l & ie[4];
 //			end
 //			i <= (j & ~k) | (j & k & ~i) | (~j & ~k & i);
 wire [4:0] jf = {dip, tip, oip, gip, vip};
-wire [4:0] kf = ack_;
+wire [4:0] kf = ack_[4:0];
 always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin
 		if (~resetl) begin
 			i[4:0] <= 1'b0;
 		end else begin
-			i[4:0] <= (jf & ~kf) | (jf & kf & ~i) | (~jf & ~kf & i);
+			i[4:0] <= (jf[4:0] & ~kf[4:0]) | (jf[4:0] & kf[4:0] & ~i[4:0]) | (~jf[4:0] & ~kf[4:0] & i[4:0]);
 		end
 	end
 end
 
 // MISC.NET (87) - intl : nr6
-assign intl_obuf = ~(|i);
+assign intl_obuf = ~(|i[4:0]);
 
 // MISC.NET (91) - di[0-4] : ts
 // MISC.NET (92) - di[5-15] : ts
@@ -305,7 +304,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (pit0) begin
-			pd <= din;
+			pd[15:0] <= din[15:0];
 		end
 	end
 end
@@ -319,7 +318,7 @@ always @(negedge sys_clk) // /!\
 `endif
 begin
 	if (pit1) begin
-		td <= din; // ldp1q negedge always @(d or g)
+		td[15:0] <= din[15:0]; // ldp1q negedge always @(d or g)
 	end
 end
 
@@ -343,11 +342,11 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_presl && ~presl)) begin // fd2q always @(posedge cp or negedge cd)
 		if (~presl) begin
-			tp <= 16'h0;
-		end else	if (tpld) begin
-			tp <= pd;
-		end else	if (ten) begin
-			tp <= tp - 16'h1;
+			tp[15:0] <= 16'h0;
+		end else if (tpld) begin
+			tp[15:0] <= pd[15:0];
+		end else if (ten) begin
+			tp[15:0] <= tp[15:0] - 16'h1;
 		end
 	end
 end
@@ -371,7 +370,7 @@ assign tpldi = ~(tpc16 | pit0w);
 assign tpld = ~tpldi;
 
 // MISC.NET (140) - dtp[0-15] : ts
-assign dr_pit0_out = tp;
+assign dr_pit0_out = tp[15:0];
 assign dr_pit0_oe = pit0r;
 
 // MISC.NET (144) - t[0] : dncnt
@@ -382,11 +381,11 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_presl && ~presl)) begin // fd2q always @(posedge cp or negedge cd)
 		if (~presl) begin
-			t <= 16'h0;
-		end else	if (tld) begin
-			t <= td;
-		end else	if (tpc16) begin
-			t <= t - 16'h1;
+			t[15:0] <= 16'h0;
+		end else if (tld) begin
+			t[15:0] <= td[15:0];
+		end else if (tpc16) begin
+			t[15:0] <= t[15:0] - 16'h1;
 		end
 	end
 end
@@ -410,7 +409,7 @@ assign tldi = ~(tc16 | pit1w);
 assign tld = ~tldi;
 
 // MISC.NET (158) - dt[0-15] : ts
-assign dr_pit1_out = t;
+assign dr_pit1_out = t[15:0];
 assign dr_pit1_oe = pit1r;
 
 // MISC.NET (160) - tint : niv
@@ -422,9 +421,9 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin // fd2q always @(posedge cp or negedge cd)
 		if (~resetl) begin
-			ps <= 6'h00; // fd2q negedge // always @(posedge cp or negedge cd)
+			ps[5:0] <= 6'h00; // fd2q negedge // always @(posedge cp or negedge cd)
 		end else begin
-			ps <= ps + 6'h01; // fd2q negedge // always @(posedge cp or negedge cd)
+			ps[5:0] <= ps[5:0] + 6'h01; // fd2q negedge // always @(posedge cp or negedge cd)
 		end
 	end
 end
@@ -476,28 +475,28 @@ assign rpcen = pen | tcount;
 // MISC.NET (218) - rp[1-3] : dncnt
 always @(posedge sys_clk)
 begin
-	if ((~old_clk && clk) | (old_presl && ~presl)) begin // fd2q always @(posedge cp or negedge cd)
-		if (~presl) begin
-			rp <= 4'h0;
-		end else	if (lrpc) begin
-			rp <= refrate;
-		end else	if (rpcen) begin
-			rp <= rp - 4'h1;
+	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin // fd2q always @(posedge cp or negedge cd)
+		if (~resetl) begin
+			rp[3:0] <= 4'h0;
+		end else if (lrpc) begin
+			rp[3:0] <= refrate[3:0];
+		end else if (rpcen) begin
+			rp[3:0] <= rp[3:0] - 4'h1;
 		end
 	end
 end
 
 // MISC.NET (222) - rpl[0-3] : iv
-assign rpl = ~rp;
+assign rpl[3:0] = ~rp[3:0];
 
 // MISC.NET (223) - lrpcl : nd6
-assign lrpcl = ~((&rpl) & rpcen);
+assign lrpcl = ~((&rpl[3:0]) & rpcen);
 
 // MISC.NET (224) - lrpc : ivh
 assign lrpc = ~lrpcl;
 
 // MISC.NET (228) - rpenl : nr4p
-assign rpenl = ~(|refrate);
+assign rpenl = ~(|refrate[3:0]);
 
 // MISC.NET (229) - rpen : iv
 assign rpen = ~rpenl;
@@ -508,19 +507,19 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin
 		if (~resetl) begin
-			rc <= 4'h1; // fd2q
+			rc[3:0] <= 4'h0; // fd2q
 		end else begin
 			if (lrpc & refcount) begin // I think this is the same as the optimized logic in netlist
-				rc <= rc + 4'h1;
+				rc[3:0] <= rc[3:0] + 4'h1;
 			end else if (~lrpc & refcount) begin
-				rc <= rc - 4'h1;
+				rc[3:0] <= rc[3:0] - 4'h1;
 			end
 		end
 	end
 end
 
 // MISC.NET (245) - drc[0-3] : ts
-assign dr_rc_out = rc;
+assign dr_rc_out[15:12] = rc[3:0];
 assign dr_rc_oe = test3r;
 
 // MISC.NET (247) - rfc0 : nd3
@@ -533,13 +532,13 @@ assign rfc[1] = ~(lrpcl & dec);
 assign rfc[2] = ~(rpenl & dec);
 
 // MISC.NET (250) - refcount : nd3
-assign refcount = ~(&rfc);
+assign refcount = ~(&rfc[2:0]);
 
 // MISC.NET (252) - full : niv
 assign full = rc[3];
 
 // MISC.NET (253) - notempty : or4
-assign notempty = |rc;
+assign notempty = |rc[3:0];
 
 // MISC.NET (255) - notrefack : nd2
 assign notrefack = ~(refback & ack);
@@ -551,9 +550,9 @@ assign refack = ~notrefack;
 assign notrq = ~rq;
 
 // --- Compiler-generated PE for BUS dr[0]
-assign dr_out = ((dr_int_oe) ? dr_int_out : 16'h0000) | ((dr_pit0_oe) ? dr_pit0_out : 16'h0000) | ((dr_pit1_oe) ? dr_pit1_out : 16'h0000) | {((dr_rc_oe) ? dr_rc_out : 4'h0),12'h000};
+assign dr_out = ((dr_int_oe) ? dr_int_out[15:0] : 16'h0000) | ((dr_pit0_oe) ? dr_pit0_out[15:0] : 16'h0000) | ((dr_pit1_oe) ? dr_pit1_out[15:0] : 16'h0000) | {((dr_rc_oe) ? dr_rc_out[15:12] : 4'h0),12'h000};
 assign dr_oe = dr_int_oe | dr_pit0_oe | dr_pit1_oe;
 assign dr_15_12_oe = dr_rc_oe;
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

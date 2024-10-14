@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -54,8 +53,7 @@ wire latchdata;
 
 // Output buffers
 reg [20:0] newdata_obuf = 20'h00000;
-wire [9:0] newheight_obuf;
-reg [9:0] newheight_cnt = 10'h0; // low 2 bits inverted
+reg [9:0] newheight_obuf = 10'h0;
 reg [8:0] newrem_obuf = 9'h000;
 wire heightnz_obuf;
 
@@ -74,10 +72,10 @@ assign heightnz = heightnz_obuf;
 assign newrem[7:0] = newrem_obuf[7:0]; //newrem 8 does not output
 
 // WBK.NET (25) - newheight : join
-assign newheight = newheight_obuf;
+assign newheight[9:0] = newheight_obuf[9:0];
 
 // WBK.NET (27) - newdata : join
-assign newdata = newdata_obuf;
+assign newdata[20:0] = newdata_obuf[20:0];
 
 // WBK.NET (45) - q0 : fd4q
 // WBK.NET (46) - q1 : fd2q
@@ -86,9 +84,9 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin // fd4q and fd2q always @(posedge cp or negedge sd)
 		if (~resetl) begin
-			q <= 3'h1;
+			q[2:0] <= 3'h1;
 		end else begin
-			q <= d_;
+			q[2:0] <= d_[2:0];
 		end
 	end
 end
@@ -153,22 +151,22 @@ assign intremnz = ~intremz;
 // WBK.NET (83) - rd[0-4] : mx2
 // WBK.NET (84) - rd[5-7] : mx2
 // WBK.NET (85) - rd[8] : niv
-assign rd[7:0] = (decrem) ? 8'hE0 : vscale; // e0 is -1 rem
+assign rd[7:0] = (decrem) ? 8'hE0 : vscale[7:0]; // e0 is -1 rem
 assign rd[8] = decrem;
 
 // WBK.NET (87) - rs[0] : ha1
-assign rs = newrem_obuf + rd;
+assign rs[8:0] = newrem_obuf[8:0] + rd[8:0];
 
 // WBK.NET (92) - rem[0-7] : mx2
 // WBK.NET (93) - rem[8] : mx2
-assign rem = (obld_2) ? {1'b0, d[23:16]} : rs;
+assign rem[8:0] = (obld_2) ? {1'b0, d[23:16]} : rs[8:0];
 
 // WBK.NET (95) - newrem[0-8] : slatch
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (latchrem) begin
-			newrem_obuf <= rem;
+			newrem_obuf[8:0] <= rem[8:0];
 		end
 	end
 end
@@ -185,19 +183,14 @@ always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin // fd2q always @(posedge cp or negedge cd)
 		if (~resetl) begin
-			newheight_cnt <= 10'h0;
-		end else	if (obld_0) begin
-			newheight_cnt <= d[23:14];
-		end else	if (decheight) begin
-			newheight_cnt <= newheight_cnt - 10'h1;
+			newheight_obuf[9:0] <= 10'h0;
+		end else if (obld_0) begin
+			newheight_obuf[9:0] <= d[23:14];
+		end else if (decheight) begin
+			newheight_obuf[9:0] <= newheight_obuf[9:0] - 10'h1;
 		end
 	end
 end
-
-
-// WBK.NET (106) - newheight[0-1] : nivm
-assign newheight_obuf[1:0] = ~newheight_cnt[1:0];// low 2 bits inverted
-assign newheight_obuf[9:2] = newheight_cnt[9:2];
 
 // WBK.NET (108) - heightz0 : nr6
 assign heightz0 = ~(|newheight_obuf[5:0]);
@@ -212,10 +205,10 @@ assign heightnz_obuf = ~(heightz0 & heightz1);
 assign heightz = ~heightnz_obuf;
 
 // WBK.NET (118) - ds[0] : add4
-assign ds = newdata_obuf + dwidth;
+assign ds[20:0] = newdata_obuf[20:0] + dwidth[9:0];
 
 // WBK.NET (126) - data[0-20] : mx4p
-assign data = (~newdataclk) ? newdata_obuf : (obld_0 ? d[63:43] : ds);
+assign data[20:0] = (~newdataclk) ? newdata_obuf[20:0] : (obld_0 ? d[63:43] : ds[20:0]);
 
 // WBK.NET (128) - newdata[0-10] : fd1q
 // WBK.NET (129) - newdatai[11-15] : fd1q
@@ -234,4 +227,4 @@ assign latchdata = obld_0 | addnewdata;
 assign newdataclk = latchdata;
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

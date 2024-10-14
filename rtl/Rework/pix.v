@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -98,21 +97,21 @@ begin
 end
 
 // Output buffers
-assign r = r_obuf;
-assign g = g_obuf;
-assign b = b_obuf;
+assign r[7:0] = r_obuf[7:0];
+assign g[7:0] = g_obuf[7:0];
+assign b[7:0] = b_obuf[7:0];
 
 // PIX.NET (28) - red : join
-assign red = r_obuf;
+assign red[7:0] = r_obuf[7:0];
 
 // PIX.NET (29) - green : join
-assign green = g_obuf;
+assign green[7:0] = g_obuf[7:0];
 
 // PIX.NET (30) - blue : join
-assign blue = b_obuf;
+assign blue[7:0] = b_obuf[7:0];
 
 // PIX.NET (34) - lbra : join
-assign lbra = lbra_obuf;
+assign lbra[8:0] = lbra_obuf[8:0];
 
 // PIX.NET (39) - startdl : iv
 assign ddl = ~dd;
@@ -125,17 +124,17 @@ always @(posedge sys_clk) // fd1q
 begin
 	if (~old_clk && clk) begin
 		if (lbres) begin
-			lbra_obuf <= 9'h000;
+			lbra_obuf[8:0] <= 9'h000;
 		end else if (lbraw) begin
-			lbra_obuf <= din[8:0];
+			lbra_obuf[8:0] <= din[8:0];
 		end else if (nextpixa) begin
-			lbra_obuf <= lbra_obuf + 9'h001;
+			lbra_obuf[8:0] <= lbra_obuf[8:0] + 9'h001;
 		end
 	end
 end
 
 // PIX.NET (45) - lbrad[0-8] : ts
-assign dr_out = lbra_obuf;
+assign dr_out[8:0] = lbra_obuf[8:0];
 assign dr_8_0_oe = lbrar;
 
 // PIX.NET (49) - nextpixb : nivu2
@@ -146,22 +145,22 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (nextpixb) begin
-			pd1 <= lbrd;
+			pd1[31:0] <= lbrd[31:0];
 		end
 	end
 end
 
 // PIX.NET (53) - ge1 : join
-assign pd1_d = pd1;
+assign pd1_d[31:0] = pd1[31:0];
 
 // PIX.NET (55) - ge3 : join
-assign lbrd_d = lbrd;
+assign lbrd_d[31:0] = lbrd[31:0];
 
 // PIX.NET (61) - word2b : nivu2
 assign word2b = word2;
 
 // PIX.NET (62) - pd2[0-15] : mx2m
-assign pd2 = (word2b) ? pd1[31:16] : pd1[15:0];
+assign pd2[15:0] = (word2b) ? pd1[31:16] : pd1[15:0];
 
 // PIX.NET (70) - rgb0 : iv
 assign rgb0 = ~rgb16;
@@ -201,7 +200,7 @@ cryrgb pd3_inst
 assign lpb = lp;
 
 // PIX.NET (88) - pd4[0-15] : mx2
-assign pd4 = (lpb) ? pd1[15:0] : pd1[31:16];
+assign pd4[15:0] = (lpb) ? pd1[15:0] : pd1[31:16];
 
 // PIX.NET (92) - bc[0-15] : ldp1q
 // PIX.NET (93) - bc[16-23] : ldp1q
@@ -213,7 +212,7 @@ always @(negedge sys_clk) // /!\
 `endif
 begin
 	if (bcrgwr) begin
-		bc[15:0] <= din; // ldp1q negedge always @(d or g)
+		bc[15:0] <= din[15:0]; // ldp1q negedge always @(d or g)
 	end
 	if (bcbwr) begin
 		bc[23:16] <= din[7:0]; // ldp1q negedge always @(d or g)
@@ -271,26 +270,26 @@ assign s0i = ~(s01 & blankl);
 assign s0 = s0i;
 
 // PIX.NET (136) - pd5[0-23] : mx4
-assign pd5 = s1 ? (s0 ? 24'h000000 : bc) : (s0 ? pd1[23:0] : pd3);
+assign pd5[23:0] = s1 ? (s0 ? 24'h000000 : bc[23:0]) : (s0 ? pd1[23:0] : pd3[23:0]);
 
 // PIX.NET (140) - pd6[0-23] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		pd6 <= pd5;
+		pd6[23:0] <= pd5[23:0];
 	end
 end
 
 // PIX.NET (145) - r[0-7] : mx2
-assign r_obuf = (rg16) ? pd4[7:0] : pd6[7:0];
+assign r_obuf[7:0] = (rg16) ? pd4[7:0] : pd6[7:0];
 
 // PIX.NET (146) - g[0-7] : mx2
-assign g_obuf = (rg16) ? pd4[15:8] : pd6[15:8];
+assign g_obuf[7:0] = (rg16) ? pd4[15:8] : pd6[15:8];
 
 // PIX.NET (147) - b[0] : mx2
 // PIX.NET (148) - b[1] : mx2
 // PIX.NET (149) - b[2-7] : mx2
-assign b_obuf = (rg16) ? {6'h00, vactive, blank} : pd6[23:16];
+assign b_obuf[7:0] = (rg16) ? {6'h00, vactive, blank} : pd6[23:16];
 
 // PIX.NET (157) - inc1 : fd1q
 always @(posedge sys_clk)
@@ -336,4 +335,4 @@ assign notincen = ~incen;
 // PIX.NET (169) - notvarmod : iv
 assign notvarmod = ~varmod;
 endmodule
-/* verilator lint_on LITENDIAN */
+

@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module rasgen
@@ -53,4 +52,4 @@ end
 
 // MEM.NET (764) - csl : dummy
 endmodule
-/* verilator lint_on LITENDIAN */
+

@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module down
@@ -27,10 +26,10 @@ assign dout[15:8] = (dmuxd[1]) ? dout_obuf[31:24] : d1[15:8];
 
 // DBUS.NET (151) - dout[0-7] : mx8p
 reg [7:0] doutm;
-assign dout[7:0] = doutm;
+assign dout[7:0] = doutm[7:0];
 always @(*)
 begin
-	case(dmuxd) // is this fast enough? could use ternaries
+	case(dmuxd[2:0]) // is this fast enough? could use ternaries
 		3'b000		: doutm[7:0] = din[7:0];
 		3'b001		: doutm[7:0] = din[15:8];
 		3'b010		: doutm[7:0] = din[23:16];
@@ -43,4 +42,4 @@ begin
 end
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

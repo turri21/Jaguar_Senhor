@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -424,4 +423,4 @@ assign exiol = ~(dspcs & a[14] & ~a[15]);
 // IODEC.NET (168) - expl : an3
 assign expl = exiol & (&romcsl[1:0]);
 endmodule
-/* verilator lint_on LITENDIAN */
+

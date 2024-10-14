@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module up
@@ -29,4 +28,4 @@ assign dout[39:32] = (dmuxu[2]) ? din[7:0] : din[39:32];
 // DBUS.NET (136) - dout[40-63] : mx2p
 assign dout[63:40] = (dmuxu[2]) ? dout_obuf[31:8] : din[63:40];
 endmodule
-/* verilator lint_on LITENDIAN */
+

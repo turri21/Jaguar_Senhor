@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -51,10 +50,8 @@ wire [15:0] d9h;
 wire [15:0] d9l;
 wire [15:0] pda_out;
 wire pda_oe;
-wire [15:0] pda_in;
 wire [15:0] pdb_out;
 wire pdb_oe;
-wire [15:0] pdb_in;
 wire [5:0] pa;
 wire obdclk;
 reg [63:0] d1 = 64'h0000000000000000;
@@ -126,7 +123,6 @@ wire pswap;
 reg [5:0] ip = 6'h00;
 wire reset;
 reg [5:0] pad = 6'h00;
-wire gnd;
 wire [5:1] pai;
 wire [5:0] ipd;
 wire nip;
@@ -243,16 +239,12 @@ wire [8:5] diff;
 wire notremgte2i;
 wire [15:0] clut_a_a0_out;
 wire        clut_a_a0_oe;
-wire [15:0] clut_a_a0_in;
 wire [15:0] clut_a_a1_out;
 wire        clut_a_a1_oe;
-wire [15:0] clut_a_a1_in;
 wire [15:0] clut_b_a0_out;
 wire        clut_b_a0_oe;
-wire [15:0] clut_b_a0_in;
 wire [15:0] clut_b_a1_out;
 wire        clut_b_a1_oe;
-wire [15:0] clut_b_a1_in;
 
 // Output buffers
 wire offscreen_obuf;
@@ -278,10 +270,10 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (obdclk) begin
-			d1 <= d;
+			d1[63:0] <= d[63:0];
 		end
 		if (nextphrase) begin
-			d2 <= d1;
+			d2[63:0] <= d1[63:0];
 		end
 	end
 end
@@ -348,19 +340,19 @@ assign empty2 = ~smq0;
 assign obdready = ~(empty0 & empty1 & empty2);
 
 // OBDATA.NET (99) - d3[0-31] : mx2
-assign d3 = (pa[5]) ? d2[63:32] : d2[31:0];
+assign d3[31:0] = (pa[5]) ? d2[63:32] : d2[31:0];
 
 // OBDATA.NET (100) - d4[0-15] : mx2
-assign d4 = (pa[4]) ? d3[31:16] : d3[15:0];
+assign d4[15:0] = (pa[4]) ? d3[31:16] : d3[15:0];
 
 // OBDATA.NET (101) - d5[0-7] : mx2
-assign d5 = (pa[3]) ? d4[15:8] : d4[7:0];
+assign d5[7:0] = (pa[3]) ? d4[15:8] : d4[7:0];
 
 // OBDATA.NET (102) - d6[0-3] : mx2
-assign d6 = (pa[2]) ? d5[7:4] : d5[3:0];
+assign d6[3:0] = (pa[2]) ? d5[7:4] : d5[3:0];
 
 // OBDATA.NET (103) - d7[0-1] : mx2
-assign d7 = (pa[1]) ? d6[3:2] : d6[1:0];
+assign d7[1:0] = (pa[1]) ? d6[3:2] : d6[1:0];
 
 // OBDATA.NET (107) - pra00 : nd2
 assign pra0[0] = ~(d7[0] & mode1);
@@ -375,7 +367,7 @@ assign pra0[2] = ~(d5[0] & mode4);
 assign pra0[3] = ~(d4[0] & mode8);
 
 // OBDATA.NET (111) - pra[0] : nd4
-assign pra[0] = ~(&pra0);
+assign pra[0] = ~(&pra0[3:0]);
 
 // OBDATA.NET (113) - pra10 : nd2
 assign pra1[0] = ~(index[1] & mode1);
@@ -390,7 +382,7 @@ assign pra1[2] = ~(d5[1] & mode4);
 assign pra1[3] = ~(d4[1] & mode8);
 
 // OBDATA.NET (117) - pra[1] : nd4
-assign pra[1] = ~(&pra1);
+assign pra[1] = ~(&pra1[3:0]);
 
 // OBDATA.NET (119) - pra20 : nd2
 assign pra2[0] = ~(index[2] & mode1);
@@ -405,7 +397,7 @@ assign pra2[2] = ~(d5[2] & mode4);
 assign pra2[3] = ~(d4[2] & mode8);
 
 // OBDATA.NET (123) - pra[2] : nd4
-assign pra[2] = ~(&pra2);
+assign pra[2] = ~(&pra2[3:0]);
 
 // OBDATA.NET (125) - pra30 : nd2
 assign pra3[0] = ~(index[3] & mode1);
@@ -420,7 +412,7 @@ assign pra3[2] = ~(d5[3] & mode4);
 assign pra3[3] = ~(d4[3] & mode8);
 
 // OBDATA.NET (129) - pra[3] : nd4
-assign pra[3] = ~(&pra3);
+assign pra[3] = ~(&pra3[3:0]);
 
 // OBDATA.NET (131) - pra[4] : mx2
 assign pra[7:4] = (mode8) ? d4[7:4] : index[7:4];
@@ -438,7 +430,7 @@ assign prb0[2] = ~(d5[4] & mode4);
 assign prb0[3] = ~(d4[8] & mode8);
 
 // OBDATA.NET (140) - prb[0] : nd4
-assign prb[0] = ~(&prb0);
+assign prb[0] = ~(&prb0[3:0]);
 
 // OBDATA.NET (142) - prb10 : nd2
 assign prb1[0] = ~(index[1] & mode1);
@@ -453,7 +445,7 @@ assign prb1[2] = ~(d5[5] & mode4);
 assign prb1[3] = ~(d4[9] & mode8);
 
 // OBDATA.NET (146) - prb[1] : nd4
-assign prb[1] = ~(&prb1);
+assign prb[1] = ~(&prb1[3:0]);
 
 // OBDATA.NET (148) - prb20 : nd2
 assign prb2[0] = ~(index[2] & mode1);
@@ -468,7 +460,7 @@ assign prb2[2] = ~(d5[6] & mode4);
 assign prb2[3] = ~(d4[10] & mode8);
 
 // OBDATA.NET (152) - prb[2] : nd4
-assign prb[2] = ~(&prb2);
+assign prb[2] = ~(&prb2[3:0]);
 
 // OBDATA.NET (154) - prb30 : nd2
 assign prb3[0] = ~(index[3] & mode1);
@@ -483,37 +475,37 @@ assign prb3[2] = ~(d5[7] & mode4);
 assign prb3[3] = ~(d4[11] & mode8);
 
 // OBDATA.NET (158) - prb[3] : nd4
-assign prb[3] = ~(&prb3);
+assign prb[3] = ~(&prb3[3:0]);
 
 // OBDATA.NET (160) - prb[4] : mx2
 assign prb[7:4] = (mode8) ? d4[15:12] : index[7:4];
 
 // OBDATA.NET (167) - paad[0-7] : mx2p
-assign paad = (clutt) ? at[8:1] : pra;
+assign paad[7:0] = (clutt) ? at[8:1] : pra[7:0];
 
 // OBDATA.NET (168) - pabd[0-7] : mx2p
-assign pabd = (clutt) ? at[8:1] : prb;
+assign pabd[7:0] = (clutt) ? at[8:1] : prb[7:0];
 
 // OBDATA.NET (172) - pral[0-7] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		paaq <= paad;
-		pabq <= pabd;
+		paaq[7:0] <= paad[7:0];
+		pabq[7:0] <= pabd[7:0];
 	end
 end
 
 // OBDATA.NET (175) - paa[0-7] : hdly2b
-assign paa = paaq; // delay only needed if using external memory (not bram)?
+assign paa[7:0] = paaq[7:0]; // delay only needed if using external memory (not bram)?
 
 // OBDATA.NET (176) - pab[0-7] : hdly2b
-assign pab = pabq; // delay only needed if using external memory (not bram)?
+assign pab[7:0] = pabq[7:0]; // delay only needed if using external memory (not bram)?
 
 // OBDATA.NET (178) - aa : join
-assign aa = paa;
+assign aa[7:0] = paa[7:0];
 
 // OBDATA.NET (179) - ab : join
-assign ab = pab;
+assign ab[7:0] = pab[7:0];
 
 // OBDATA.NET (183) - ncst : ivh
 assign ncst = ~clk;
@@ -538,40 +530,40 @@ assign csl = ~(ncst & cs);
 // OBDATA.NET (189) - clut1 : ab8016a
 ab8016a clut1_inst
 (
-	.z_out /* BUS */ (clut_a_a0_out),
+	.z_out /* BUS */ (clut_a_a0_out[15:0]),
 	.z_oe /* BUS */ (clut_a_a0_oe),
-	.z_in /* BUS */ (clut_a_a0_in),
+	.z_in /* BUS */ (pda_out[15:0]),
 	.cen /* IN */ (csl),
 	.rw /* IN */ (prw),
-	.a /* IN */ (aa),
+	.a /* IN */ (aa[7:0]),
 	.sys_clk(sys_clk) // Generated
 );
 
 // OBDATA.NET (190) - clut2 : ab8016a
 ab8016a clut2_inst
 (
-	.z_out /* BUS */ (clut_b_a0_out),
+	.z_out /* BUS */ (clut_b_a0_out[15:0]),
 	.z_oe /* BUS */ (clut_b_a0_oe),
-	.z_in /* BUS */ (clut_b_a0_in),
+	.z_in /* BUS */ (pdb_out[15:0]),
 	.cen /* IN */ (csl),
 	.rw /* IN */ (prw),
-	.a /* IN */ (ab),
+	.a /* IN */ (ab[7:0]),
 	.sys_clk(sys_clk) // Generated
 );
 
 // OBDATA.NET (194) - pdi[0-15] : mx2
-assign pdi = (aout_9) ? pdb_in : pda_in;
+assign pdi[15:0] = (aout_9) ? pdb_out[15:0] : pda_out[15:0];
 
 // OBDATA.NET (195) - pd[0-15] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		pd <= pdi;
+		pd[15:0] <= pdi[15:0];
 	end
 end
 
 // OBDATA.NET (196) - dr[0-15] : ts
-assign dr_out = pd;
+assign dr_out[15:0] = pd[15:0];
 assign dr_oe = pden;
 
 // OBDATA.NET (197) - pdeni : nd2
@@ -587,11 +579,11 @@ assign pwdeni = ~(busy1 | pden);
 assign pwden = pwdeni;
 
 // OBDATA.NET (205) - pwda : ts
-assign clut_a_a1_out = din;
+assign clut_a_a1_out[15:0] = din[15:0];
 assign clut_a_a1_oe = pwden;
 
 // OBDATA.NET (206) - pwdb : ts
-assign clut_b_a1_out = din;
+assign clut_b_a1_out[15:0] = din[15:0];
 assign clut_b_a1_oe = pwden;
 
 // OBDATA.NET (210) - iw : iv
@@ -611,27 +603,27 @@ assign hilob = hilo;
 
 // OBDATA.NET (221) - d8[0-15] : mx4
 assign d8[15:0] =
-   (~phys & ~hilob)   ? pda_in[15:0] :
+   (~phys & ~hilob)   ? pda_out[15:0] :
    ( phys & ~hilob)   ? d3[15:0]     :
-   (~phys &  hilob)   ? pdb_in[15:0] :
+   (~phys &  hilob)   ? pdb_out[15:0] :
  /*( phys &  hilob)*/   d3[31:16];
 
 assign d8[31:16] =
-   (~phys & ~hilob)   ? pdb_in[15:0] :
+   (~phys & ~hilob)   ? pdb_out[15:0] :
    ( phys & ~hilob)   ? d3[31:16]     :
-   (~phys &  hilob)   ? pda_in[15:0] :
+   (~phys &  hilob)   ? pda_out[15:0] :
  /*( phys &  hilob)*/   d3[15:0];
 
 // OBDATA.NET (226) - d9[0-31] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		d9 <= d8;
+		d9[31:0] <= d8[31:0];
 	end
 end
 
 // OBDATA.NET (227) - d9l : join
-assign d9l = d9[15:0];
+assign d9l[15:0] = d9[15:0];
 
 // OBDATA.NET (228) - d9lu : dummy
 
@@ -661,7 +653,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (delpix) begin
-			da <= d9[31:16];
+			da[15:0] <= d9[31:16];
 		end
 	end
 end
@@ -673,7 +665,7 @@ assign del1 = lbwa_[0] ^ reflected;
 assign delayed = del1 & notscaled;
 
 // OBDATA.NET (277) - db[0-15] : mx2
-assign db = (delayed) ? da : d9[31:16];
+assign db[15:0] = (delayed) ? da[15:0] : d9[31:16];
 
 // OBDATA.NET (279) - lbwd[0-15] : mx2
 assign lbwd[15:0] = (pswap) ? db[15:0] : d9[15:0];
@@ -682,27 +674,24 @@ assign lbwd[15:0] = (pswap) ? db[15:0] : d9[15:0];
 assign lbwd[31:16] = (pswap) ? d9[15:0] : db[15:0];
 
 // OBDATA.NET (294) - pa[0] : upcnts
-wire [5:0] combined = {modew, mode8, mode4, mode2, mode1, 1'b0};
-wire [5:0] simplified = ~scaled ? combined : (pa[0] ? combined - 6'h01 : 6'h01); // Needs to be checked
+wire [5:0] combined = {modew, mode8, mode4, mode2, mode1, 1'b0}; // assumes modes are exclusive
+wire [5:0] simplified = ~scaled ? combined[5:0] : (pa[0] ? combined[5:0] - 6'h01 : 6'h01); // Needs to be checked
 always @(posedge sys_clk) // fd1q
 begin
 	if (~old_clk && clk) begin
 		if (reset) begin
-			pad <= 6'h00;
+			pad[5:0] <= 6'h00;
 		end else if (nextphrase) begin
-			pad <= ip;
+			pad[5:0] <= ip[5:0];
 		end else if (nextbits) begin
-			pad <= pad + simplified;
+			pad[5:0] <= pad[5:0] + simplified[5:0];
 		end
 	end
 end
 
-// OBDATA.NET (300) - gnd : tie0
-assign gnd = 1'b0;
-
 // OBDATA.NET (301) - pai[1-5] : en
 //assign pai[5:1] = ~(pad[5:1] ^ (hilo, hilo, hilo, hilo, hilo));
-assign pai[5:1] = hilo ? ~(pad[5:1]) : (pad[5:1]);
+assign pai[5:1] = hilo ? (pad[5:1]) : ~(pad[5:1]);
 
 // OBDATA.NET (302) - pa[1-3] : ivm
 assign pa[5:1] = ~pai[5:1];
@@ -719,7 +708,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (nip) begin
-			ip <= ipd;
+			ip[5:0] <= ipd[5:0];
 		end
 	end
 end
@@ -764,28 +753,28 @@ assign notphdone = ~phdone;
 assign nextxx = (phys) ? nextx : nextx1;
 
 // OBDATA.NET (356) - lbwadd[0-9] : mx2
-assign lbwadd = (lbt) ? at : lbwad[9:0];
+assign lbwadd[9:0] = (lbt) ? at[10:1] : lbwad[9:0];
 
 // OBDATA.NET (349) - nextx1 : fd1q
 // OBDATA.NET (352) - lbwad[0] : udcnt
 // OBDATA.NET (357) - lbwa[0-9] : fd1q
-assign lbwa = lbwa_[9:1];
+assign lbwa[9:1] = lbwa_[9:1];
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		nextx1 <= nextx;
-		lbwa_ <= lbwadd;
+		lbwa_[9:0] <= lbwadd[9:0];
 		if (xld) begin
-			lbwad <= d[11:0]; // fd1q
+			lbwad[11:0] <= d[11:0]; // fd1q
 		end else begin
 			if (up & lci_0) begin // I think this is the same as the optimized logic in netlist
-				lbwad <= lbwad + 12'h1;
+				lbwad[11:0] <= lbwad[11:0] + 12'h1;
 			end else if (~up & lci_0) begin
-				lbwad <= lbwad - 12'h1;
+				lbwad[11:0] <= lbwad[11:0] - 12'h1;
 			end else if (up & ~lcil_1) begin
-				lbwad <= lbwad + 12'h2;
+				lbwad[11:0] <= lbwad[11:0] + 12'h2;
 			end else if (~up & ~lcil_1) begin
-				lbwad <= lbwad - 12'h2;
+				lbwad[11:0] <= lbwad[11:0] - 12'h2;
 			end
 		end
 	end
@@ -1109,7 +1098,7 @@ assign lbweb[8] = ~(lbweb80 & lbweb81);
 
 // OBDATA.NET (607) - lbwe[0] : fd1q
 // OBDATA.NET (608) - lbwe[1] : fd1q
-assign lbwe = lbwe_;
+assign lbwe[1:0] = lbwe_[1:0];
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
@@ -1132,7 +1121,7 @@ begin
 end
 
 // OBDATA.NET (620) - lbend : or6
-assign lbend = smd2 | lbwrite | (|lbw);
+assign lbend = smd2 | lbwrite | (|lbw[3:1]);
 
 // OBDATA.NET (621) - lbeni : fd2q
 always @(posedge sys_clk)
@@ -1181,18 +1170,18 @@ assign pswap = pswapi;
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		xrem <= xrd;
+		xrem[8:0] <= xrd[8:0];
 	end
 end
 
 // OBDATA.NET (648) - sum[0] : ha1
-assign sum = xrem[7:0] + xscale; // check this; xrem8 not used; ensure sum8 is set
+assign sum[8:0] = xrem[7:0] + xscale[7:0]; // check this; xrem8 not used; ensure sum8 is set
 
 // OBDATA.NET (652) - xs[0-8] : mx2
-assign xs = (nextbits) ? sum : xrem;
+assign xs[8:0] = (nextbits) ? sum[8:0] : xrem[8:0];
 
 // OBDATA.NET (654) - diff[5] : ha1
-assign diff = xs[8:5] + {nextx, nextx, nextx, nextx};
+assign diff [8:5]= xs[8:5] + {nextx, nextx, nextx, nextx};
 
 // OBDATA.NET (659) - xrd[0-4] : mx2
 assign xrd[4:0] = (obld_2) ? d[4:0] : xs[4:0];
@@ -1201,7 +1190,7 @@ assign xrd[4:0] = (obld_2) ? d[4:0] : xs[4:0];
 assign xrd[7:5] = (obld_2) ? d[7:5] : diff[7:5];
 
 // OBDATA.NET (661) - xrd[8] : mx2
-assign xrd[8] = (obld_2) ? gnd : diff[8];
+assign xrd[8] = (obld_2) ? 1'b0 : diff[8];
 
 // OBDATA.NET (663) - notremgte2i : nr3
 assign notremgte2i = ~(|xrem[8:6]);
@@ -1216,22 +1205,12 @@ assign remgte2 = ~notremgte2;
 assign remgte1 = |xrem[8:5];
 
 // --- Compiler-generated local PE for BUS pda<0>
-assign pda_out = ((clut_a_a0_oe) ? clut_a_a0_out : 16'h0000) | ((clut_a_a1_oe) ? clut_a_a1_out : 16'h0000);
+assign pda_out[15:0] = ((clut_a_a0_oe) ? clut_a_a0_out[15:0] : 16'h0000) | ((clut_a_a1_oe) ? clut_a_a1_out[15:0] : 16'h0000);
 assign pda_oe = clut_a_a0_oe | clut_a_a1_oe;
-assign clut_a_a0_in = pda_in;
-assign clut_a_a1_in = pda_in;
 
 // --- Compiler-generated local PE for BUS pda<15>
-assign pdb_out = ((clut_b_a0_oe) ? clut_b_a0_out : 16'h0000) | ((clut_b_a1_oe) ? clut_b_a1_out : 16'h0000);
+assign pdb_out[15:0] = ((clut_b_a0_oe) ? clut_b_a0_out[15:0] : 16'h0000) | ((clut_b_a1_oe) ? clut_b_a1_out[15:0] : 16'h0000);
 assign pdb_oe = clut_b_a0_oe | clut_b_a1_oe;
-assign clut_b_a0_in = pdb_in;
-assign clut_b_a1_in = pdb_in;
-
-// --- Compiler-generated local LB for BUS pda<0>
-assign pda_in = pda_out;
-
-// --- Compiler-generated local LB for BUS pdb<0>
-assign pdb_in = pdb_out;
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

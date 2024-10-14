@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -1384,4 +1383,4 @@ assign dr_15_12_oe = dr_gpu_oe | dr_vid_15_12_oe | dr_abus_oe | dr_ob_oe | dr_ob
 assign justify_out = (justify_gpu_oe ? justify_gpu_out : 1'b0) | (justify_mem_oe ? justify_mem_out : 1'b0) | (justify_ob_oe ? justify_ob_out : 1'b0);
 assign justify_oe = justify_gpu_oe | justify_mem_oe | justify_ob_oe;
 endmodule
-/* verilator lint_on LITENDIAN */
+

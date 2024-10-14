@@ -130,7 +130,6 @@ wire hbeeq;
 wire hdb1eq;
 wire hdb2eq;
 wire hdeeq;
-wire [10:0] hse;
 wire hseq;
 wire hvsb;
 wire hvse;
@@ -146,7 +145,6 @@ wire vcount;
 wire [11:0] vco;
 wire [10:0] vcb;
 reg [10:0] vp = 11'h000;
-wire [10:0] vpe;
 wire vpeqt;
 wire vbbeq;
 wire vbeeq;
@@ -373,10 +371,10 @@ assign ppresl = notstartd & resetl;
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		pp_ <= ~ppresl ? 3'b000 : (pp_obuf ? ppn : (pp_ - 3'b001));
+		pp_[2:0] <= ~ppresl ? 3'b000 : (pp_obuf ? ppn[2:0] : (pp_[2:0] - 3'b001));
 	end
 end
-assign ppco = (pp_==3'b000); //cin = 1
+assign ppco = (pp_[2:0]==3'b000); //cin = 1
 
 // VID.NET (101) - pp : nivm
 assign pp_obuf = ppco;
@@ -438,7 +436,7 @@ end
 assign hcb[10:0] = hc[10:0];
 
 // VID.NET (144) - hcd[0-10] : ts
-assign dr_hcb_out[10:0] = hcb;
+assign dr_hcb_out[10:0] = hcb[10:0];
 assign dr_hcb_oe = hcrd;
 
 // VID.NET (152) - hp[0-9] : ldp1q
@@ -516,28 +514,25 @@ begin
 		heq_[9:0] <= din[9:0];
 	end
 end
-assign hbbeq = &(~(hbb_[10:0] ^ hcb[10:0]));
-assign hbeeq = &(~(hbe_[10:0] ^ hcb[10:0]));
-assign hdb1eq = &(~(hdb1_[10:0] ^ hcb[10:0]));
-assign hdb2eq = &(~(hdb2_[10:0] ^ hcb[10:0]));
-assign hdeeq = &(~(hde_[10:0] ^ hcb[10:0]));
-
-// VID.NET (176) - hse[0-10] : en
-assign hse[10:0] = (~(hs_[10:0] ^ hcb[10:0]));
+assign hbbeq = hbb_[10:0] == hcb[10:0];
+assign hbeeq = hbe_[10:0] == hcb[10:0];
+assign hdb1eq = hdb1_[10:0] == hcb[10:0];
+assign hdb2eq = hdb2_[10:0] == hcb[10:0];
+assign hdeeq = hde_[10:0] == hcb[10:0];
 
 // VID.NET (177) - hseq : and11
-assign hseq = &hse[10:0];
+assign hseq = hs_[10:0] == hcb[10:0];
 
 // VID.NET (178) - hvsb : and10
-assign hvsb = &hse[9:0];
+assign hvsb = hs_[9:0] == hcb[9:0];// 9:0 only
 
 // VID.NET (185) - hvse[0-9] : en
 // VID.NET (186) - hvse : and10
-assign hvse = &(~(hvs_[9:0] ^ hcb[9:0]));
+assign hvse = hvs_[9:0] == hcb[9:0];
 
 // VID.NET (192) - heqe[0-9] : en
 // VID.NET (193) - heqe : and10
-assign heqe = &(~(heq_[9:0] ^ hcb[9:0]));
+assign heqe = heq_[9:0] == hcb[9:0];
 
 // VID.NET (202) - nextfieldl : nd2
 assign nextfieldl = ~(vpeq & hpeq);
@@ -575,7 +570,7 @@ end
 assign vcb[10:0] = vc[10:0];
 
 // VID.NET (215) - vcd[0-11] : ts
-assign dr_vc_out = vc;
+assign dr_vc_out[11:0] = vc[11:0];
 assign dr_vc_oe = vcrd;
 
 // VID.NET (222) - vp[0-10] : ldp1q
@@ -591,13 +586,11 @@ begin
 end
 
 // VID.NET (223) - vpe[0-10] : en
-assign vpe[10:0] = ~(vp[10:0] ^ vcb[10:0]);
-
 // VID.NET (224) - vpeqt : and11
-assign vpeqt = &vpe[10:0];
+assign vpeqt = vp[10:0] == vcb[10:0];
 
 // VID.NET (225) - vpeq : and12
-assign vpeq = &vpe[10:0] & viden;
+assign vpeq = vp[10:0] == vcb[10:0] & viden;
 
 // VID.NET (227) - vbb : creg11
 // VID.NET (228) - vbe : creg11
@@ -646,14 +639,14 @@ begin
 		vi[10:0] <= din[10:0];
 	end
 end
-assign vbbeq = &(~(vbb[10:0] ^ vcb[10:0]));
-assign vbeeq = &(~(vbe[10:0] ^ vcb[10:0]));
-assign vdbeq = &(~(vdb[10:0] ^ vcb[10:0]));
-assign vdeeq = &(~(vde[10:0] ^ vcb[10:0]));
-assign vebeq = &(~(veb[10:0] ^ vcb[10:0]));
-assign veeeq = &(~(vee[10:0] ^ vcb[10:0]));
-assign vseq = &(~(vs[10:0] ^ vcb[10:0]));
-assign vieq = &(~(vi[10:0] ^ vcb[10:0]));
+assign vbbeq = vbb[10:0] == vcb[10:0];
+assign vbeeq = vbe[10:0] == vcb[10:0];
+assign vdbeq = vdb[10:0] == vcb[10:0];
+assign vdeeq = vde[10:0] == vcb[10:0];
+assign vebeq = veb[10:0] == vcb[10:0];
+assign veeeq = vee[10:0] == vcb[10:0];
+assign vseq = vs[10:0] == vcb[10:0];
+assign vieq = vi[10:0] == vcb[10:0];
 
 // VID.NET (238) - vvactive : fjkr
 always @(posedge sys_clk)
@@ -696,7 +689,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (vclb) begin
-			vcl_obuf <= vcb; 
+			vcl_obuf[10:0] <= vcb[10:0]; 
 		end
 	end
 end
@@ -775,8 +768,8 @@ assign hblank_out = hblank;
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		vblank <= ~(vbbeq ^ vblank) & vresl;
-		hblank <= ~(hbbeq ^ hblank) & vresl;
+		vblank <= ~(~(vbbeq & vblank) & (vbeeq | vblank)) & vresl;
+		hblank <= ~(~(hbbeq & hblank) & (hbeeq | hblank)) & vresl;
 		hs <= ~(~(hseq & hs) & (hpeq | hs)) & vresl;
 		vvs <= ~(~(vseq & vvs) & (vpeq | vvs)) & vresl;
 		hvs <= ~(~(hvstart & hvs) & (hvse | hvs)) & vresl;
@@ -992,4 +985,4 @@ assign dr_out[11] = (dr_vc_oe & dr_vc_out[11]) | (dr_lph_oe & dr_lph_out[11]) | 
 assign dr_11_0_oe = dr_15_12_oe | dr_test3r_oe;
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

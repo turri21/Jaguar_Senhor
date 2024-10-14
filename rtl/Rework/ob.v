@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -238,9 +237,7 @@ wire eback;
 wire ewr;
 wire wbken0d;
 wire xldi;
-wire [2:0] typel;
 wire notstopob;
-wire [2:0] heightl;
 wire cctrue0;
 wire cctrue1;
 wire y7ff;
@@ -248,7 +245,6 @@ wire cctrue2;
 wire cctrue3;
 wire cctrue4;
 wire cctrue5;
-wire [2:0] depthl;
 wire mode8i;
 reg start1 = 1'b0;
 reg start2 = 1'b0;
@@ -264,7 +260,7 @@ wire oben;
 wire obldi_0;
 wire obldi_1;
 wire obldi_2;
-reg wbkeni_0 = 1'b0;
+reg wbkeni_0 = 1'b1;
 reg wbkeni_2 = 1'b0;
 wire equ;
 wire [10:0] ve;
@@ -369,7 +365,7 @@ assign dr_d_out[15:0] = data[20:5];
 assign dr_d_oe = ob3r;
 
 // OB.NET (71) - obwbk0[0-2] : ts
-assign wd_a_out[2:0] = type_;
+assign wd_a_out[2:0] = type_[2:0];
 assign wd_a_oe = wbken_0;
 
 // OB.NET (72) - obwbk0[3-13] : ts
@@ -429,7 +425,7 @@ assign wd_b_oe = wbken_2;
 assign wd_b_out[15:8] = vscale_obuf[7:0];
 
 // OB.NET (96) - obwbk2[16-23] : ts
-assign wd_b_out[23:16] = newrem;
+assign wd_b_out[23:16] = newrem[7:0];
 
 // OB.NET (97) - obwbk2[24-63] : ts
 assign wd_b_out[63:24] = 40'h00000000;
@@ -489,7 +485,7 @@ begin
 		if (obld_0_obuf) begin
 			data[20:0] <= d[63:43]; // fd2q negedge // always @(posedge cp or negedge cd)
 		end else if (dmainc) begin
-			data[20:0] <= data + skip[2:0]; // fd2q negedge // always @(posedge cp or negedge cd)
+			data[20:0] <= data[20:0] + skip[2:0]; // fd2q negedge // always @(posedge cp or negedge cd)
 		end
 		if (~resetl) begin // no reset for lowest 3 bits?
 			data[20:3] <= 18'h0000; // fd2q negedge // always @(posedge cp or negedge cd)
@@ -874,23 +870,20 @@ assign xldi = ~(d40 & d80);
 // OB.NET (521) - xld : nivm
 assign xld = xldi;
 
-// OB.NET (527) - typel[0-2] : iv
-assign typel[2:0] = ~type_[2:0];
-
 // OB.NET (529) - notbitob : nd3
-assign notbitob = ~(&typel[2:0]);
+assign notbitob = ~(type_[2:0]==3'b000);
 
 // OB.NET (530) - notscaled : nd3
-assign notscaled = ~(typel[2] & typel[1] & type_[0]);
+assign notscaled = ~(type_[2:0]==3'b001);
 
 // OB.NET (531) - notgrpob : nd3
-assign notgrpob = ~(typel[2] & type_[1] & typel[0]);
+assign notgrpob = ~(type_[2:0]==3'b010);
 
 // OB.NET (532) - notbranchob : nd3
-assign notbranchob = ~(typel[2] & type_[1] & type_[0]);
+assign notbranchob = ~(type_[2:0]==3'b011);
 
 // OB.NET (533) - notstopob : nd3
-assign notstopob = ~(type_[2] & typel[1] & typel[0]);
+assign notstopob = ~(type_[2:0]==3'b100);
 
 // OB.NET (535) - bitob : ivm
 assign bitob = ~notbitob;
@@ -907,26 +900,23 @@ assign branchob = ~notbranchob;
 // OB.NET (539) - stopob : iv
 assign stopob = ~notstopob;
 
-// OB.NET (544) - heightl[0-2] : iv
-assign heightl[2:0] = ~newheight[2:0];
-
 // OB.NET (546) - cctrue0 : nd4
-assign cctrue0 = ~(heightl[2] & heightl[1] & heightl[0] & vey_obuf);
+assign cctrue0 = ~(newheight[2:0]==3'b000 & vey_obuf);
 
 // OB.NET (547) - cctrue1 : nd4
-assign cctrue1 = ~(heightl[2] & heightl[1] & heightl[0] & y7ff);
+assign cctrue1 = ~(newheight[2:0]==3'b000 & y7ff);
 
 // OB.NET (548) - cctrue2 : nd4
-assign cctrue2 = ~(heightl[2] & heightl[1] & newheight[0] & vly_obuf);
+assign cctrue2 = ~(newheight[2:0]==3'b001 & vly_obuf);
 
 // OB.NET (549) - cctrue3 : nd4
-assign cctrue3 = ~(heightl[2] & newheight[1] & heightl[0] & vgy_obuf);
+assign cctrue3 = ~(newheight[2:0]==3'b010 & vgy_obuf);
 
 // OB.NET (550) - cctrue4 : nd4
-assign cctrue4 = ~(heightl[2] & newheight[1] & newheight[0] & obf);
+assign cctrue4 = ~(newheight[2:0]==3'b011 & obf);
 
 // OB.NET (551) - cctrue5 : nd4
-assign cctrue5 = ~(newheight[2] & heightl[1] & heightl[0] & hcb_10);
+assign cctrue5 = ~(newheight[2:0]==3'b100 & hcb_10);
 
 // OB.NET (552) - cctrue : nd6
 assign cctrue = ~(cctrue0 & cctrue1 & cctrue2 & cctrue3 & cctrue4 & cctrue5);
@@ -934,29 +924,26 @@ assign cctrue = ~(cctrue0 & cctrue1 & cctrue2 & cctrue3 & cctrue4 & cctrue5);
 // OB.NET (553) - ccfalse : iv
 assign ccfalse = ~cctrue;
 
-// OB.NET (555) - depthl[0-2] : iv
-assign depthl[2:0] = ~depth[2:0];
-
 // OB.NET (557) - mode1 : an3h
-assign mode1 = depthl[2] & depthl[1] & depthl[0];
+assign mode1 = depth[2:0]==3'b000;
 
 // OB.NET (558) - mode2 : an3h
-assign mode2 = depthl[2] & depthl[1] & depth[0];
+assign mode2 = depth[2:0]==3'b001;
 
 // OB.NET (559) - mode4 : an3h
-assign mode4 = depthl[2] & depth[1] & depthl[0];
+assign mode4 = depth[2:0]==3'b010;
 
 // OB.NET (560) - mode8i : nd3
-assign mode8i = ~(depthl[2] & depth[1] & depth[0]);
+assign mode8i = ~(depth[2:0]==3'b011);
 
 // OB.NET (561) - mode8 : ivh
 assign mode8 = ~mode8i;
 
 // OB.NET (562) - mode16 : an3
-assign mode16 = depth[2] & depthl[1] & depthl[0];
+assign mode16 = depth[2:0]==3'b100;
 
 // OB.NET (563) - mode24 : an3
-assign mode24 = depth[2] & depthl[1] & depth[0];
+assign mode24 = depth[2:0]==3'b101;
 
 // OB.NET (567) - start1 : fd2q
 // OB.NET (568) - start2 : fd2q
@@ -1194,12 +1181,12 @@ assign a_oe = oben;
 assign a_out[23:3] = oa[23:3];
 
 // --- Compiler-generated PE for BUS wd[0]
-assign wd_out = ((wd_a_oe) ? wd_a_out : 16'h0000) | ((wd_b_oe) ? wd_b_out : 16'h0000);
+assign wd_out[63:0] = ((wd_a_oe) ? wd_a_out[63:0] : 64'h0000) | ((wd_b_oe) ? wd_b_out[63:0] : 64'h0000);
 assign wd_oe = wd_a_oe | wd_b_oe;
 
 // --- Compiler-generated PE for BUS dr[0]
-assign dr_out = ((dr_a_oe) ? dr_a_out : 16'h0000) | ((dr_b_oe) ? dr_b_out : 16'h0000) | ((dr_c_oe) ? dr_c_out : 16'h0000) | ((dr_d_oe) ? dr_d_out : 16'h0000);
+assign dr_out[15:0] = ((dr_a_oe) ? dr_a_out[15:0] : 16'h0000) | ((dr_b_oe) ? dr_b_out[15:0] : 16'h0000) | ((dr_c_oe) ? dr_c_out[15:0] : 16'h0000) | ((dr_d_oe) ? dr_d_out[15:0] : 16'h0000);
 assign dr_oe = dr_a_oe | dr_b_oe | dr_c_oe | dr_d_oe;
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

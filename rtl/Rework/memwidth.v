@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -106,52 +105,52 @@ begin
 end
 
 // Output buffers
-assign maskw = maskw_obuf;
-assign maska = maska_obuf;
-assign at = at_obuf;
+assign maskw[3:0] = maskw_obuf[3:0];
+assign maska[2:0] = maska_obuf[2:0];
+assign at[2:0] = at_obuf[2:0];
 assign lastc = lastc_obuf;
-assign bm = bm_;
+assign bm[7:0] = bm_[7:0];
 
 // MEMWIDTH.NET (69) - rw1[0-3] : mx2h
-assign rw1 = (ack) ? w : rw;
+assign rw1[3:0] = (ack) ? w[3:0] : rw[3:0];
 
 // MEMWIDTH.NET (73) - pw[0-3] : slatch
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (nextc) begin
-			pw <= rw1;
+			pw[3:0] <= rw1[3:0];
 		end
 	end
 end
 
 // MEMWIDTH.NET (77) - ba1[0-2] : mx2h
-assign ba1 = (ack) ? ba : nba;
+assign ba1[2:0] = (ack) ? ba[2:0] : nba[2:0];
 
 // MEMWIDTH.NET (78) - ba1l[0-2] : iv
-assign ba1l = ~ba1;
+assign ba1l[2:0] = ~ba1[2:0];
 
 // MEMWIDTH.NET (82) - maskai[0-2] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		maskai <= at_obuf;
+		maskai[2:0] <= at_obuf[2:0];
 	end
 end
 
 // MEMWIDTH.NET (83) - at[0-2] : mx2
-assign at_obuf = (nextc) ? ba1 : maskai;
+assign at_obuf[2:0] = (nextc) ? ba1[2:0] : maskai[2:0];
 
 // MEMWIDTH.NET (84) - maska[0] : nivu
 // MEMWIDTH.NET (85) - maska[1] : nivu2
 // MEMWIDTH.NET (86) - maska[2] : nivu
-assign maska_obuf = maskai;
+assign maska_obuf[2:0] = maskai[2:0];
 
 // MEMWIDTH.NET (115) - mwl[0-1] : iv
-assign mwl = ~mw;
+assign mwl[1:0] = ~mw[1:0];
 
 // MEMWIDTH.NET (135) - cw1[0-3] : mx2p
-assign cw1 = (lastc_obuf) ? rw1 : d;
+assign cw1[3:0] = (lastc_obuf) ? rw1[3:0] : d[3:0];
 
 // MEMWIDTH.NET (139) - mw8 : an2p
 assign mw8 = &mwl[1:0];
@@ -169,34 +168,34 @@ assign mw64 = &mw[1:0];
 // MEMWIDTH.NET (145) - cw2[1] : mx2p
 // MEMWIDTH.NET (146) - cw2[2] : mx2p
 // MEMWIDTH.NET (147) - cw2[3] : mx2p
-assign cw2 = (direct) ? {mw64,mw32,mw16,mw8} : cw1;
+assign cw2[3:0] = (direct) ? {mw64,mw32,mw16,mw8} : cw1[3:0];
 
 // MEMWIDTH.NET (149) - maskw[0-3] : slatch
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (nextc) begin
-			maskw_obuf <= cw2;
+			maskw_obuf[3:0] <= cw2[3:0];
 		end
 	end
 end
 
 // MEMWIDTH.NET (154) - maskwl[0-3] : iv
-assign maskwl = ~maskw_obuf;
+assign maskwl[3:0] = ~maskw_obuf[3:0];
 
 // MEMWIDTH.NET (156) - rw[0] : fa1
 // MEMWIDTH.NET (157) - rw[1-3] : fa1
-assign {rwc,rw} = pw + maskwl + 5'b1;
+assign {rwc,rw[3:0]} = pw[3:0] + maskwl[3:0] + 5'b1;
 
 // MEMWIDTH.NET (161) - zerol : or4
-assign zerol = |rw;
+assign zerol = |rw[3:0];
 
 // MEMWIDTH.NET (162) - lastcycle : nd2
 assign lastcycle = ~(zerol & rwc);
 
 // MEMWIDTH.NET (166) - nba[0] : fa1
 // MEMWIDTH.NET (167) - nba[1-2] : fa1
-assign nba = maska_obuf + maskw_obuf[2:0];
+assign nba[2:0] = maska_obuf[2:0] + maskw_obuf[2:0];
 
 // MEMWIDTH.NET (172) - dra : nd3
 assign dra = ~(mw[1] & mw[0] & rw1[3]);
@@ -217,10 +216,10 @@ assign direct = ~(dra & drb & drc & drd);
 assign w32 = rw1[2] | rw1[3];
 
 // MEMWIDTH.NET (181) - w16 : or3
-assign w16 = rw1[2] | rw1[2] | rw1[3];
+assign w16 = rw1[1] | rw1[2] | rw1[3];
 
 // MEMWIDTH.NET (190) - sa : dec38h
-assign sa = 8'b00000001 << ba1[2:0];
+assign sa[7:0] = 8'b00000001 << ba1[2:0];
 
 // MEMWIDTH.NET (192) - rwl[1-3] : ivh
 //assign rwl[3:1] = ~rw1[3:1];
@@ -229,7 +228,7 @@ assign sa = 8'b00000001 << ba1[2:0];
 assign rwgt1 = ~(rw1[3:1] == 3'b000);
 
 // MEMWIDTH.NET (194) - rwgt2a : nd2
-assign rwgt2a = ~(rw1[3:2] == 2'b11);
+assign rwgt2a = ~(rw1[1:0] == 2'b11);
 
 // MEMWIDTH.NET (195) - rwgt2 : nd3p
 assign rwgt2 = ~(rwgt2a & (rw1[3:2] == 2'b00));
@@ -514,4 +513,4 @@ assign d[3:0] = mw[1] ? (mw[0] ? {negba[3:0]} : {1'b0,d216,negba[1:0]})
 // MEMWIDTH.NET (344) - d216 : an2
 assign d216 = ba1l[0] & ba1l[1];
 endmodule
-/* verilator lint_on LITENDIAN */
+

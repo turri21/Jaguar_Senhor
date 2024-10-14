@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -27,16 +26,14 @@ wire [63:8] d4;
 reg [31:0] d5_ = 32'h00000000;
 wire [15:0] dout_;
 wire [7:0] vd;
-wire gnd;
-wire vcc;
 
 // Output buffers
 wire [31:16] dout_obuf;
 reg [63:32] d5_obuf = 32'h00000000;
 
 // Output buffers
-assign dout = dout_obuf;
-assign d5 = d5_obuf;
+assign dout[31:16] = dout_obuf[31:16];
+assign d5[63:32] = d5_obuf[63:32];
 
 // DBUS.NET (53) - d3i[0-15] : mx4
 assign d3i[15:0] = xdsrc ? (din[15:0]) : (dren ? dr[15:0] : wd[15:0]);
@@ -50,8 +47,8 @@ assign d3[63:16] = (xdsrc) ? din[63:16] : wd[63:16];
 // DBUS.NET (59) - d4 : up
 up d4_inst
 (
-	.din /* IN */ (d3),
-	.dmuxu /* IN */ (dmuxu),
+	.din /* IN */ (d3[63:0]),
+	.dmuxu /* IN */ (dmuxu[2:0]),
 	.dout /* OUT */ (d4[63:8])
 );
 
@@ -188,7 +185,7 @@ end
 down dout_inst
 (
 	.din /* IN */ ({d5_obuf[63:32], d5_[31:0]}),
-	.dmuxd /* IN */ (dmuxd),
+	.dmuxd /* IN */ (dmuxd[2:0]),
 	.dout /* OUT */ ({dout_obuf[31:16], dout_[15:0]})
 );
 
@@ -205,16 +202,16 @@ assign d[63:32] = d5_obuf[63:32];
 assign vd[7:0] = (ourack) ? 8'h40 : dout_[7:0];
 
 // DBUS.NET (110) - dob[0-7] : nivu2
-assign dob[7:0] = vd;
+assign dob[7:0] = vd[7:0];
 
 // DBUS.NET (111) - dob[8-9] : nivu2
 // DBUS.NET (112) - dob[10-15] : nivu
 assign dob[15:8] = dout_[15:8];
 
 // DBUS.NET (113) - dp[0-7] : niv
-assign dp[7:0] = vd;
+assign dp[7:0] = vd[7:0];
 
 // DBUS.NET (114) - dp[8-15] : niv
 assign dp[15:8] = dout_[15:8];
 endmodule
-/* verilator lint_on LITENDIAN */
+

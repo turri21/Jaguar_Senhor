@@ -162,7 +162,7 @@ begin
 end
 
 // Output buffers
-assign lbrd = lbrd_obuf;
+assign lbrd[31:0] = lbrd_obuf[31:0];
 
 // LBUF.NET (58) - nota[1] : iv
 assign nota_1 = ~aout_1;
@@ -180,22 +180,22 @@ assign lbbd = lbbw;
 assign lbb = lbbd;
 
 // LBUF.NET (67) - lbwad[0-8] : hdly1b // delay needed?
-assign lbwad = lbwa;
+assign lbwad[8:0] = lbwa[8:0];
 
 // LBUF.NET (68) - lbrad[0-8] : hdly1b // delay needed?
-assign lbrad = lbra;
+assign lbrad[8:0] = lbra[8:0];
 
 // LBUF.NET (69) - lbaadi[0-8] : mx2p
-assign lbaadi = (lbaactive) ? lbrad : lbwad;
+assign lbaadi[8:0] = (lbaactive) ? lbrad[8:0] : lbwad[8:0];
 
 // LBUF.NET (70) - lbbadi[0-8] : mx2p
-assign lbbadi = (lbbactive) ? lbrad : lbwad;
+assign lbbadi[8:0] = (lbbactive) ? lbrad[8:0] : lbwad[8:0];
 
 // LBUF.NET (71) - lbaad[0-8] : niv
-assign lbaad = lbaadi;
+assign lbaad[8:0] = lbaadi[8:0];
 
 // LBUF.NET (72) - lbbad[0-8] : niv
-assign lbbad = lbbadi;
+assign lbbad[8:0] = lbbadi[8:0];
 
 // LBUF.NET (77) - dw[0-15] : mx2
 assign dw[15:0] = (down) ? dout[31:16] : dout[15:0];
@@ -213,25 +213,25 @@ assign down = aout_15 & bigend;
 assign up = aout_15 & littlend;
 
 // LBUF.NET (85) - lbrd[0-15] : mx2
-assign lbrd_obuf[15:0] = (lbufa) ? lbadl : lbbdl;
+assign lbrd_obuf[15:0] = (lbufa) ? lbadl[15:0] : lbbdl[15:0];
 
 // LBUF.NET (86) - lbrd[16-31] : mx2
-assign lbrd_obuf[31:16] = (lbufa) ? lbadh : lbbdh;
+assign lbrd_obuf[31:16] = (lbufa) ? lbadh[15:0] : lbbdh[15:0];
 
 // LBUF.NET (89) - ge1 : join
-assign lbrd_d = lbrd_obuf;
+assign lbrd_d[31:0] = lbrd_obuf[31:0];
 
 // LBUF.NET (94) - rmwd[0-15] : mx2
-assign rmwd[15:0] = (lbufb) ? lbadl : lbbdl;
+assign rmwd[15:0] = (lbufb) ? lbadl[15:0] : lbbdl[15:0];
 
 // LBUF.NET (95) - rmwd[16-31] : mx2
-assign rmwd[31:16] = (lbufb) ? lbadh : lbbdh;
+assign rmwd[31:16] = (lbufb) ? lbadh[15:0] : lbbdh[15:0];
 
 // LBUF.NET (99) - rmwd1[0-31] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		rmwd1 <= rmwd;
+		rmwd1[31:0] <= rmwd[31:0];
 	end
 end
 
@@ -284,16 +284,16 @@ sadd4 rmwd2_index_28_inst
 );
 
 // LBUF.NET (120) - wd[0-31] : mx4p
-assign wd = extadd ? dw : (rmw ? rmwd2 : lbwd);
+assign wd[31:0] = extadd ? dw[31:0] : (rmw ? rmwd2[31:0] : lbwd[31:0]);
 
 // LBUF.NET (123) - extadd : ivu
 assign extadd = ~lben;
 
 // LBUF.NET (124) - wdil : join
-assign wdil = wd[15:0];
+assign wdil[15:0] = wd[15:0];
 
 // LBUF.NET (125) - wdih : join
-assign wdih = wd[31:16];
+assign wdih[15:0] = wd[31:16];
 
 // LBUF.NET (133) - writes : ivm
 assign writes = ~reads;
@@ -357,72 +357,72 @@ assign wrbl = wrbli;
 assign wrbh = wrbhi;
 
 // LBUF.NET (156) - lbadl : ts
-assign lbadl_wdil_out = wdil;
+assign lbadl_wdil_out[15:0] = wdil[15:0];
 assign lbadl_wdil_oe = wral;
 
 // LBUF.NET (157) - lbadh : ts
-assign lbadh_wdih_out = wdih;
+assign lbadh_wdih_out[15:0] = wdih[15:0];
 assign lbadh_wdih_oe = wrah;
 
 // LBUF.NET (158) - lbbdl : ts
-assign lbbdl_wdil_out = wdil;
+assign lbbdl_wdil_out[15:0] = wdil[15:0];
 assign lbbdl_wdil_oe = wrbl;
 
 // LBUF.NET (159) - lbbdh : ts
-assign lbbdh_wdih_out = wdih;
+assign lbbdh_wdih_out[15:0] = wdih[15:0];
 assign lbbdh_wdih_oe = wrbh;
 
 // LBUF.NET (163) - lbai : join
-assign lbai = lbaad;
+assign lbai[8:0] = lbaad[8:0];
 
 // LBUF.NET (164) - lbbi : join
-assign lbbi = lbbad;
+assign lbbi[8:0] = lbbad[8:0];
 
 // LBUF.NET (167) - lbufal : ab8616a
 ab8616a lbufal_inst
 (
-	.z_out /* BUS */ (lbadl_ab616a_out),
+	.z_out /* BUS */ (lbadl_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbadl_ab616a_oe),
-	.z_in /* BUS */ (lbadl),
+	.z_in /* BUS */ (lbadl[15:0]),
 	.cen /* IN */ (cea_0),
 	.rw /* IN */ (wea_0),
-	.a /* IN */ (lbai),
+	.a /* IN */ (lbai[8:0]),
 	.sys_clk(sys_clk) // Generated
 );
 
 // LBUF.NET (168) - lbufah : ab8616a
 ab8616a lbufah_inst
 (
-	.z_out /* BUS */ (lbadh_ab616a_out),
+	.z_out /* BUS */ (lbadh_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbadh_ab616a_oe),
-	.z_in /* BUS */ (lbadh),
+	.z_in /* BUS */ (lbadh[15:0]),
 	.cen /* IN */ (cea_1),
 	.rw /* IN */ (wea_1),
-	.a /* IN */ (lbai),
+	.a /* IN */ (lbai[8:0]),
 	.sys_clk(sys_clk) // Generated
 );
 
 // LBUF.NET (169) - lbufbl : ab8616a
 ab8616a lbufbl_inst
 (
-	.z_out /* BUS */ (lbbdl_ab616a_out),
+	.z_out /* BUS */ (lbbdl_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbbdl_ab616a_oe),
-	.z_in /* BUS */ (lbbdl),
+	.z_in /* BUS */ (lbbdl[15:0]),
 	.cen /* IN */ (ceb_0),
 	.rw /* IN */ (web_0),
-	.a /* IN */ (lbbi),
+	.a /* IN */ (lbbi[8:0]),
 	.sys_clk(sys_clk) // Generated
 );
 
 // LBUF.NET (170) - lbufbh : ab8616a
 ab8616a lbufbh_inst
 (
-	.z_out /* BUS */ (lbbdh_ab616a_out),
+	.z_out /* BUS */ (lbbdh_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbbdh_ab616a_oe),
-	.z_in /* BUS */ (lbbdh),
+	.z_in /* BUS */ (lbbdh[15:0]),
 	.cen /* IN */ (ceb_1),
 	.rw /* IN */ (web_1),
-	.a /* IN */ (lbbi),
+	.a /* IN */ (lbbi[8:0]),
 	.sys_clk(sys_clk) // Generated
 );
 
@@ -533,13 +533,13 @@ assign vcc = 1'b1;
 assign notsiz_2 = ~siz_2;
 
 // LBUF.NET (220) - lbdi[0-15] : mx4
-assign lbdi = lbb ? (aout_1 ? lbbdh : lbbdl) : (aout_1 ? lbadh : lbadl);
+assign lbdi[15:0] = lbb ? (aout_1 ? lbbdh[15:0] : lbbdl[15:0]) : (aout_1 ? lbadh[15:0] : lbadl[15:0]);
 
 // LBUF.NET (225) - lbd[0-15] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		lbd <= lbdi;
+		lbd[15:0] <= lbdi[15:0];
 	end
 end
 
@@ -550,7 +550,7 @@ assign lbdeni = ~(wra0 & wrb0);
 assign lbden = lbdeni;
 
 // LBUF.NET (229) - dr[0-15] : ts
-assign dr_out = lbd;
+assign dr_out[15:0] = lbd[15:0];
 assign dr_oe = lbden;
 
 // LBUF.NET (233) - bgc[0-15] : ldp1q
@@ -562,24 +562,24 @@ always @(negedge sys_clk) // /!\
 `endif
 begin
 	if (bgwr) begin
-		bgc <= dw[15:0]; // ldp1q negedge always @(d or g)
+		bgc[15:0] <= dw[15:0]; // ldp1q negedge always @(d or g)
 	end
 end
 
 // LBUF.NET (238) - bwadl : ts
-assign lbadl_bgc_out = bgc;
+assign lbadl_bgc_out[15:0] = bgc[15:0];
 assign lbadl_bgc_oe = bgwa;
 
 // LBUF.NET (239) - bwadh : ts
-assign lbadh_bgc_out = bgc;
+assign lbadh_bgc_out[15:0] = bgc[15:0];
 assign lbadh_bgc_oe = bgwa;
 
 // LBUF.NET (240) - bwbdl : ts
-assign lbbdl_bgc_out = bgc;
+assign lbbdl_bgc_out[15:0] = bgc[15:0];
 assign lbbdl_bgc_oe = bgwb;
 
 // LBUF.NET (241) - bwbdh : ts
-assign lbbdh_bgc_out = bgc;
+assign lbbdh_bgc_out[15:0] = bgc[15:0];
 assign lbbdh_bgc_oe = bgwb;
 
 // LBUF.NET (243) - bgwa : an2u
@@ -589,15 +589,15 @@ assign bgwa = bgw & aactive;
 assign bgwb = bgw & bactive;
 
 // --- Compiler-generated local PE for BUS lbadl<0>
-assign lbadl = ((lbadl_wdil_oe) ? lbadl_wdil_out : 16'h0000 ) | ((lbadl_ab616a_oe) ? lbadl_ab616a_out : 16'h0000 ) | ((lbadl_bgc_oe) ? lbadl_bgc_out : 16'h0000);
+assign lbadl[15:0] = ((lbadl_wdil_oe) ? lbadl_wdil_out[15:0] : 16'h0000 ) | ((lbadl_ab616a_oe) ? lbadl_ab616a_out[15:0] : 16'h0000 ) | ((lbadl_bgc_oe) ? lbadl_bgc_out[15:0] : 16'h0000);
 
 // --- Compiler-generated local PE for BUS lbadh<0>
-assign lbadh = ((lbadh_wdih_oe) ? lbadh_wdih_out : 16'h0000 ) | ((lbadh_ab616a_oe) ? lbadh_ab616a_out : 16'h0000 ) | ((lbadh_bgc_oe) ? lbadh_bgc_out : 16'h0000);
+assign lbadh[15:0] = ((lbadh_wdih_oe) ? lbadh_wdih_out[15:0] : 16'h0000 ) | ((lbadh_ab616a_oe) ? lbadh_ab616a_out[15:0] : 16'h0000 ) | ((lbadh_bgc_oe) ? lbadh_bgc_out[15:0] : 16'h0000);
 
 // --- Compiler-generated local PE for BUS lbbdl<0>
-assign lbbdl = ((lbbdl_wdil_oe) ? lbbdl_wdil_out : 16'h0000 ) | ((lbbdl_ab616a_oe) ? lbbdl_ab616a_out : 16'h0000 ) | ((lbbdl_bgc_oe) ? lbbdl_bgc_out : 16'h0000);
+assign lbbdl[15:0] = ((lbbdl_wdil_oe) ? lbbdl_wdil_out[15:0] : 16'h0000 ) | ((lbbdl_ab616a_oe) ? lbbdl_ab616a_out[15:0] : 16'h0000 ) | ((lbbdl_bgc_oe) ? lbbdl_bgc_out[15:0] : 16'h0000);
 
 // --- Compiler-generated local PE for BUS lbbdh<0>
-assign lbbdh = ((lbbdh_wdih_oe) ? lbbdh_wdih_out : 16'h0000 ) | ((lbbdh_ab616a_oe) ? lbbdh_ab616a_out : 16'h0000 ) | ((lbbdh_bgc_oe) ? lbbdh_bgc_out : 16'h0000);
+assign lbbdh[15:0] = ((lbbdh_wdih_oe) ? lbbdh_wdih_out[15:0] : 16'h0000 ) | ((lbbdh_ab616a_oe) ? lbbdh_ab616a_out[15:0] : 16'h0000 ) | ((lbbdh_bgc_oe) ? lbbdh_bgc_out[15:0] : 16'h0000);
 
 endmodule

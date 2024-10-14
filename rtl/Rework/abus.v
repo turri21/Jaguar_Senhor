@@ -69,8 +69,6 @@ module abus
 	input sys_clk // Generated
 );
 wire [2:0] m1d;
-wire m1d_1;
-wire m1d_2;
 wire m1d_13;
 wire m1d_14;
 wire m2d_12;
@@ -230,22 +228,22 @@ end
 
 // Output buffers
 assign aout[23:16] = aout_obuf[23:16];
-assign ma = ma_obuf;
+assign ma[10:0] = ma_obuf[10:0];
 assign fintdev = fintdev_obuf;
 assign fdram = fdram_obuf;
 assign dram = dram_obuf;
-assign dspd = dspd_obuf;
-assign romspd = romspd_obuf;
-assign iospd = iospd_obuf;
-assign bs = bs_obuf;
+assign dspd[1:0] = dspd_obuf[1:0];
+assign romspd[1:0] = romspd_obuf[1:0];
+assign iospd[1:0] = iospd_obuf[1:0];
+assign bs[3:0] = bs_obuf[3:0];
 assign cpu32 = cpu32_obuf;
 
-// assign refrate = refrate_obuf;
+// assign refrate[3:0] = refrate_obuf[3:0];
 
 // Inhibit the old DRAM refresh pulses.
 // Will help a bit with debugging via SignalTap, and might also help certain games to run a bit faster. ElectronAsh.
 //
-assign refrate = 4'b0000;
+assign refrate[3:0] = 4'b0000;
 
 assign nocpu = nocpu_obuf;
 assign hilo = hilo_obuf;
@@ -256,17 +254,17 @@ assign clut = clut_obuf;
 assign clutt = clutt_obuf;
 assign fastrom = fastrom_obuf;
 assign m68k = m68k_obuf;
-assign atout = at_obuf;
+assign atout[10:3] = at_obuf[10:3];
 assign at[2:0] = atin[2:0];
 assign at[10:3] = atout[10:3];
 //at[23:11] done below
 assign ab[14:13] = 2'b00; //unused
 
 // ABUS.NET (76) - ma : join
-assign ma = ma_obuf;
+assign ma[10:0] = ma_obuf[10:0];
 
 // ABUS.NET (83) - m1d[0-2] : mx2
-assign m1d = (cfgen) ? din[2:0] : cfg[2:0];
+assign m1d[2:0] = (cfgen) ? din[2:0] : cfg[2:0];
 
 // ABUS.NET (84) - m1d[13] : mx2
 assign m1d_13 = (cfgen) ? din[13] : cfg[4];
@@ -297,11 +295,11 @@ always @(negedge sys_clk) // /!\
 begin
 	if (m1ld) begin
 		{romwid[1:0], romhii} <= m1d[2:0]; // ldp1q negedge always @(d or g)
-		dspd_obuf[1:0] <= din[6:5]; // ldp1q negedge always @(d or g)
 		nocpu_obuf <= m1d_13; // ldp1q negedge always @(d or g)
 		cpu32_obuf <= m1d_14; // ldp1q negedge always @(d or g)
 	end
 	if (memc1w) begin
+		dspd_obuf[1:0] <= din[6:5]; // ldp1q negedge always @(d or g)
 		iospd_obuf[1:0] <= din[12:11]; // ldp1q negedge always @(d or g)
 	end
 end
@@ -321,10 +319,10 @@ always @(negedge sys_clk) // /!\
 `endif
 begin
 	if (~resetl) begin
-		romspd_obuf <= 2'h0; // ldp2q negedge // always @(d or g or cd)
+		romspd_obuf[1:0] <= 2'h0; // ldp2q negedge // always @(d or g or cd)
 		fastrom_obuf <= 1'b0; // ldp2q negedge // always @(d or g or cd)
 	end else if (memc1w) begin
-		romspd_obuf <= din[4:3]; // ldp2q negedge // always @(d or g or cd)
+		romspd_obuf[1:0] <= din[4:3]; // ldp2q negedge // always @(d or g or cd)
 		fastrom_obuf <= din[7]; // ldp2q negedge // always @(d or g or cd)
 	end
 end
@@ -363,7 +361,6 @@ begin
 		dwid0[1:0] <= din[3:2]; // ldp1q negedge always @(d or g)
 		cols1[1:0] <= din[5:4]; // ldp1q negedge always @(d or g)
 		dwid1[1:0] <= din[7:6]; // ldp1q negedge always @(d or g)
-		dwid1[1:0] <= din[7:6]; // ldp1q negedge always @(d or g)
 		hiloi <= din[13]; // ldp1q negedge always @(d or g)
 	end
 	if (m2ld) begin
@@ -376,7 +373,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (memc2w) begin
-			refrate_obuf <= din[11:8];
+			refrate_obuf[3:0] <= din[11:8];
 		end
 	end
 end
@@ -766,29 +763,29 @@ assign dwidi[1:0] = (abt_2) ? dwid1[1:0] : dwid0[1:0];
 assign dwid[1:0] = dwidi[1:0];
 
 // ABUS.NET (378) - ald[0-10] : mx4
-assign ald[10:0] = dwid[1] ? (dwid[0] ? at[13:3] : at[12:2]) : (dwid[0] ? at[11:11] : at[10:0]);
+assign ald[10:0] = dwid[1] ? (dwid[0] ? at[13:3] : at[12:2]) : (dwid[0] ? at[11:1] : at[10:0]);
 
 // ABUS.NET (383) - cw0i[0] : ha1
 // ABUS.NET (384) - cw0i[1] : fa1
-assign cw0i = {1'b0,dwid0} + cols0;
+assign cw0i[2:0] = {1'b0,dwid0[1:0]} + cols0[1:0];
 
 // ABUS.NET (385) - cw0[0-2] : nivm
-assign cw0 = cw0i;
+assign cw0[2:0] = cw0i[2:0];
 
 // ABUS.NET (387) - cw1i[0] : ha1
 // ABUS.NET (388) - cw1i[1] : fa1
-assign cw1i = {1'b0,dwid1} + cols1;
+assign cw1i[2:0] = {1'b0,dwid1[1:0]} + cols1[1:0];
 
 // ABUS.NET (389) - cw1[0-2] : nivm
-assign cw1 = cw1i;
+assign cw1[2:0] = cw1i[2:0];
 
 // ABUS.NET (393) - ahd0[0-9] : mx8
 // ABUS.NET (395) - ahd0[10] : mx8
 reg [10:0] ahd0m;
-assign ahd0[10:0] = ahd0m;
+assign ahd0[10:0] = ahd0m[10:0];
 always @(*)
 begin
-	case(cw0) // is this fast enough? could use ternaries
+	case(cw0[2:0]) // is this fast enough? could use ternaries
 		3'b000		: ahd0m[10:0] = at[18:8];
 		3'b001		: ahd0m[10:0] = at[19:9];
 		3'b010		: ahd0m[10:0] = at[20:10];
@@ -803,10 +800,10 @@ end
 // ABUS.NET (397) - ahd1[0-9] : mx8
 // ABUS.NET (399) - ahd1[10] : mx8
 reg [10:0] ahd1m;
-assign ahd1[10:0] = ahd1m;
+assign ahd1[10:0] = ahd1m[10:0];
 always @(*)
 begin
-	case(cw1) // is this fast enough? could use ternaries
+	case(cw1[2:0]) // is this fast enough? could use ternaries
 		3'b000		: ahd1m[10:0] = at[18:8];
 		3'b001		: ahd1m[10:0] = at[19:9];
 		3'b010		: ahd1m[10:0] = at[20:10];
@@ -819,16 +816,16 @@ begin
 end
 
 // ABUS.NET (403) - ahd[0-10] : mx2
-assign ahd = (abt_2) ? ahd1 : ahd0;
+assign ahd[10:0] = (abt_2) ? ahd1[10:0] : ahd0[10:0];
 
 // ABUS.NET (404) - mad[0-10] : mx2
-assign mad = (mux) ? ahd : ald;
+assign mad[10:0] = (mux) ? ahd[10:0] : ald[10:0];
 
 // ABUS.NET (405) - ma[0-10] : fd1q
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		ma_obuf <= mad;
+		ma_obuf[10:0] <= mad[10:0];
 	end
 end
 
@@ -845,24 +842,39 @@ assign reset = ~resetl;
 assign bankresl = ~(reset | resrow);
 
 // ABUS.NET (416) - bank[0] : bank
-bank bank_index_0_inst
-(
-	.match /* OUT */ (match_[0]),
-	.a /* IN */ (ahd0),
-	.newrow /* IN */ (newrow_[0]),
-	.resl /* IN */ (bankresl),
-	.sys_clk(sys_clk) // Generated
-);
-
 // ABUS.NET (417) - bank[1] : bank
-bank bank_index_1_inst
-(
-	.match /* OUT */ (match_[1]),
-	.a /* IN */ (ahd1),
-	.newrow /* IN */ (newrow_[1]),
-	.resl /* IN */ (bankresl),
-	.sys_clk(sys_clk) // Generated
-);
+reg [10:0] bank0 = 11'h000;
+reg valid0 = 1'b1;
+reg [10:0] bank1 = 11'h000;
+reg valid1 = 1'b1;
+
+// ABUS.NET (483) - ra[0-10] : ldp1q
+// always @(d or g)
+// ABUS.NET (488) - valid : lsra
+// always @(rn or sn)
+`ifdef FAST_CLOCK
+always @(posedge sys_clk)
+`else
+always @(negedge sys_clk) // /!\
+`endif
+begin
+	if (newrow_[0]) begin
+		bank0[10:0] <= ahd0[10:0];
+		valid0 <= 1'b1;
+	end else if (~bankresl) begin
+		valid0 <= 1'b0;
+	end
+	if (newrow_[1]) begin
+		bank1[10:0] <= ahd1[10:0];
+		valid1 <= 1'b1;
+	end else if (~bankresl) begin
+		valid1 <= 1'b0;
+	end
+end
+
+// ABUS.NET (492) - m[0-10] : en
+assign match_[0] = (bank0[10:0] == ahd0[10:0]) & valid0;
+assign match_[1] = (bank1[10:0] == ahd1[10:0]) & valid1;
 
 // ABUS.NET (419) - m[0] : nd2
 assign m[0] = ~(match_[0] & abs[3]);
@@ -933,7 +945,7 @@ assign lbb1 = ~(fintdev_obuf & (ab[14:11]==4'b0011) & lbufa & notourack);
 assign lbbd = ~(lbb0 & lbb1);
 
 // ABUS.NET (454) - clutd : an8
-assign clutd = fintdev_obuf & (ab[15:10]==6'b00001) & notourack;
+assign clutd = fintdev_obuf & (ab[15:10]==6'b000001) & notourack;
 
 // ABUS.NET (455) - lb0 : nd6
 assign lb0 = ~(fintdev_obuf & (ab[14:13]==2'b00) & (ab[11]==1'b1) & notourack);
@@ -980,7 +992,7 @@ assign clutt_obuf = (ack) ? clutd : clut_obuf;
 // ABUS.NET (469) - cluti : fd2qp
 
 // --- Compiler-generated PE for BUS dr[0]
-assign dr_out = (dr_a0_oe ? dr_a0_out : 16'h0000) | (dr_a1_oe ? dr_a1_out : 16'h0000);
+assign dr_out[15:0] = (dr_a0_oe ? dr_a0_out[15:0] : 16'h0000) | (dr_a1_oe ? dr_a1_out[15:0] : 16'h0000);
 assign dr_oe = dr_a0_oe | dr_a1_oe;
 endmodule
-/* verilator lint_on LITENDIAN */
+

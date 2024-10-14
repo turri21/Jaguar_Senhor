@@ -323,18 +323,18 @@ wire [7:0] loader_be = (loader_en && loader_addr[2:0]==0) ? 8'b11000000 :
 							  (loader_en && loader_addr[2:0]==6) ? 8'b00000011 :
 																				8'b11111111;
 
-reg [1:0] status_reg = 0;
+//reg [1:0] status_reg = 0;
 reg       old_download;
-integer   timeout = 0;
+//integer   timeout = 0;
 
 wire rom_index = ioctl_index[5:0] == 1;
 
 always @(posedge clk_sys)
 if (reset) begin
 	ioctl_wait <= 0;
-	status_reg <= 0;
+//	status_reg <= 0;
 	old_download <= 0;
-	timeout <= 0;
+//	timeout <= 0;
 	loader_wr <= 0;
 	loader_en <= 0;
 	loader_addr <= 32'h0080_0000;
@@ -348,9 +348,9 @@ else begin
 		loader_addr <= 32'h0080_0000;   // Force the cart ROM to load at 0x00800000 in DDR for Jag core. (byte address!)
 		                                // (The ROM actually gets written at 0x30800000 in DDR, which is done when load_addr gets assigned to DDRAM_ADDR below).
 		loader_en <= 1;
-		status_reg <= 0;
+//		status_reg <= 0;
 		ioctl_wait <= 0;
-		timeout <= 3000000;
+//		timeout <= 3000000;
 	end
 
 	if (loader_wr) loader_addr <= loader_addr + 2'd2; // Writing a 16-bit WORD at a time!

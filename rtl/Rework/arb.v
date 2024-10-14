@@ -235,7 +235,7 @@ begin
 			ack_[9:0] <= 10'h001;
 		end else begin
 			if (arben) begin
-				ack_[9:1] <= pr[9:1];
+				ack_[9:0] <= pr[9:0];
 			end
 		end
 	end
@@ -333,4 +333,4 @@ end
 // ARB.NET (160) - dbgl : iv
 assign dbgl = ~dbg;
 endmodule
-/* verilator lint_on LITENDIAN */
+
