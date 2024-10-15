@@ -107,10 +107,10 @@ assign gensrc[7] = srcb7;
 assign gensrc[31:8] = {24{topsrc}};
 
 // INS_EXEC.NET (722) - masklo : d416g2l
-assign maskt_n[15:0] = ~(srcop[4] ? (16'h0001 << srcop[3:0]) : 16'h0);
+assign maskt_n[15:0] = ~(~srcop[4] ? (16'h0001 << srcop[3:0]) : 16'h0);
 
 // INS_EXEC.NET (724) - maskhi : d416g2l
-assign maskt_n[31:16] = ~(~srcop[4] ? (16'h0001 << srcop[3:0]) : 16'h0);
+assign maskt_n[31:16] = ~(srcop[4] ? (16'h0001 << srcop[3:0]) : 16'h0);
 
 // INS_EXEC.NET (726) - type9 : an4u
 assign type9 = (srcdat[3:0]==4'h9);

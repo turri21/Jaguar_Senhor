@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module execon
@@ -44,13 +43,13 @@ wire exeb_0;
 wire execi;
 wire compdwaiti_n;
 reg idle = 1'b1;
-wire [0:3] idlet;
-wire [0:4] exect;
-wire [0:2] imm1t;
-wire [0:1] imm2t;
+wire [3:0] idlet;
+wire [4:0] exect;
+wire [2:0] imm1t;
+wire [1:0] imm2t;
 wire imm2i;
-wire [0:3] stopt;
-wire [0:6] romot;
+wire [3:0] stopt;
+wire [6:0] romot;
 wire romot2t;
 wire romoldt;
 wire compdldt_n;
@@ -158,7 +157,7 @@ assign idlet[1] = ~(exec & ~go);
 assign idlet[2] = ~(stop_obuf & ~go);
 
 // EXECON.NET (105) - idlet3 : nd3
-assign idlet[3] = ~(&idlet[0:2]);
+assign idlet[3] = ~(&idlet[2:0]);
 
 // EXECON.NET (108) - exect0 : nd2
 assign exect[0] = ~(idle & go);
@@ -176,7 +175,7 @@ assign exect[3] = ~(imm2 & insrdyp & ~single_step);
 assign exect[4] = ~(stop_obuf & single_go & go);
 
 // EXECON.NET (114) - exect5 : nd5
-assign execi = ~(&exect[0:4]);
+assign execi = ~(&exect[4:0]);
 
 // EXECON.NET (115) - exect : fd2q
 // EXECON.NET (121) - imm1 : fd2q
@@ -206,7 +205,7 @@ assign imm1t[0] = ~(exec & go & exe_obuf & immld);
 assign imm1t[1] = ~(imm1 & ~insrdyp);
 
 // EXECON.NET (120) - imm1t2 : nd2
-assign imm1t[2] = ~(&imm1t[0:1]);
+assign imm1t[2] = ~(&imm1t[1:0]);
 
 // EXECON.NET (123) - imm2t0 : nd2
 assign imm2t[0] = ~(imm1 & insrdyp);
@@ -227,7 +226,7 @@ assign stopt[1] = ~(imm2 & insrdyp & single_step);
 assign stopt[2] = ~(stop_obuf & ~single_go & go);
 
 // EXECON.NET (132) - stopt3 : nd3
-assign stopt[3] = ~(&stopt[0:2]);
+assign stopt[3] = ~(&stopt[2:0]);
 
 // EXECON.NET (150) - romot0 : nd2p
 assign romot[0] = ~(imm1 & insrdy);
@@ -254,10 +253,10 @@ assign romot[5] = ~(exec & exe_n & wait_n & insrdy);
 assign romot[6] = ~(stop_obuf & single_go & insrdy);
 
 // EXECON.NET (160) - romoldt : an4p
-assign romoldt = &romot[3:6];
+assign romoldt = &romot[6:3];
 
 // EXECON.NET (161) - romold : nd4p
-assign romold_obuf = ~(&romot[0:2] & romoldt);
+assign romold_obuf = ~(&romot[2:0] & romoldt);
 
 // EXECON.NET (171) - loimmld : an2h
 assign loimmld = insrdyp & imm1;
@@ -288,4 +287,4 @@ assign compdwaiti_n = compdldt_n;
 // EXECON.NET (194) - immwri : an2
 assign immwri = insrdy & imm2i;
 endmodule
-/* verilator lint_on LITENDIAN */
+

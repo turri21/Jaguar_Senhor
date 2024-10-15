@@ -21,7 +21,7 @@ wire [31:0] opt1;
 // ARITH.NET (623) - b[0-15] : mx2
 // ARITH.NET (624) - b[16-31] : mx2
 wire [63:0] t;
-assign t = {32'h0,a[31:0]} << sft[4:0];
+assign t[63:0] = {32'h0,a[31:0]} << sft[4:0];
 assign f[31:0] = t[31:0] | t[63:32];
 
 // ARITH.NET (640) - dcd0 : d416gh

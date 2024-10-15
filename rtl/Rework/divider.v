@@ -185,7 +185,7 @@ end
 assign quosh_1 = ~addq1_32;
 
 // DIVIDE.NET (231) - quoti[0] : mxi2
-assign quoti_0 = div_active ? addq2_32 : ~quotient_[0];
+assign quoti_0 = div_active ? ~addq2_32 : quotient_[0];
 
 // DIVIDE.NET (233) - quotient[0] : fd1
 always @(posedge sys_clk)

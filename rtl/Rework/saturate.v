@@ -71,4 +71,4 @@ assign op[7:0] = sign_n ? opt[7:0] : 8'h00;
 // ARITH.NET (588) - q : join
 assign q[23:0] = op[23:0];
 endmodule
-/* verilator lint_on LITENDIAN */
+

@@ -471,7 +471,7 @@ begin
 			big_iot <= big_ioi;
 			big_pixt <= big_pixi;
 			if (bigwr) begin
-				big_instr_ <= big_pixi;
+				big_instr_ <= gpu_din[2];
 			end
 		end
 	end

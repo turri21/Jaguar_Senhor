@@ -298,6 +298,7 @@ prefetch prefetch_inst
 	.dbgrd /* IN */ (dbgrd),
 	.go /* IN */ (go),
 	.gpu_data /* IN */ (gpu_data_in[31:0]),
+	.gpu_din /* IN */ (gpu_din[31:0]),
 	.progack /* IN */ (progack),
 	.jumprel /* IN */ (jumprel),
 	.jumpabs /* IN */ (jumpabs),
@@ -977,7 +978,7 @@ assign jump_ena = &cond[3:0];
 
 // INS_EXEC.NET (566) - mtx_addr : join
 assign mtx_addr[1:0] = 2'b00;
-//assign mtx_addr[2:11] = mtxaddr[2:11];
+//assign mtx_addr[11:2] = mtxaddr[11:2];
 assign mtx_addr[31:12] = (JERRY==0) ? 20'h00F03 : 20'h00F1B;
 
 // INS_EXEC.NET (571) - dataseli[0] : or2

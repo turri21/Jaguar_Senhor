@@ -456,7 +456,7 @@ assign msizet[0] = msized[0] & progown_n;
 assign msizet[1] = msized[1] | progown;
 
 // GATEWAY.NET (206) - widt : d24h
-assign widt[3:0] = 4'b0001 << msize[1:0];
+assign widt[3:0] = 4'b0001 << msizet[1:0];
 
 // GATEWAY.NET (207) - width[0-3] : ts
 assign width_out[3:0] = widt[3:0];
@@ -552,7 +552,7 @@ assign ddatldb = ddatld;
 assign hidwrb = hidwr;
 
 // GATEWAY.NET (248) - hidin : mx4
-assign hidin = ddatldb ? (hidatai[31:0]) : (hidwrb ? gpu_din[31:0] : hirdata[31:0]);
+assign hidin[31:0] = ddatldb ? (hidatai[31:0]) : (hidwrb ? gpu_din[31:0] : hirdata[31:0]);
 
 // GATEWAY.NET (250) - hirdata : fd1q
 // GATEWAY.NET (257) - wden : fd1q

@@ -217,7 +217,7 @@ assign imask_n = ~imask;
 
 // INTER-UA.NET (116) - flagrd[3] : ts
 assign gpu_dout_out[3] = imask;
-//assign gpu_dout_3_13_oe = flagrd;
+//assign gpu_dout_13_3_oe = flagrd;
 
 // INTER-UA.NET (122) - cnten : an2
 assign cnten = romold & intser_obuf;
@@ -260,12 +260,12 @@ assign ins[0] = 16'h1C9F;
 assign ins[1] = 16'hCC1E;
 assign ins[2] = 16'hBFFE;
 assign ins[3] = 16'h981E;
-assign ins[4] = {(JERRY==0 ? 8'hB0: 8'h30),1'b0,_int[2:0],4'h0};//16'h3000-70
-assign ins[5] = (JERRY==0 ? 16'h00F1 : 16'h00F0);
+assign ins[4] = {(JERRY!=0 ? 8'hB0: 8'h30),1'b0,_int[2:0],4'h0};//16'h3000-70
+assign ins[5] = (JERRY!=0 ? 16'h00F1 : 16'h00F0);
 assign ins[6] = 16'hD3C0;
 assign ins[7] = 16'hE400;
 
-assign intins[15:0] = ins[icount];
 // INTER-UA.NET (153) - inssel : mx8p
+assign intins[15:0] = ins[icount];
 
 endmodule

@@ -154,7 +154,7 @@ wire hidrd;
 wire hidwr;
 wire progserv;
 wire [11:2] ram_addr;
-wire ramen;
+wire [1:0] ramen; // ramen[1] is jerry only
 wire gatereq;
 wire ioreq;
 wire bus_hog;
@@ -497,7 +497,7 @@ gpu_mem gpu_mem_inst
 	.progack /* OUT */ (progack),
 	.progserv /* OUT */ (progserv),
 	.ram_addr /* OUT */ (ram_addr[11:2]),
-	.ramen /* OUT */ (ramen),
+	.ramen /* OUT */ (ramen[1:0]),
 	.remrd /* OUT */ (remrd),
 	.statrd /* OUT */ (statrd),
 	.clk /* IN */ (clk),
@@ -552,7 +552,7 @@ gpu_ram gpu_ram_inst
 	.clk /* IN */ (clk),
 	.gpu_memw /* IN */ (gpu_memw),
 	.ram_addr /* IN */ (ram_addr[11:2]),
-	.ramen /* IN */ (ramen),
+	.ramen /* IN */ (ramen[0]),
 	.sys_clk(sys_clk) // Generated
 );
 
