@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module srcshift
@@ -93,4 +92,4 @@ assign srcd_0[31:8] = oneb[95:72];
 // SRCSHIFT.NET (111) - srcd[1] : join
 assign srcd_1[31:0] = oneb[127:96];
 endmodule
-/* verilator lint_on LITENDIAN */
+

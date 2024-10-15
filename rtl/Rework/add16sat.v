@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module add16sat
@@ -75,4 +74,4 @@ assign r[7:0] = (saturateb) ? {8{ctopb}} : q[7:0];
 assign r[15:8] = (hisaturate) ? {8{ctopb}} : q[15:8];
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

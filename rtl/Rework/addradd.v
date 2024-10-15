@@ -69,7 +69,7 @@ assign maskbit[4:0] = masksel[4:0] | maskbit[5:1];
 
 // ADDRADD.NET (83) - mask[0-5] : mx2
 // ADDRADD.NET (86) - addq_x : join
-assign addq_x[5:0] = maskbit[5:0] & addqt_x[5:0];
+assign addq_x[5:0] = ~maskbit[5:0] & addqt_x[5:0];
 assign addq_x[15:6] = addqt_x[15:6];
 
 endmodule

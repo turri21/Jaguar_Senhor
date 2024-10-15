@@ -4,7 +4,7 @@
 module inner_cnt
 (
 	output [31:16] gpu_dout_out,
-//	output gpu_dout_oe, = statrd; already handled above
+	output gpu_dout_31_16_oe, //= statrd; already handled above
 	output [2:0] icount,
 	output inner0,
 	input clk,
@@ -128,21 +128,12 @@ assign inc_n[2] = ~(phrase_mode & inc2t[2]);
 assign inc_n[3] = ~(phrase_mode & pixel8 & ~inct[0] & ~inct[1] & ~inct[2]);
 
 // INNER.NET (637) - count0t4 : add4
-assign {carry[3],count[3:0]} = icount_[3:0] + inc_n[3:0] + 1'b1;
 // INNER.NET (639) - count[4-9] : hs1
-assign {carry[9],count[9:4]} = icount_[9:4] + carry[3];
-
 // INNER.NET (641) - count[10] : en
-assign count[10] = ~(carry[9] ^ icount_[10]);
-
 // INNER.NET (642) - cla10 : or8
-assign cla10 = carry[3] | |icount_[10:4];
-
 // INNER.NET (643) - count[11] : hs1
-assign {carry[14],count[14:11]} = icount_[14:11] + cla10;
-
 // INNER.NET (646) - count[15] : en
-assign count[15] = ~(carry[14] ^ icount_[15]);
+assign count[15:0] = icount_[15:0] - (~inc_n[3:0]);
 
 // INNER.NET (651) - cntlden : fd1q
 always @(posedge sys_clk)
@@ -188,4 +179,5 @@ assign inner0 = inner0t | underflow;
 
 // INNER.NET (677) - stat[16-31] : ts
 assign gpu_dout_out[31:16] = icount_[15:0];
+assign gpu_dout_31_16_oe = statrd;
 endmodule

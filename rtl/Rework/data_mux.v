@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module data_mux
@@ -53,7 +52,7 @@ wire [63:0] dat;
 assign phrase_mode_n = ~phrase_mode;
 
 // DATAMUX.NET (202) - edis : or6
-assign edis_n = |dend;
+assign edis_n = |dend[5:0];
 
 // DATAMUX.NET (203) - ecoarse : decl38e
 assign e_coarse_n = edis_n ? ~(8'h01 << dend[5:3]) : 8'hFF;
@@ -69,7 +68,7 @@ assign s_coarse[7:0] = 8'h01 << dstart[5:3];
 assign sfen_n = ~s_coarse[0];
 
 // DATAMUX.NET (210) - sfine : dech38el
-assign s_fine[7:0] = sfen_n ? ~(8'h01 << dstart[2:0]) : 8'hFF;
+assign s_fine[7:0] = ~sfen_n ? (8'h01 << dstart[2:0]) : 8'h00;
 
 // DATAMUX.NET (212) - maskt[0] : niv
 assign maskt[0] = s_fine[0];
@@ -170,4 +169,4 @@ assign wdata_out[63:0] = dat[63:0];
 assign wdata_oe = data_ena;
 
 endmodule
-/* verilator lint_on LITENDIAN */
+

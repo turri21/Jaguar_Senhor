@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module data
@@ -420,12 +419,12 @@ end
 // DATA.NET (225) - lfu : lfu
 assign lfu_0[31:0] = ({32{lfu_func[3]}} & srcdlo[31:0] & dstd_0[31:0])
                    | ({32{lfu_func[2]}} & srcdlo[31:0] & ~dstd_0[31:0])
-						 | ({32{lfu_func[1]}} & ~srcdlo[31:0] & dstd_0[31:0])
-						 | ({32{lfu_func[0]}} & ~srcdlo[31:0] & ~dstd_0[31:0]);
+                   | ({32{lfu_func[1]}} & ~srcdlo[31:0] & dstd_0[31:0])
+                   | ({32{lfu_func[0]}} & ~srcdlo[31:0] & ~dstd_0[31:0]);
 assign lfu_1[31:0] = ({32{lfu_func[3]}} & srcdhi[31:0] & dstd_1[31:0])
                    | ({32{lfu_func[2]}} & srcdhi[31:0] & ~dstd_1[31:0])
-						 | ({32{lfu_func[1]}} & ~srcdhi[31:0] & dstd_1[31:0])
-						 | ({32{lfu_func[0]}} & ~srcdhi[31:0] & ~dstd_1[31:0]);
+                   | ({32{lfu_func[1]}} & ~srcdhi[31:0] & dstd_1[31:0])
+                   | ({32{lfu_func[0]}} & ~srcdhi[31:0] & ~dstd_1[31:0]);
 
 // DATA.NET (230) - zincldg : an2u
 assign zincldg = zincld & load_strobe;
@@ -526,41 +525,41 @@ daddamux addamux_inst
 // DATA.NET (279) - addbmux : daddbmux
 daddbmux addbmux_inst
 (
-	.addb_0 /* OUT */ ({addb_0[0],addb_0[1],addb_0[2],addb_0[3],addb_0[4],addb_0[5],addb_0[6],addb_0[7],addb_0[8],addb_0[9],addb_0[10],addb_0[11],addb_0[12],addb_0[13],addb_0[14],addb_0[15]}),
-	.addb_1 /* OUT */ ({addb_1[0],addb_1[1],addb_1[2],addb_1[3],addb_1[4],addb_1[5],addb_1[6],addb_1[7],addb_1[8],addb_1[9],addb_1[10],addb_1[11],addb_1[12],addb_1[13],addb_1[14],addb_1[15]}),
-	.addb_2 /* OUT */ ({addb_2[0],addb_2[1],addb_2[2],addb_2[3],addb_2[4],addb_2[5],addb_2[6],addb_2[7],addb_2[8],addb_2[9],addb_2[10],addb_2[11],addb_2[12],addb_2[13],addb_2[14],addb_2[15]}),
-	.addb_3 /* OUT */ ({addb_3[0],addb_3[1],addb_3[2],addb_3[3],addb_3[4],addb_3[5],addb_3[6],addb_3[7],addb_3[8],addb_3[9],addb_3[10],addb_3[11],addb_3[12],addb_3[13],addb_3[14],addb_3[15]}),
-	.srcdlo /* IN */ ({srcdlo[0],srcdlo[1],srcdlo[2],srcdlo[3],srcdlo[4],srcdlo[5],srcdlo[6],srcdlo[7],srcdlo[8],srcdlo[9],srcdlo[10],srcdlo[11],srcdlo[12],srcdlo[13],srcdlo[14],srcdlo[15],srcdlo[16],srcdlo[17],srcdlo[18],srcdlo[19],srcdlo[20],srcdlo[21],srcdlo[22],srcdlo[23],srcdlo[24],srcdlo[25],srcdlo[26],srcdlo[27],srcdlo[28],srcdlo[29],srcdlo[30],srcdlo[31]}),
-	.srcdhi /* IN */ ({srcdhi[0],srcdhi[1],srcdhi[2],srcdhi[3],srcdhi[4],srcdhi[5],srcdhi[6],srcdhi[7],srcdhi[8],srcdhi[9],srcdhi[10],srcdhi[11],srcdhi[12],srcdhi[13],srcdhi[14],srcdhi[15],srcdhi[16],srcdhi[17],srcdhi[18],srcdhi[19],srcdhi[20],srcdhi[21],srcdhi[22],srcdhi[23],srcdhi[24],srcdhi[25],srcdhi[26],srcdhi[27],srcdhi[28],srcdhi[29],srcdhi[30],srcdhi[31]}),
-	.iinc /* IN */ ({iinc[0],iinc[1],iinc[2],iinc[3],iinc[4],iinc[5],iinc[6],iinc[7],iinc[8],iinc[9],iinc[10],iinc[11],iinc[12],iinc[13],iinc[14],iinc[15],iinc[16],iinc[17],iinc[18],iinc[19],iinc[20],iinc[21],iinc[22],iinc[23],iinc[24],iinc[25],iinc[26],iinc[27],iinc[28],iinc[29],iinc[30],iinc[31]}),
-	.zinc /* IN */ ({zinc[0],zinc[1],zinc[2],zinc[3],zinc[4],zinc[5],zinc[6],zinc[7],zinc[8],zinc[9],zinc[10],zinc[11],zinc[12],zinc[13],zinc[14],zinc[15],zinc[16],zinc[17],zinc[18],zinc[19],zinc[20],zinc[21],zinc[22],zinc[23],zinc[24],zinc[25],zinc[26],zinc[27],zinc[28],zinc[29],zinc[30],zinc[31]}),
+	.addb_0 /* OUT */ (addb_0[15:0]),
+	.addb_1 /* OUT */ (addb_1[15:0]),
+	.addb_2 /* OUT */ (addb_2[15:0]),
+	.addb_3 /* OUT */ (addb_3[15:0]),
+	.srcdlo /* IN */ (srcdlo[31:0]),
+	.srcdhi /* IN */ (srcdhi[31:0]),
+	.iinc /* IN */ (iinc[31:0]),
+	.zinc /* IN */ (zinc[31:0]),
 	.daddbsel /* IN */ (daddbsel[2:0])
 );
 
 // DATA.NET (284) - addarray : addarray
 addarray addarray_inst
 (
-	.addq_0 /* OUT */ ({addq_0[0],addq_0[1],addq_0[2],addq_0[3],addq_0[4],addq_0[5],addq_0[6],addq_0[7],addq_0[8],addq_0[9],addq_0[10],addq_0[11],addq_0[12],addq_0[13],addq_0[14],addq_0[15]}),
-	.addq_1 /* OUT */ ({addq_1[0],addq_1[1],addq_1[2],addq_1[3],addq_1[4],addq_1[5],addq_1[6],addq_1[7],addq_1[8],addq_1[9],addq_1[10],addq_1[11],addq_1[12],addq_1[13],addq_1[14],addq_1[15]}),
-	.addq_2 /* OUT */ ({addq_2[0],addq_2[1],addq_2[2],addq_2[3],addq_2[4],addq_2[5],addq_2[6],addq_2[7],addq_2[8],addq_2[9],addq_2[10],addq_2[11],addq_2[12],addq_2[13],addq_2[14],addq_2[15]}),
-	.addq_3 /* OUT */ ({addq_3[0],addq_3[1],addq_3[2],addq_3[3],addq_3[4],addq_3[5],addq_3[6],addq_3[7],addq_3[8],addq_3[9],addq_3[10],addq_3[11],addq_3[12],addq_3[13],addq_3[14],addq_3[15]}),
-	.adda_0 /* IN */ ({adda_0[0],adda_0[1],adda_0[2],adda_0[3],adda_0[4],adda_0[5],adda_0[6],adda_0[7],adda_0[8],adda_0[9],adda_0[10],adda_0[11],adda_0[12],adda_0[13],adda_0[14],adda_0[15]}),
-	.adda_1 /* IN */ ({adda_1[0],adda_1[1],adda_1[2],adda_1[3],adda_1[4],adda_1[5],adda_1[6],adda_1[7],adda_1[8],adda_1[9],adda_1[10],adda_1[11],adda_1[12],adda_1[13],adda_1[14],adda_1[15]}),
-	.adda_2 /* IN */ ({adda_2[0],adda_2[1],adda_2[2],adda_2[3],adda_2[4],adda_2[5],adda_2[6],adda_2[7],adda_2[8],adda_2[9],adda_2[10],adda_2[11],adda_2[12],adda_2[13],adda_2[14],adda_2[15]}),
-	.adda_3 /* IN */ ({adda_3[0],adda_3[1],adda_3[2],adda_3[3],adda_3[4],adda_3[5],adda_3[6],adda_3[7],adda_3[8],adda_3[9],adda_3[10],adda_3[11],adda_3[12],adda_3[13],adda_3[14],adda_3[15]}),
-	.addb_0 /* IN */ ({addb_0[0],addb_0[1],addb_0[2],addb_0[3],addb_0[4],addb_0[5],addb_0[6],addb_0[7],addb_0[8],addb_0[9],addb_0[10],addb_0[11],addb_0[12],addb_0[13],addb_0[14],addb_0[15]}),
-	.addb_1 /* IN */ ({addb_1[0],addb_1[1],addb_1[2],addb_1[3],addb_1[4],addb_1[5],addb_1[6],addb_1[7],addb_1[8],addb_1[9],addb_1[10],addb_1[11],addb_1[12],addb_1[13],addb_1[14],addb_1[15]}),
-	.addb_2 /* IN */ ({addb_2[0],addb_2[1],addb_2[2],addb_2[3],addb_2[4],addb_2[5],addb_2[6],addb_2[7],addb_2[8],addb_2[9],addb_2[10],addb_2[11],addb_2[12],addb_2[13],addb_2[14],addb_2[15]}),
-	.addb_3 /* IN */ ({addb_3[0],addb_3[1],addb_3[2],addb_3[3],addb_3[4],addb_3[5],addb_3[6],addb_3[7],addb_3[8],addb_3[9],addb_3[10],addb_3[11],addb_3[12],addb_3[13],addb_3[14],addb_3[15]}),
-	.daddmode /* IN */ (daddmode),
+	.addq_0 /* OUT */ (addq_0[15:0]),
+	.addq_1 /* OUT */ (addq_1[15:0]),
+	.addq_2 /* OUT */ (addq_2[15:0]),
+	.addq_3 /* OUT */ (addq_3[15:0]),
+	.adda_0 /* IN */ (adda_0[15:0]),
+	.adda_1 /* IN */ (adda_1[15:0]),
+	.adda_2 /* IN */ (adda_2[15:0]),
+	.adda_3 /* IN */ (adda_3[15:0]),
+	.addb_0 /* IN */ (addb_0[15:0]),
+	.addb_1 /* IN */ (addb_1[15:0]),
+	.addb_2 /* IN */ (addb_2[15:0]),
+	.addb_3 /* IN */ (addb_3[15:0]),
+	.daddmode /* IN */ (daddmode[2:0]),
 	.clk_0 /* IN */ (clk),
 	.reset_n /* IN */ (reset_n),
 	.sys_clk(sys_clk) // Generated
 );
 
 // DATA.NET (289) - data_local : local_mux
-assign load_data_0[31:0] = (blit_back | (|blit_breq)) ? data[31:0] : gpu_din[31:0];
-assign load_data_1[31:0] = (blit_back | (|blit_breq)) ? data[63:32] : gpu_din[31:0];
+assign load_data_0[31:0] = (blit_back | (|blit_breq[1:0])) ? data[31:0] : gpu_din[31:0];
+assign load_data_1[31:0] = (blit_back | (|blit_breq[1:0])) ? data[63:32] : gpu_din[31:0];
 assign local_data_0[31:0] = (daddq_sel) ? {addq_1[15:0],addq_0[15:0]} : load_data_0[31:0];
 assign local_data_1[31:0] = (daddq_sel) ? {addq_3[15:0],addq_2[15:0]} : load_data_1[31:0];
 
@@ -610,4 +609,4 @@ data_mux data_out_inst
 	.srczhi /* IN */ (srczo_1[31:0])
 );
 endmodule
-/* verilator lint_on LITENDIAN */
+

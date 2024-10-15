@@ -96,12 +96,12 @@ assign ym2[11:0] = width[0] ? y[11:0] : 12'h0;
 
 // ADDRGEN.NET (110) - yadd : fa332
 // ADDRGEN.NET (135) - ytm[0-14] : nivh
-assign ytm[14:0] = ym2[11:0] + {ym2[11:0],1'b0} + {1'b0,y[11:0],2'b00};
+assign ytm[14:0] = ym2[11:0] + {ym1[11:0],1'b0} + {1'b0,y[11:0],2'b00};
 
 // ADDRGEN.NET (142) - yaddr[0] : mx4g
 // ADDRGEN.NET (144) - yaddr[1] : mx4g
 wire [34:0] ya_;
-assign ya_[34:0] = {11'b000,ytm[14:2],ytm[1:0],9'h0} << width[5:2];
+assign ya_[34:0] = {11'h000,ytm[14:2],ytm[1:0],9'h0} << width[5:2];
 assign ya[23:0] = (&width[5:4]) ? 24'h0 : ya_[34:11];
 
 // ADDRGEN.NET (227) - pa_a : join

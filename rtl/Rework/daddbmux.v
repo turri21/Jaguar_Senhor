@@ -35,7 +35,7 @@ assign zinclo[15:0] = zinc[15:0];
 assign zinchi[15:0] = zinc[31:16];
 
 // DATAMUX.NET (85) - word : mx4p
-assign word[15:0] = daddbsel[1] ? (daddbsel[0] ? iinclo[15:0] : iinchi[15:0]) : (daddbsel[0] ? zinclo[15:0] : zinchi[15:0]);
+assign word[15:0] = daddbsel[1] ? (daddbsel[0] ? zinchi[15:0] : zinclo[15:0]) : (daddbsel[0] ? iinchi[15:0] : iinclo[15:0]);
 
 // DATAMUX.NET (88) - srcdw0 : join
 assign srcdw_0[15:0] = srcdlo[15:0];

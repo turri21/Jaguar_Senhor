@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -509,6 +508,5 @@ assign grden = a1posrd | a1posfrd | a2posrd;
 assign gpu_dout_out[31:0] = grdt1[31:0];
 assign gpu_dout_oe = grden;
 
-// ADDRESS.NET (245) - unused[0-2] : dummy
 endmodule
-/* verilator lint_on LITENDIAN */
+

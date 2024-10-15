@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module acontrol
@@ -456,7 +455,7 @@ assign wmb4t[0] = ~(a1_win_x[1] & pixel8);
 assign wmb4t[1] = ~(a1_win_x[0] & pixel16);
 
 // ACONTROL.NET (382) - wmb4 : nd2
-assign wmb[4] = ~(&wmb4t[1]);
+assign wmb[4] = ~(&wmb4t[1:0]);
 
 // ACONTROL.NET (383) - wmb5t0 : nd2
 assign wmb5t[0] = ~(a1_win_x[2] & pixel8);
@@ -564,7 +563,10 @@ assign shftt[5:0] = dstxp[5:0] - srcxp[5:0];
 // ACONTROL.NET (490) - shftv0 : an4
 // ACONTROL.NET (492) - shftv1 : mx2g
 wire [2:0] pixsizet = (&pixsize[2:1]) ? (pixsize[2:0] & 3'b101) : pixsize[2:0]; //[7:6] are the same as [5:4] 
-assign shftv[5:0] = shftt[5:0] << pixsizet[2:0];
+wire [5:0] shftv_ = shftt[5:0] << pixsizet[2:0];
+assign shftv[5:2] = shftv_[5:2];
+assign shftv[1] = shftv_[1] & ~pixsize[1];  // Check this. This looks like a bug; should have pixsize_0_obuf as input s on line 492
+assign shftv[0] = shftv_[0];
 
 // ACONTROL.NET (508) - pobb0t : or3
 assign pobb0t = pixel8 | pixel16 | pixel32;

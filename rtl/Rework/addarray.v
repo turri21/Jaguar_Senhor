@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module addarray
@@ -39,7 +38,7 @@ begin
 end
 
 // ADDARRAY.NET (60) - cinsel : nr2p
-assign cinsel = ~(|daddmode[2:0]);
+assign cinsel = ~(&(~daddmode[1:0]) | daddmode[2]);
 
 // ADDARRAY.NET (64) - carrylat[0-3] : fd2q
 always @(posedge sys_clk)
@@ -115,4 +114,4 @@ add16sat adder4_inst
 	.hicinh /* IN */ (hicinh)
 );
 endmodule
-/* verilator lint_on LITENDIAN */
+

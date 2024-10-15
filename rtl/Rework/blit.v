@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module blit
@@ -132,8 +131,6 @@ wire [31:0] gpu_dout_address_out;
 wire gpu_dout_address_oe;
 wire [31:0] gpu_dout_state_out;
 wire gpu_dout_state_oe;
-assign gpu_dout_out = (gpu_dout_address_oe ? gpu_dout_address_out : 32'h0) | (gpu_dout_state_oe ? gpu_dout_state_out : 32'h0);
-assign gpu_dout_oe = gpu_dout_address_oe | gpu_dout_state_oe;
 
 // BLIT.NET (50) - loadstrt : niv
 assign loadstrt = tlw;
@@ -388,5 +385,9 @@ blitgpu blitgpu_inst
 	.srczread /* IN */ (srczread)
 );
 
+// --- Compiler-generated PE for BUS gpu_dout[0]
+assign gpu_dout_out = (gpu_dout_address_oe ? gpu_dout_address_out[31:0] : 32'h0) | (gpu_dout_state_oe ? gpu_dout_state_out[31:0] : 32'h0);
+assign gpu_dout_oe = gpu_dout_address_oe | gpu_dout_state_oe;
+
 endmodule
-/* verilator lint_on LITENDIAN */
+

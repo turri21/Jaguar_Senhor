@@ -118,14 +118,14 @@ end
 // INTER-UA.NET (66) - flagrd[4-8] : ts
 assign gpu_dout_out[5:4] = int_ena[1:0];
 assign gpu_dout_13_3_oe = flagrd;
-//assign gpu_dout_out[8:6] = int_ena[2:4];
+//assign gpu_dout_out[8:6] = int_ena[4:2];
 
 // INTER-UA.NET (67) - flagrd[9-13] : ts
 //assign gpu_dout_out[10:9] = 2'h0;
 assign gpu_dout_out[13:11] = 3'h0;
 
 // INTER-UA.NET (68) - statrd[6-10] : ts
-//assign gpu_dout_out[6:10] = ilatch[0:4];
+//assign gpu_dout_out[6:10] = ilatch[4:0];
 
 // --- Compiler-generated PE for BUS gpu_dout[6]
 assign gpu_dout_out[10:6] = (flagrd ? {2'b00,int_ena[4:2]}:5'h0) | (statrd ? {ilatch[4:0]}:5'h0);

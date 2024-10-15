@@ -1,10 +1,9 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module outer
 (
 	output [15:11] gpu_dout_out,
-//	output gpu_dout_11_15_oe, statrd; already handled above
+	output gpu_dout_15_11_oe, // statrd; already handled above
 	output a1updatei,
 	output a1fupdatei,
 	output a2updatei,
@@ -77,6 +76,7 @@ assign gpu_dout_out[12] = inner;
 assign gpu_dout_out[13] = a1fupdate;
 assign gpu_dout_out[14] = a1update;
 assign gpu_dout_out[15] = a2update;
+assign gpu_dout_15_11_oe = statrd;
 
 // OUTER.NET (54) - upda1f : fdsync
 // OUTER.NET (55) - upda1 : fdsync
@@ -230,4 +230,4 @@ end
 // OUTER.NET (159) - blit_int : an2
 assign blit_int = ~idled & idledt;
 endmodule
-/* verilator lint_on LITENDIAN */
+

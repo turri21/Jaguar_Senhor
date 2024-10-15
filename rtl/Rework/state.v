@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module state
@@ -201,10 +200,10 @@ assign inhiben = ~(inhibent | phrase_mode_obuf | bkgwren);
 // STATE.NET (127) - inner : inner
 inner inner_inst
 (
-	.gpu_dout_2_10_out /* BUS */ (gpu_dout_out[10:2]),
-//	.gpu_dout_2_10_oe /* BUS */ (gpu_dout_2_10_oe), = statrd; already handled
-	.gpu_dout_16_31_out /* BUS */ (gpu_dout_out[31:16]),
-//	.gpu_dout_16_31_oe /* BUS */ (gpu_dout_16_31_oe), = statrd; already handled
+	.gpu_dout_10_2_out /* BUS */ (gpu_dout_out[10:2]),
+//	.gpu_dout_10_2_oe /* BUS */ (gpu_dout_10_2_oe), = statrd; already handled
+	.gpu_dout_31_16_out /* BUS */ (gpu_dout_out[31:16]),
+//	.gpu_dout_31_16_oe /* BUS */ (gpu_dout_31_16_oe), = statrd; already handled
 	.apipe /* OUT */ (apipe),
 	.atick /* OUT */ (atick[1:0]),
 	.aticki_0 /* OUT */ (aticki_0),
@@ -263,7 +262,7 @@ inner inner_inst
 outer outer_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_out[15:11]),
-//	.gpu_dout_11_15_oe /* BUS */ (gpu_dout_11_15_oe), = statrd; already handled
+//	.gpu_dout_15_11_oe /* BUS */ (gpu_dout_15_11_oe), = statrd; already handled
 	.a1updatei /* OUT */ (a1updatei),
 	.a1fupdatei /* OUT */ (a1fupdatei),
 	.a2updatei /* OUT */ (a2updatei),
@@ -444,4 +443,4 @@ blitstop blitstop_inst
 	.sys_clk(sys_clk) // Generated
 );
 endmodule
-/* verilator lint_on LITENDIAN */
+

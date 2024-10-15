@@ -2,10 +2,10 @@
 
 module inner
 (
-	output [10:2] gpu_dout_2_10_out,
-//	output gpu_dout_2_10_oe, statrd; already handled above
-	output [31:16] gpu_dout_16_31_out,
-//	output gpu_dout_16_31_oe, statrd; already handled above
+	output [10:2] gpu_dout_10_2_out,
+	output gpu_dout_10_2_oe, //statrd; already handled above
+	output [31:16] gpu_dout_31_16_out,
+	output gpu_dout_31_16_oe, //statrd; already handled above
 	output apipe,
 	output [1:0] atick,
 	output aticki_0,
@@ -225,15 +225,16 @@ assign denat[2] = denat_2;
 // INNER.NET (89) - stat[8] : ts
 // INNER.NET (90) - stat[9] : ts
 // INNER.NET (91) - stat[10] : ts
-assign gpu_dout_2_10_out[2] = idle;
-assign gpu_dout_2_10_out[3] = sreadx;
-assign gpu_dout_2_10_out[4] = szreadx;
-assign gpu_dout_2_10_out[5] = sread;
-assign gpu_dout_2_10_out[6] = szread;
-assign gpu_dout_2_10_out[7] = dread;
-assign gpu_dout_2_10_out[8] = dzread;
-assign gpu_dout_2_10_out[9] = dwrite_obuf;
-assign gpu_dout_2_10_out[10] = dzwrite_obuf;
+assign gpu_dout_10_2_out[2] = idle;
+assign gpu_dout_10_2_out[3] = sreadx;
+assign gpu_dout_10_2_out[4] = szreadx;
+assign gpu_dout_10_2_out[5] = sread;
+assign gpu_dout_10_2_out[6] = szread;
+assign gpu_dout_10_2_out[7] = dread;
+assign gpu_dout_10_2_out[8] = dzread;
+assign gpu_dout_10_2_out[9] = dwrite_obuf;
+assign gpu_dout_10_2_out[10] = dzwrite_obuf;
+assign gpu_dout_10_2_oe = statrd;
 
 // INNER.NET (101) - srcen : fdsync
 // INNER.NET (102) - srcenz : fdsync
@@ -627,8 +628,8 @@ assign icntena = atick_obuf[0] & dwrite_obuf;
 // INNER.NET (373) - inner_count : inner_cnt
 inner_cnt inner_count_inst
 (
-	.gpu_dout_out /* BUS */ (gpu_dout_16_31_out[31:16]),
-//	.gpu_dout_16_31_oe /* BUS */ (gpu_dout_16_oe), = statrtd; handled above
+	.gpu_dout_out /* BUS */ (gpu_dout_31_16_out[31:16]),
+	.gpu_dout_31_16_oe /* BUS */ (gpu_dout_31_16_oe), //= statrtd; handled above
 	.icount /* OUT */ (icount[2:0]),
 	.inner0 /* OUT */ (inner0_obuf),
 	.clk /* IN */ (clk),
@@ -746,10 +747,14 @@ begin
 				szread_1 <= szread;
 				dread_1 <= dread;
 				dzread_1 <= dzread;
-				dwrite1_obuf <= dwrite_obuf;
-				dzwrite1_obuf <= dzwrite_obuf;
 				denat_2 <= denat[1];
 			end
+		end
+	end
+	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin
+		if (step_p1) begin
+			dwrite1_obuf <= dwrite_obuf;
+			dzwrite1_obuf <= dzwrite_obuf;
 		end
 	end
 end
