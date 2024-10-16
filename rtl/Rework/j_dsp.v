@@ -183,7 +183,6 @@ wire [31:0] gpu_data_gate_out; //39a5
 wire gpu_data_gate_oe;
 wire [31:0] gpu_data_bits_out; //39a6
 wire gpu_data_bits_oe;
-wire ts_local_pe_70_a0_in;
 
 wire [31:0] gpu_dout_ins_out; //74a0(71)
 wire gpu_dout_ins_14_3_oe;

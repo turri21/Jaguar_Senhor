@@ -195,18 +195,18 @@ wire tlw_unused;
 wire uint;
 wire ts;
 
-wire [15:0] dsprd_dsp_out;
+wire [15:0] dsprd_dsp_out; //167a0
 wire dsprd_dsp_oe;
-wire [15:0] dsprd_i2s_out;
+wire [15:0] dsprd_i2s_out; //167a1
 wire dsprd_i2s_oe;
 
-wire [15:0] dr_dsp_out;
+wire [15:0] dr_dsp_out; //183a0
 wire dr_dsp_oe;
-wire [15:0] dr_jio_out;
+wire [15:0] dr_jio_out; //183a1
 wire dr_jio_oe;
-wire [15:0] dr_misc_out;
+wire [15:0] dr_misc_out; //183a2
 wire dr_misc_oe;
-wire [15:0] dr_u2_out;
+wire [15:0] dr_u2_out; //183a3
 wire dr_u2_oe;
 
 // Output buffers
@@ -498,7 +498,6 @@ j_dsp dsp_inst
 	.gpu_dout_o_in /* BUS */ (dsprd_out[15:0]),
 	.sys_clk(sys_clk) // Generated
 );
-
 
 // JERRY.NET (263) - jiodec : jiodec
 j_jiodec jiodec_inst

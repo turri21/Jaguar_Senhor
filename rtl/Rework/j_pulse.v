@@ -10,18 +10,15 @@ module j_pulse
 	output pulse,
 	input sys_clk // Generated
 );
-wire [7:0] ab;
 wire start;
 reg pulse_ = 1'b0;
 assign pulse = pulse_;
 
 // DAC.NET (82) - ab[0-6] : en
 // DAC.NET (83) - ab[7] : iv
-assign ab[7:0] = ~(a[7:0] ^ {1'b1,b[6:0]}); //ab[7] = ~a[7];
-
 // DAC.NET (84) - startl : nd8
 // DAC.NET (85) - start : iv
-assign start = (&ab[7:0]);
+assign start = (a[7:0] == {1'b0,b[6:0]});
 
 // DAC.NET (87) - pulse : fjk2
 reg old_clk;

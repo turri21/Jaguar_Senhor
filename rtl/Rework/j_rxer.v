@@ -217,7 +217,7 @@ end
 
 // UART2.NET (248) - rco[1-2] : an3
 // UART2.NET (249) - rco[0] : an2
-assign rco[2:0] = bx16 ? rxg[2:0] & {rco[1:0],1'b1} : 2'b0;
+assign rco[2:0] = bx16 ? rxg[2:0] & {rco[1:0],1'b1} : 3'b0;
 
 // UART2.NET (250) - rxg[0-3] : fd2
 always @(posedge sys_clk)
@@ -250,7 +250,7 @@ begin
 end
 
 // UART2.NET (260) - nro : an6
-assign nro = resetl & ~rxg[3:0]==4'h5 & bx16;
+assign nro = resetl & rxg[3:0]==4'h5 & bx16;
 
 // UART2.NET (266) - nrxen : an3
 assign nrxen = resetl & ro & ~rod;
@@ -429,7 +429,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		rds <= u2drd;
-		rdsd <= ~rdsd;
+		rdsd <= rds;
 	end
 end
 

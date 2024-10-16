@@ -131,11 +131,7 @@ assign tlw = ~clk1;
 always @(posedge sys_clk)
 begin
 	if (~old_pclkosc && pclkosc) begin
-		if (~resetl) begin
-			cfgwl <= 1'b0;
-		end else begin
-			cfgwl <= resetl;
-		end
+		cfgwl <= resetl;
 	end
 end
 
@@ -215,7 +211,7 @@ begin
 			cd[5:0] <= 6'h0;
 			chrq <= 1'b0;
 		end else begin
-			cd[5:0] <= (cd[5:0]==6'h0) ? chrdd[5:0] : cd[5:0] - 1'b1; //cdco[5] = cd[5:0]==0 and ci[0]==1 (vcc)
+			cd[5:0] <= (cd[5:0]==6'h0) ? chrdd[5:0] : (cd[5:0] - 1'b1); //cdco[5] = cd[5:0]==0 and ci[0]==1 (vcc)
 			chrq <= cd[5:0] > {1'b0,chrdd[5:1]}; // gt
 		end
 	end
@@ -239,7 +235,7 @@ begin
 		if (~tresl) begin
 			cld[9:0] <= 10'h0;
 		end else begin
-			cld[9:0] <= (clkdiv) ? cldd[9:0] : cld[9:0] - 1'b1; //cdco[5] = cd[5:0]==0 and ci[0]==1 (vcc)
+			cld[9:0] <= (clkdiv) ? cldd[9:0] : (cld[9:0] - 1'b1); //cdco[5] = cd[5:0]==0 and ci[0]==1 (vcc)
 		end
 	end
 end
@@ -251,11 +247,7 @@ assign clkdiv = cld[9:0] == 10'h0; // vi is vcc so co is cld[]==0
 always @(posedge sys_clk)
 begin
 	if (~old_pclkosc && pclkosc) begin
-		if (~resetl) begin
-			pclkdiv_ <= 1'b0;
-		end else begin
-			pclkdiv_ <= clkdiv;
-		end
+		pclkdiv_ <= clkdiv;
 	end
 end
 
@@ -269,7 +261,7 @@ always @(negedge sys_clk) // /!\
 begin
 	if (~resetl) begin
 		cldd[9:0] <= 10'h01; // ~cldd[0]
-	end else if (clk3w) begin
+	end else if (clk1w) begin
 		cldd[9:0] <= din[9:0];
 	end
 end
@@ -284,7 +276,7 @@ begin
 		if (~tresl) begin
 			vd[9:0] <= 10'h0;
 		end else begin
-			vd[9:0] <= (vclkdivi) ? cldd[9:0] : vd[9:0] - 1'b1; //cdco[5] = cd[5:0]==0 and ci[0]==1 (vcc)
+			vd[9:0] <= (vclkdivi) ? vdd[9:0] : (vd[9:0] - 1'b1); //cdco[5] = cd[5:0]==0 and ci[0]==1 (vcc)
 		end
 	end
 end

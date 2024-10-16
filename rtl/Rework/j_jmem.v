@@ -419,7 +419,7 @@ assign dsp32 = ~dsp16;
 assign siz[0] = ws[0] | long;
 
 // JMEM.NET (232) - siz[1] : or2
-assign siz[1] = |ws[2];
+assign siz[1] = |ws[2:1];
 
 // JMEM.NET (234) - seta1 : niv
 assign seta1 = q3b;

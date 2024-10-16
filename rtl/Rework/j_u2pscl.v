@@ -56,7 +56,7 @@ begin
 		if (~presl0) begin
 			tp0[15:0] <= 16'h0;
 		end else begin
-			tp0[15:0] <= tpld0 ? pd0[15:0] : tp0[15:0] - (ten0 ? 1'b1 : 1'b0);
+			tp0[15:0] <= tpld0 ? pd0[15:0] : (tp0[15:0] - (ten0 ? 1'b1 : 1'b0));
 		end
 	end
 end

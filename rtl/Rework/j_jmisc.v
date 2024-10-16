@@ -213,7 +213,7 @@ begin
 		if (~presl0) begin
 			tp0[15:0] <= 16'h0;
 		end else begin
-			tp0[15:0] <= tpld0 ? pd0[15:0] : tp0[15:0] - (ten0 ? 1'b1 : 1'b0);
+			tp0[15:0] <= tpld0 ? pd0[15:0] : (tp0[15:0] - (ten0 ? 1'b1 : 1'b0));
 		end
 	end
 end
@@ -247,7 +247,7 @@ begin
 		if (~presl0) begin
 			t0[15:0] <= 16'h0;
 		end else begin
-			t0[15:0] <= tld0 ? td0[15:0] : t0[15:0] - (tpc016 ? 1'b1 : 1'b0);
+			t0[15:0] <= tld0 ? td0[15:0] : (t0[15:0] - (tpc016 ? 1'b1 : 1'b0));
 		end
 	end
 end
@@ -312,7 +312,7 @@ begin
 		if (~presl1) begin
 			tp1[15:0] <= 16'h0;
 		end else begin
-			tp1[15:0] <= tpld1 ? pd1[15:0] : tp1[15:0] - (ten1 ? 1'b1 : 1'b0);
+			tp1[15:0] <= tpld1 ? pd1[15:0] : (tp1[15:0] - (ten1 ? 1'b1 : 1'b0));
 		end
 	end
 end
@@ -343,7 +343,7 @@ begin
 		if (~presl1) begin
 			t1[15:0] <= 16'h0;
 		end else begin
-			t1[15:0] <= tld1 ? td1[15:0] : t1[15:0] - (tpc116 ? 1'b1 : 1'b0);
+			t1[15:0] <= tld1 ? td1[15:0] : (t1[15:0] - (tpc116 ? 1'b1 : 1'b0));
 		end
 	end
 end
@@ -380,9 +380,12 @@ always @(negedge sys_clk) // /!\
 begin
 	if (~resetl) begin
 		ndtest_ <= 1'b0;
-		joyen <= 1'b0;
-	end else if (pit1w) begin
+	end else if (test1w) begin
 		ndtest_ <= din[0];
+	end
+	if (~resetl) begin
+		joyen <= 1'b0;
+	end else if (joy1w) begin
 		joyen <= din[15];
 	end
 end

@@ -143,7 +143,7 @@ begin
 		if (~resetl) begin
 			t[7:0] <= 8'h0;
 		end else begin
-			t[7:0] <= (tld) ? p_[7:0] : t[7:0] - 1'b1; // ci==vcc
+			t[7:0] <= (tld) ? p_[7:0] : (t[7:0] - 1'b1); // ci==vcc
 		end
 	end
 end
@@ -179,7 +179,7 @@ begin
 		if (~bresl) begin
 			b[4:0] <= 5'h0;
 		end else begin
-			b[4:0] <= b[4:0] + ben ? 1'b1 : 1'b0;
+			b[4:0] <= b[4:0] + (ben ? 1'b1 : 1'b0);
 		end
 	end
 end

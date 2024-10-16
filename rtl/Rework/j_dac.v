@@ -69,7 +69,7 @@ begin
 		if (~resetl) begin
 			p[7:0] <= 8'h0;
 		end else begin
-			p[7:0] <= (ts) ? 8'h80 : p[7:0] - (go ? 1'b1 : 1'b0); // d[7]==vcc
+			p[7:0] <= (ts) ? 8'h80 : (p[7:0] - (go ? 1'b1 : 1'b0)); // d[7]==vcc
 		end
 	end
 end
