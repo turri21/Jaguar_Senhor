@@ -422,9 +422,7 @@ end
 assign mult_atomic = multa | multaset;
 
 // INS_EXEC.NET (227) - interrupt : interrupt
-interrupt
-#(.JERRY(JERRY))
-interrupt_inst
+interrupt #(.JERRY(JERRY)) interrupt_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_out[13:3]),
 	.gpu_dout_13_3_oe /* BUS */ (gpu_dout_14_3_oe), //flagrd; 14 below

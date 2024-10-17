@@ -125,7 +125,7 @@ assign gpu_dout_13_3_oe = flagrd;
 assign gpu_dout_out[13:11] = 3'h0;
 
 // INTER-UA.NET (68) - statrd[6-10] : ts
-//assign gpu_dout_out[6:10] = ilatch[4:0];
+//assign gpu_dout_out[10:6] = ilatch[4:0];
 
 // --- Compiler-generated PE for BUS gpu_dout[6]
 assign gpu_dout_out[10:6] = (flagrd ? {2'b00,int_ena[4:2]}:5'h0) | (statrd ? {ilatch[4:0]}:5'h0);
@@ -266,6 +266,6 @@ assign ins[6] = 16'hD3C0;
 assign ins[7] = 16'hE400;
 
 // INTER-UA.NET (153) - inssel : mx8p
-assign intins[15:0] = ins[icount];
+assign intins[15:0] = ins[icount][15:0];
 
 endmodule

@@ -614,7 +614,7 @@ gateway #(.JERRY(1)) gateway_inst
 	.flagwr /* IN */ (flagwr),
 	.gateack /* IN */ (gateack),
 	.gpu_addr /* IN */ (gpu_addr[23:0]),
-	.gpu_back /* IN */ (~gpu_back), //signal is inverted from above
+	.gpu_back /* IN */ (~gpu_back), //signal is inverted from above and opposite of tom
 	.gpu_din /* IN */ (gpu_din_[31:0]),
 	.gpu_memw /* IN */ (gpu_memw),
 	.msize /* IN */ (msize[1:0]),

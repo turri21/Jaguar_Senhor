@@ -403,6 +403,7 @@ arith arith_inst
 	.nega_flag /* OUT */ (nega_flag),
 	.result /* OUT */ (result[31:0]),
 	.zero_flag /* OUT */ (zero_flag),
+	.accumrd /* IN */ (1'b0), // jerry only
 	.dstdp /* IN */ (dstdp[31:0]),
 	.srcdp /* IN */ (srcdp[31:0]),
 	.srcd_31 /* IN */ (srcd[31]),
@@ -414,6 +415,7 @@ arith arith_inst
 	.flagwr /* IN */ (flagwr),
 	.gpu_din /* IN */ (gpu_data_out[31:0]),
 	.macop /* IN */ (macop),
+	.modulowr /* IN */ (1'b0), // jerry only
 	.multsel /* IN */ (multsel),
 	.multsign /* IN */ (multsign),
 	.reset_n /* IN */ (reset_n),

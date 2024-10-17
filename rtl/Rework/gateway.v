@@ -468,14 +468,28 @@ assign pdatstrb = pdatld & clk_2;
 // GATEWAY.NET (212) - prog_data : ldp1q
 `ifdef FAST_CLOCK
 always @(posedge sys_clk)
-`else
-always @(negedge sys_clk) // /!\
-`endif
 begin
-	if (pdatstrb) begin
+	if (pdatstrb & (JERRY==0)) begin
+		prog_data[31:0] <= lodatai[31:0];
+	end
+	if (~old_clk && clk & (JERRY!=0) & pdatld) begin
 		prog_data[31:0] <= lodatai[31:0];
 	end
 end
+`else
+always @(negedge sys_clk) // /!\
+begin
+	if (pdatstrb & (JERRY==0)) begin
+		prog_data[31:0] <= lodatai[31:0];
+	end
+end
+always @(posedge sys_clk)
+begin
+	if (~old_clk && clk & (JERRY!=0) & pdatld) begin
+		prog_data[31:0] <= lodatai[31:0];
+	end
+end
+`endif
 
 // GATEWAY.NET (220) - lodwr : an3u
 assign lodwr = external & progserv_n & gpu_memw;

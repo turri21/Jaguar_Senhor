@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module j_gpuram
@@ -38,4 +37,4 @@ aba032a ram_inst
 	.sys_clk(sys_clk) // Generated
 );
 endmodule
-/* verilator lint_on LITENDIAN */
+
