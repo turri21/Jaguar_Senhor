@@ -199,7 +199,7 @@ assign LED_USER  = ioctl_download;
 `define RDY_WAIT  4'b0001
 `define RAM_END   4'b1111
 
-//`define FAST_CLOCK
+`define FAST_CLOCK
 
 wire clk_106m, clk_26m, clk_53m;
 
