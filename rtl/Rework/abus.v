@@ -238,12 +238,12 @@ assign iospd[1:0] = iospd_obuf[1:0];
 assign bs[3:0] = bs_obuf[3:0];
 assign cpu32 = cpu32_obuf;
 
-// assign refrate[3:0] = refrate_obuf[3:0];
+assign refrate[3:0] = refrate_obuf[3:0];
 
 // Inhibit the old DRAM refresh pulses.
 // Will help a bit with debugging via SignalTap, and might also help certain games to run a bit faster. ElectronAsh.
 //
-assign refrate[3:0] = 4'b0000;
+//assign refrate[3:0] = 4'b0000;
 
 assign nocpu = nocpu_obuf;
 assign hilo = hilo_obuf;
@@ -463,7 +463,7 @@ begin
 end
 
 // ABUS.NET (169) - mset : nivh
-assign mset = mseti;
+assign mset = mseti; // after boot config
 
 // ABUS.NET (193) - alb[10-23] : ivu
 assign alb[23:10] = ~a_in[23:10];
@@ -477,97 +477,95 @@ assign ab[23:15] = ~alb[23:15];//simplifying below;just use ab
 // ABUS.NET (196) - notmset : iv
 assign notmset = ~mset;
 
-// ABUS.NET (197) - ab23 : dummy
-
 // ABUS.NET (198) - mreqb : nivm
 assign mreqb = mreq;
 
 // ABUS.NET (200) - abs01 : nd2
-assign abs01 = ~(mreqb & notmset);
+assign abs01 = ~(mreqb & notmset); // boot before cfgen set
 
 // ABUS.NET (201) - abs02 : nd6
-assign abs02 = ~(mreqb & romlo & (ab[23:21]==3'b000));
+assign abs02 = ~(mreqb & romlo & (ab[23:21]==3'b000)); // 000000-1FFFFF romlo
 
 // ABUS.NET (202) - abs03 : nd6
-assign abs03 = ~(mreqb & romhi & (ab[23:21]==3'b111));
+assign abs03 = ~(mreqb & romhi & (ab[23:21]==3'b111)); // E00000-FFFFFF romhi
 
 // ABUS.NET (203) - abs0 : nd3
-assign abs_[0] = ~(abs01 & abs02 & abs03);
+assign abs_[0] = ~(abs01 & abs02 & abs03); // not cart or ram
 
 // ABUS.NET (205) - abs10 : nd6
-assign abs10 = ~(mreqb & romlo & (ab[23:21]==3'b001) & mset);
+assign abs10 = ~(mreqb & romlo & (ab[23:21]==3'b001) & mset); // 200000-3FFFFF romlo
 
 // ABUS.NET (206) - abs11 : nd6
-assign abs11 = ~(mreqb & romlo & (ab[23:22]==2'b01) & mset);
+assign abs11 = ~(mreqb & romlo & (ab[23:22]==2'b01) & mset); // 400000-7FFFFF romlo
 
 // ABUS.NET (207) - abs12 : nd6
-assign abs12 = ~(mreqb & romhi & (ab[23:21]==3'b110) & mset);
+assign abs12 = ~(mreqb & romhi & (ab[23:21]==3'b110) & mset); // C00000-DFFFFF romhi
 
 // ABUS.NET (208) - abs13 : nd6
-assign abs13 = ~(mreqb & romhi & (ab[23:22]==2'b10) & mset);
+assign abs13 = ~(mreqb & romhi & (ab[23:22]==2'b10) & mset); // 800000-BFFFFF romhi
 
 // ABUS.NET (209) - abs1 : nd4
-assign abs_[1] = ~(abs13 & abs12 & abs11 & abs10);
+assign abs_[1] = ~(abs13 & abs12 & abs11 & abs10); // cart
 
 // ABUS.NET (211) - abs20 : nd6
-assign abs20 = ~(mreqb & romlo & (ab[23:22]==2'b10) & mset);
+assign abs20 = ~(mreqb & romlo & (ab[23:22]==2'b10) & mset); // 800000-BFFFFF romlo
 
 // ABUS.NET (212) - abs21 : nd6
-assign abs21 = ~(mreqb & romhi & (ab[23:22]==2'b01) & mset);
+assign abs21 = ~(mreqb & romhi & (ab[23:22]==2'b01) & mset); // 400000-7FFFFF romhi
 
 // ABUS.NET (213) - abs2 : nd2
-assign abs[2] = ~(abs21 & abs21);
+assign abs[2] = ~(abs21 & abs21); // ram1
 
 // ABUS.NET (215) - abs30 : nd6
-assign abs30 = ~(mreqb & romlo & (ab[23:22]==2'b11) & mset);
+assign abs30 = ~(mreqb & romlo & (ab[23:22]==2'b11) & mset); // C00000-FFFFFF romlo
 
 // ABUS.NET (216) - abs31 : nd6
-assign abs31 = ~(mreqb & romhi & (ab[23:22]==2'b00) & mset);
+assign abs31 = ~(mreqb & romhi & (ab[23:22]==2'b00) & mset); // 000000-3FFFFF romhi
 
 // ABUS.NET (217) - abs3 : nd2
-assign abs[3] = ~(abs31 & abs30);
+assign abs[3] = ~(abs31 & abs30); // ram0
 
 // ABUS.NET (223) - fdram : or2
-assign fdram_obuf = |abs[3:2];
+assign fdram_obuf = |abs[3:2]; // ram
 
 // ABUS.NET (230) - fintdev1 : nd6
-assign fintdev1 = ~(abs_[0] & (ab[20:16]==5'b00001));
+assign fintdev1 = ~(abs_[0] & (ab[20:16]==5'b10000)); // F00000-F0FFFF romhi tom stuff
 
 // ABUS.NET (231) - fintdev : ivh
 assign fintdev_obuf = ~fintdev1;
 
 // ABUS.NET (232) - fextdevl : nd6
-assign fextdevl = ~(abs_[0] & (ab[20:16]==5'b10001));
+assign fextdevl = ~(abs_[0] & (ab[20:16]==5'b10001)); // F10000-F1FFFF romhi jerry or ext stuff
 
 // ABUS.NET (233) - fextdev : iv
 assign fextdev = ~fextdevl;
 
 // ABUS.NET (246) - rom1 : nd6
-assign rom[1] = ~(mset & romlo & (ab[23:21]==3'b000) & notdev);
+assign rom[1] = ~(mset & romlo & (ab[23:21]==3'b000) & notdev); // 000000-0FFFFF / 120000-1FFFFF romlo
 
 // ABUS.NET (247) - rom2 : nd6
-assign rom[2] = ~(mset & romhi & (ab[23:21]==3'b111) & notdev);
+assign rom[2] = ~(mset & romhi & (ab[23:21]==3'b111) & notdev); // E00000-EFFFFF / F20000-FFFFFF romhi
 
 // ABUS.NET (248) - rom3 : nd6
-assign rom[3] = ~(mset & romlo & (ab[23:21]==3'b001));
+assign rom[3] = ~(mset & romlo & (ab[23:21]==3'b001)); // 200000-3FFFFF romlo
 
 // ABUS.NET (249) - rom4 : nd6
-assign rom[4] = ~(mset & romhi & (ab[23:21]==3'b110));
+assign rom[4] = ~(mset & romhi & (ab[23:21]==3'b110)); // C00000-DFFFFF romhi
 
 // ABUS.NET (250) - rom5 : nd4
-assign rom[5] = ~(mset & romlo & (ab[23:22]==2'b01));
+assign rom[5] = ~(mset & romlo & (ab[23:22]==2'b01)); // 400000-7FFFFF romlo
 
 // ABUS.NET (251) - rom6 : nd4
-assign rom[6] = ~(mset & romhi & (ab[23:22]==2'b10));
+assign rom[6] = ~(mset & romhi & (ab[23:22]==2'b10)); // 800000-BFFFFF romhi
 
 // ABUS.NET (252) - rom7 : nd2
 assign rom[7] = ~(notmset & notdev);
 
 // ABUS.NET (253) - from : nd8
-assign from = ~(&rom[7:1]);
+assign from = ~(&rom[7:1]); // cart or bios
 
 // ABUS.NET (255) - romcsl[0] : an3
-assign romcsl_0 = (&rom[2:1]) & rom[7];
+assign romcsl_0 = (&rom[2:1]) & rom[7]; // bios
 
 // ABUS.NET (260) - intdevi : slatchc
 // always @(posedge cp or negedge cd)
@@ -640,7 +638,7 @@ assign mw01 = ~(notmset & notdev & romwid[0]);
 assign mw02 = ~(notmset & dev16);
 
 // ABUS.NET (299) - mw03 : nd8
-assign mw03 = ~(mset & romlo & (ab[23:21]==3'b000) & notdev & romwid[0]);
+assign mw03 = ~(mset & romlo & (ab[23:21]==3'b000) & notdev & romwid[0]); // 200000-3FFFFF romlo
 
 // ABUS.NET (300) - mw04 : nd6
 assign mw04 = ~(mset & romlo & (ab[23:21]==3'b000) & dev16);
@@ -685,58 +683,58 @@ assign mw11 = ~(notmset & notdev & romwid[1]);
 assign mw12 = ~(notmset & dev32);
 
 // ABUS.NET (317) - mw13 : nd8
-assign mw13 = ~(mset & romlo & (ab[23:21]==3'b000) & notdev & romwid[1]);
+assign mw13 = ~(mset & romlo & (ab[23:21]==3'b000) & notdev & romwid[1]); //32 bit bios so never
 
 // ABUS.NET (318) - mw14 : nd6
-assign mw14 = ~(mset & romlo & (ab[23:21]==3'b000) & dev32);
+assign mw14 = ~(mset & romlo & (ab[23:21]==3'b000) & dev32); //32 bit interface to registers
 
 // ABUS.NET (319) - mw15 : nd8
-assign mw15 = ~(mset & romhi & (ab[23:21]==3'b111) & notdev & romwid[1]);
+assign mw15 = ~(mset & romhi & (ab[23:21]==3'b111) & notdev & romwid[1]); //32 bit bios so never
 
 // ABUS.NET (320) - mw16 : nd6
-assign mw16 = ~(mset & romhi & (ab[23:21]==3'b111) & dev32);
+assign mw16 = ~(mset & romhi & (ab[23:21]==3'b111) & dev32); //32 bit interface to registers
 
 // ABUS.NET (321) - mw17 : nd6
-assign mw17 = ~(mset & romlo & (ab[23:21]==3'b001) & romwid[1]);
+assign mw17 = ~(mset & romlo & (ab[23:21]==3'b001) & romwid[1]); //32 bit cart
 
 // ABUS.NET (322) - mw18 : nd6
-assign mw18 = ~(mset & romhi & (ab[23:21]==3'b110) & romwid[1]);
+assign mw18 = ~(mset & romhi & (ab[23:21]==3'b110) & romwid[1]); //32 bit cart
 
 // ABUS.NET (323) - mw19 : nd6
-assign mw19 = ~(mset & romlo & (ab[23:22]==2'b01) & romwid[1]);
+assign mw19 = ~(mset & romlo & (ab[23:22]==2'b01) & romwid[1]); //32 bit cart
 
 // ABUS.NET (324) - mw1a : nd6
-assign mw1a = ~(mset & romhi & (ab[23:22]==2'b10) & romwid[1]);
+assign mw1a = ~(mset & romhi & (ab[23:22]==2'b10) & romwid[1]); //32 bit cart
 
 // ABUS.NET (325) - mw1b : nd6
-assign mw1b = ~(mset & romlo & (ab[23:22]==2'b10) & dwid1[1]);
+assign mw1b = ~(mset & romlo & (ab[23:22]==2'b10) & dwid1[1]); //64/32 bit dram1
 
 // ABUS.NET (326) - mw1c : nd6
-assign mw1c = ~(mset & romhi & (ab[23:22]==2'b01) & dwid1[1]);
+assign mw1c = ~(mset & romhi & (ab[23:22]==2'b01) & dwid1[1]); //64/32 bit dram1
 
 // ABUS.NET (327) - mw1d : nd6
-assign mw1d = ~(mset & romlo & (ab[23:22]==2'b11) & dwid0[1]);
+assign mw1d = ~(mset & romlo & (ab[23:22]==2'b11) & dwid0[1]); //64/32 bit dram0
 
 // ABUS.NET (328) - mw1e : nd6
-assign mw1e = ~(mset & romhi & (ab[23:22]==2'b00) & dwid0[1]);
+assign mw1e = ~(mset & romhi & (ab[23:22]==2'b00) & dwid0[1]); //64/32 bit dram0
 
 // ABUS.NET (330) - mw[1] : nand14
 assign mw[1] = ~(mw11 & mw12 & mw13 & mw14 & mw15 & mw16 & mw17 & mw18 & mw19 & mw1a & mw1b & mw1c & mw1d & mw1e);
 
 // ABUS.NET (333) - notdev : nd4p
-assign notdev = ~(ab[20:17]==4'b1000);
+assign notdev = ~(ab[20:17]==4'b1000); // 100000-11FFFF
 
 // ABUS.NET (334) - dev32l : nd6
-assign dev32l = ~(ab[20:15]==6'b100001);
+assign dev32l = ~(ab[20:15]==6'b100001); // 108000-10FFFF
 
 // ABUS.NET (335) - dev32 : ivm
 assign dev32 = ~dev32l;
 
 // ABUS.NET (336) - dev160 : nd6
-assign dev160 = ~(ab[20:15]==6'b100000);
+assign dev160 = ~(ab[20:15]==6'b100000); // 100000-107FFF
 
 // ABUS.NET (337) - dev161 : nd6
-assign dev161 = ~(ab[20:16]==5'b10001);
+assign dev161 = ~(ab[20:16]==5'b10001); // 110000-11FFFF
 
 // ABUS.NET (338) - dev16 : nd2p
 assign dev16 = ~(dev160 & dev161);
