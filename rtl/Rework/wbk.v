@@ -178,7 +178,6 @@ assign latchremi = ~(obld_2 | addrem | decrem);
 assign latchrem = ~latchremi;
 
 // WBK.NET (103) - newheighti[0] : dncnt
-// low 2 bits inverted
 always @(posedge sys_clk)
 begin
 	if ((~old_clk && clk) | (old_resetl && ~resetl)) begin // fd2q always @(posedge cp or negedge cd)

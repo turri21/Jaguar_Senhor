@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
 module cpu

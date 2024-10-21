@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -258,7 +257,7 @@ assign atout[10:3] = at_obuf[10:3];
 assign at[2:0] = atin[2:0];
 assign at[10:3] = atout[10:3];
 //at[23:11] done below
-assign ab[14:13] = 2'b00; //unused
+//assign ab[14:13] = 2'b00; //unused
 
 // ABUS.NET (76) - ma : join
 assign ma[10:0] = ma_obuf[10:0];
@@ -415,7 +414,7 @@ begin
 		m68ki <= cfg[8];
 	end
 end
-assign not68k = m68ki;
+assign not68k = ~m68ki;
 
 // ABUS.NET (150) - m68k : nivh
 assign m68k_obuf = m68ki;
@@ -473,6 +472,7 @@ assign ab[12:10] = ~alb[12:10];
 
 // ABUS.NET (195) - ab[15-23] : ivu
 assign ab[23:15] = ~alb[23:15];//simplifying below;just use ab
+assign ab[14:13] = ~alb[14:13];//simplifying below;just use ab
 
 // ABUS.NET (196) - notmset : iv
 assign notmset = ~mset;
@@ -514,7 +514,7 @@ assign abs20 = ~(mreqb & romlo & (ab[23:22]==2'b10) & mset); // 800000-BFFFFF ro
 assign abs21 = ~(mreqb & romhi & (ab[23:22]==2'b01) & mset); // 400000-7FFFFF romhi
 
 // ABUS.NET (213) - abs2 : nd2
-assign abs[2] = ~(abs21 & abs21); // ram1
+assign abs[2] = ~(abs21 & abs20); // ram1
 
 // ABUS.NET (215) - abs30 : nd6
 assign abs30 = ~(mreqb & romlo & (ab[23:22]==2'b11) & mset); // C00000-FFFFFF romlo
@@ -993,4 +993,3 @@ assign clutt_obuf = (ack) ? clutd : clut_obuf;
 assign dr_out[15:0] = (dr_a0_oe ? dr_a0_out[15:0] : 16'h0000) | (dr_a1_oe ? dr_a1_out[15:0] : 16'h0000);
 assign dr_oe = dr_a0_oe | dr_a1_oe;
 endmodule
-
