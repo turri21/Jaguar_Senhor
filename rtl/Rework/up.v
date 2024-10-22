@@ -17,7 +17,7 @@ assign dout[31:8] = dout_obuf[31:8];
 assign dout_obuf[15:8] = (dmuxu[0]) ? din[7:0] : din[15:8];
 
 // DBUS.NET (132) - dout[16-23] : mx2p
-assign dout_obuf[23:16] = (dmuxu[0]) ? din[7:0] : din[23:16];
+assign dout_obuf[23:16] = (dmuxu[1]) ? din[7:0] : din[23:16];
 
 // DBUS.NET (133) - dout[24-31] : mx4p
 assign dout_obuf[31:24] = dmuxu[1] ? (dmuxu[0] ? din[7:0] : din[15:8]) : (din[31:24]);

@@ -452,6 +452,8 @@ reg old_memc1w = 1'b0;
 reg old_cfgen = 1'b0;
 always @(posedge sys_clk)
 begin
+	old_memc1w <= memc1w;
+	old_cfgen <= cfgen;
 	if ((~old_memc1w && memc1w) | (old_cfgen && ~cfgen)) begin
 		if (~cfgen) begin
 			mseti <= 1'b0;// always @(posedge cp or negedge sd)
