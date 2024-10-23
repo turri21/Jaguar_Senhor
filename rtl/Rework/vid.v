@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -90,7 +89,6 @@ wire lockl;
 wire viden;
 wire videnl;
 reg [11:0] vm = 11'h000;
-wire [3:1] vml;
 wire csyncen;
 wire bgwen;
 wire [2:0] ppn;
@@ -118,11 +116,9 @@ wire hpeql;
 wire hcres;
 wire hmres;
 wire hcount;
-wire [10:0] hco;
 wire hpeq;
-wire [10:0] hcb;
 reg [9:0] hp = 10'h000;
-wire [9:0] hpe;
+wire hpe;
 wire hpeqt;
 wire hpeqi;
 wire hbbeq;
@@ -142,8 +138,6 @@ wire vcresi;
 wire vcres;
 wire res;
 wire vcount;
-wire [11:0] vco;
-wire [10:0] vcb;
 reg [10:0] vp = 11'h000;
 wire vpeqt;
 wire vbbeq;
@@ -249,7 +243,6 @@ begin
 	old_resetl <= resetl;
 end
 
-
 // Output buffers
 assign start = start_obuf;
 assign dd = dd_obuf;
@@ -264,9 +257,9 @@ assign rgb16 = rgb16_obuf;
 assign tcount = tcount_obuf;
 assign word2 = word2_obuf;
 assign pp = pp_obuf;
-assign vcl = vcl_obuf;
+assign vcl[10:0] = vcl_obuf[10:0];
 assign vint = vint_;
-assign hcb_10 = hcb[10];
+assign hcb_10 = hc[10];
 
 // VID.NET (34) - lockl : ivm
 assign lockl = ~lock;
@@ -432,11 +425,8 @@ begin
 	end
 end
 
-// VID.NET (142) - hcb[0-10] : nivh
-assign hcb[10:0] = hc[10:0];
-
 // VID.NET (144) - hcd[0-10] : ts
-assign dr_hcb_out[10:0] = hcb[10:0];
+assign dr_hcb_out[10:0] = hc[10:0];
 assign dr_hcb_oe = hcrd;
 
 // VID.NET (152) - hp[0-9] : ldp1q
@@ -452,13 +442,13 @@ begin
 end
 
 // VID.NET (156) - hpe[0-9] : en
-assign hpe[9:0] = ~(hp[9:0] ^ hcb[9:0]);
+assign hpe = (hp[9:0] == hc[9:0]);
 
 // VID.NET (157) - hpeqt : and10
-assign hpeqt = &hpe[9:0];
+assign hpeqt = hpe;
 
 // VID.NET (158) - hpeqi : and11
-assign hpeqi = &hpe[9:0] & viden;
+assign hpeqi = hpe & viden;
 
 // VID.NET (159) - hpeq : niv
 assign hpeq = hpeqi;
@@ -468,7 +458,6 @@ assign hpeql = ~hpeq;
 
 // VID.NET (164) - hbb : creg11
 // VID.NET (165) - hbe : creg11
-// VID.NET (166) - hdb1 : creg11
 // VID.NET (166) - hdb1 : creg11
 // VID.NET (167) - hdb2 : creg11
 // VID.NET (168) - hde : creg11
@@ -514,25 +503,25 @@ begin
 		heq_[9:0] <= din[9:0];
 	end
 end
-assign hbbeq = hbb_[10:0] == hcb[10:0];
-assign hbeeq = hbe_[10:0] == hcb[10:0];
-assign hdb1eq = hdb1_[10:0] == hcb[10:0];
-assign hdb2eq = hdb2_[10:0] == hcb[10:0];
-assign hdeeq = hde_[10:0] == hcb[10:0];
+assign hbbeq = hbb_[10:0] == hc[10:0];
+assign hbeeq = hbe_[10:0] == hc[10:0];
+assign hdb1eq = hdb1_[10:0] == hc[10:0];
+assign hdb2eq = hdb2_[10:0] == hc[10:0];
+assign hdeeq = hde_[10:0] == hc[10:0];
 
 // VID.NET (177) - hseq : and11
-assign hseq = hs_[10:0] == hcb[10:0];
+assign hseq = hs_[10:0] == hc[10:0];
 
 // VID.NET (178) - hvsb : and10
-assign hvsb = hs_[9:0] == hcb[9:0];// 9:0 only
+assign hvsb = hs_[9:0] == hc[9:0];// 9:0 only
 
 // VID.NET (185) - hvse[0-9] : en
 // VID.NET (186) - hvse : and10
-assign hvse = hvs_[9:0] == hcb[9:0];
+assign hvse = hvs_[9:0] == hc[9:0];
 
 // VID.NET (192) - heqe[0-9] : en
 // VID.NET (193) - heqe : and10
-assign heqe = heq_[9:0] == hcb[9:0];
+assign heqe = heq_[9:0] == hc[9:0];
 
 // VID.NET (202) - nextfieldl : nd2
 assign nextfieldl = ~(vpeq & hpeq);
@@ -566,9 +555,6 @@ begin
 	end
 end
 
-// VID.NET (213) - vcb[0-10] : nivm
-assign vcb[10:0] = vc[10:0];
-
 // VID.NET (215) - vcd[0-11] : ts
 assign dr_vc_out[11:0] = vc[11:0];
 assign dr_vc_oe = vcrd;
@@ -587,10 +573,10 @@ end
 
 // VID.NET (223) - vpe[0-10] : en
 // VID.NET (224) - vpeqt : and11
-assign vpeqt = vp[10:0] == vcb[10:0];
+assign vpeqt = vp[10:0] == vc[10:0];
 
 // VID.NET (225) - vpeq : and12
-assign vpeq = vp[10:0] == vcb[10:0] & viden;
+assign vpeq = (vp[10:0] == vc[10:0]) & viden;
 
 // VID.NET (227) - vbb : creg11
 // VID.NET (228) - vbe : creg11
@@ -639,23 +625,23 @@ begin
 		vi[10:0] <= din[10:0];
 	end
 end
-assign vbbeq = vbb[10:0] == vcb[10:0];
-assign vbeeq = vbe[10:0] == vcb[10:0];
-assign vdbeq = vdb[10:0] == vcb[10:0];
-assign vdeeq = vde[10:0] == vcb[10:0];
-assign vebeq = veb[10:0] == vcb[10:0];
-assign veeeq = vee[10:0] == vcb[10:0];
-assign vseq = vs[10:0] == vcb[10:0];
-assign vieq = vi[10:0] == vcb[10:0];
+assign vbbeq = vbb[10:0] == vc[10:0];
+assign vbeeq = vbe[10:0] == vc[10:0];
+assign vdbeq = vdb[10:0] == vc[10:0];
+assign vdeeq = vde[10:0] == vc[10:0];
+assign vebeq = veb[10:0] == vc[10:0];
+assign veeeq = vee[10:0] == vc[10:0];
+assign vseq = vs[10:0] == vc[10:0];
+assign vieq = vi[10:0] == vc[10:0];
 
 // VID.NET (238) - vvactive : fjkr
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		vvactive <= ~(~(vdbeq & vvactive) & (vdeeq | vvactive)) & vresl;
+		vvactive <= ((vdbeq & ~vvactive) | (~vdeeq & vvactive)) & vresl;
 	end
 end
-assign notvvactive = vvactive;
+assign notvvactive = ~vvactive;
 
 // VID.NET (255) - startd1 : nd2
 assign startd1 = ~(hdb1eq & vvactive);
@@ -689,7 +675,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (vclb) begin
-			vcl_obuf[10:0] <= vcb[10:0]; 
+			vcl_obuf[10:0] <= vc[10:0]; 
 		end
 	end
 end
@@ -719,10 +705,10 @@ assign dd_obuf = vdactive & hdb;
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		vactive_obuf <= ~(~(dd_obuf & vactive_obuf) & (hdeeq | vactive_obuf)) & vresl;
+		vactive_obuf <= ((dd_obuf & ~vactive_obuf) | (~hdeeq & vactive_obuf)) & vresl;
 	end
 end
-assign notvactive = vactive_obuf;
+assign notvactive = ~vactive_obuf;
 
 // VID.NET (278) - lbufai : fdr
 always @(posedge sys_clk)
@@ -731,7 +717,7 @@ begin
 		lbufai <= vresl & lbufad;
 	end
 end
-assign lbufbi = lbufai;
+assign lbufbi = ~lbufai;
 
 // VID.NET (279) - lbufd : mx2
 assign lbufad = (dd_obuf) ? lbufb_obuf : lbufa_obuf;
@@ -768,13 +754,13 @@ assign hblank_out = hblank;
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		vblank <= ~(~(vbbeq & vblank) & (vbeeq | vblank)) & vresl;
-		hblank <= ~(~(hbbeq & hblank) & (hbeeq | hblank)) & vresl;
-		hs <= ~(~(hseq & hs) & (hpeq | hs)) & vresl;
-		vvs <= ~(~(vseq & vvs) & (vpeq | vvs)) & vresl;
-		hvs <= ~(~(hvstart & hvs) & (hvse | hvs)) & vresl;
-		ves <= ~(~(vebeq & ves) & (veeeq | ves)) & vresl;
-		hes <= ~(~(hestart & hes) & (heqe | hes)) & vresl;
+		vblank <= ((vbbeq & ~vblank) | (~vbeeq & vblank)) & vresl;
+		hblank <= ((hbbeq & ~hblank) | (~hbeeq & hblank)) & vresl;
+		hs <= ((hseq & ~hs) | (~hpeq & hs)) & vresl;
+		vvs <= ((vseq & ~vvs) | (~vpeq & vvs)) & vresl;
+		hvs <= ((hvstart & ~hvs) | (~hvse & hvs)) & vresl;
+		ves <= ((vebeq & ~ves) | (~veeeq & ves)) & vresl;
+		hes <= ((hestart & ~hes) | (~heqe & hes)) & vresl;
 	end
 end
 assign notvblank = ~vblank;
@@ -875,7 +861,7 @@ always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
 		if (lpld) begin
-			lph[10:0] <= hcb[10:0]; 
+			lph[10:0] <= hc[10:0]; 
 			lpv[11:0] <= vc[11:0]; 
 		end
 	end
@@ -899,11 +885,11 @@ begin
 		if (~resetl) begin
 			lpe <= 1'b0;
 		end else begin
-			lpe <= (lpld & ~nextfield) | (lpld & nextfield & ~lpe) | (~lpld & ~nextfield & lpe);
+			lpe <= (lpld & ~lpe) | (~nextfield & lpe);
 		end
 	end
 end
-assign notlpe = lpe;
+assign notlpe = ~lpe;
 
 // VID.NET (365) - td2[0] : ts
 // VID.NET (366) - td2[1] : ts
@@ -981,6 +967,7 @@ assign vs_o = vvs;
 // --- Compiler-generated PE for BUS dr[0]
 assign dr_out[10:0] = (dr_hcb_oe ? dr_hcb_out[10:0] : 11'h000) | (dr_vc_oe ? dr_vc_out[10:0] : 11'h000) | (dr_lph_oe ? dr_lph_out[10:0] : 11'h000) | (dr_lpv_oe ? dr_lpv_out[10:0] : 11'h000) | (dr_test2r_oe ? dr_test2r_out[10:0] : 11'h000);
 assign dr_out[11] = (dr_vc_oe & dr_vc_out[11]) | (dr_lph_oe & dr_lph_out[11]) | (dr_lpv_oe & dr_lpv_out[11]) | (dr_test3r_oe & dr_test3r_out[11]);
+//dr_e11_out is 0 so dr_e11_oe doesnt matter if using this method
 
 assign dr_11_0_oe = dr_15_12_oe | dr_test3r_oe;
 
