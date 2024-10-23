@@ -270,7 +270,7 @@ assign rwlte4 = ~rwgt4;
 assign bmwa[1] = ~sa[1];
 
 // MEMWIDTH.NET (212) - bmwb[1] : nd2
-assign bmwb[1] = ~(sa[1] & rwgt1);
+assign bmwb[1] = ~(sa[0] & rwgt1);
 
 // MEMWIDTH.NET (213) - bmw[1] : nd2
 assign bmw[1] = ~(bmwa[1] & bmwb[1]);

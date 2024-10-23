@@ -242,13 +242,13 @@ begin
 end
 
 // ARB.NET (114) - lbrl : nr8
-assign lbrl = ~(|pr[9:1]);
+assign lbrl = ~(|pr[9:4] | |pr[2:1]);
 
 // ARB.NET (115) - lbr : iv
 assign lbr = ~lbrl;
 
 // ARB.NET (116) - lbackl : nr8
-assign lbackl = ~(|ack_[9:1]);
+assign lbackl = ~(|ack_[9:4] | |ack_[2:1]);
 
 // ARB.NET (117) - lback : iv
 assign lback = ~lbackl;

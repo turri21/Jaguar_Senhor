@@ -141,7 +141,7 @@ assign pw641 = ~(notjustify & intbm);
 assign pw64 = ~(pw640 & pw641);
 
 // BUS.NET (104) - pw160 : nd6
-assign pw160 = ~(justify & (&wl[3:0]));
+assign pw160 = ~(justify & (w[3:0]==4'b0010));
 
 // BUS.NET (105) - pw161 : nd3
 assign pw161 = ~(notjustify & cpubm & cpu16);
