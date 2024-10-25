@@ -251,9 +251,7 @@ end
 assign gpu_irq_[1] = dint & ~dintd;
 
 // GRAPHICS.NET (103) - ins_exec : ins_exec
-ins_exec 
-#(.JERRY(0))
-ins_exec_inst
+ins_exec #(.JERRY(0)) ins_exec_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_ins_exec_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_ins_exec_oe),

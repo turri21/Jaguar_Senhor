@@ -133,7 +133,7 @@ assign inc_n[3] = ~(phrase_mode & pixel8 & ~inct[0] & ~inct[1] & ~inct[2]);
 // INNER.NET (642) - cla10 : or8
 // INNER.NET (643) - count[11] : hs1
 // INNER.NET (646) - count[15] : en
-assign count[15:0] = icount_[15:0] - (~inc_n[3:0]);
+assign count[15:0] = icount_[15:0] - {12'h0,~inc_n[3:0]};
 
 // INNER.NET (651) - cntlden : fd1q
 always @(posedge sys_clk)

@@ -180,7 +180,7 @@ assign a2updt[1] = ~(inner & indone & ~outer0 & ~upda1f & ~upda1 & upda2);
 assign a2updatei_obuf = ~(&a2updt[1:0]);
 
 // OUTER.NET (125) - instart : nd4u
-assign instart_obuf = ~(&innert[4:0]);
+assign instart_obuf = ~(innert[0] & &innert[4:2]);
 
 // OUTER.NET (129) - sshftld : fd1qm
 always @(posedge sys_clk)

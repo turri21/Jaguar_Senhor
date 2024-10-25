@@ -33,7 +33,7 @@ wire [31:0] ddathi;
 wire phrase_mode_n;
 wire edis_n;
 wire [7:0] e_coarse_n;
-wire [7:1] e_fine_n;
+wire [7:0] e_fine_n;
 wire [7:0] s_coarse;
 wire sfen_n;
 wire [7:0] s_fine;
@@ -55,11 +55,10 @@ assign phrase_mode_n = ~phrase_mode;
 assign edis_n = |dend[5:0];
 
 // DATAMUX.NET (203) - ecoarse : decl38e
-assign e_coarse_n = edis_n ? ~(8'h01 << dend[5:3]) : 8'hFF;
+assign e_coarse_n[7:0] = edis_n ? ~(8'h01 << dend[5:3]) : 8'hFF;
 
 // DATAMUX.NET (205) - efine : decl38e
-wire [7:0] tmp =(~e_coarse_n[0] ? ~(8'h01 << dend[2:0]) : 8'hFF);
-assign e_fine_n[7:1] = tmp[7:1];
+assign e_fine_n[7:0] = (~e_coarse_n[0] ? ~(8'h01 << dend[2:0]) : 8'hFF);
 
 // DATAMUX.NET (208) - scoarse : dech38
 assign s_coarse[7:0] = 8'h01 << dstart[5:3];
