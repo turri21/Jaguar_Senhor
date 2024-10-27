@@ -990,8 +990,8 @@ assign dataseli[1] = resaddrldi | mtx_doveri;
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		datasel0[5:0] <= {5{dataseli[0]}};
-		datasel1[5:0] <= {5{dataseli[1]}};
+		datasel0[5:0] <= {6{dataseli[0]}};
+		datasel1[5:0] <= {6{dataseli[1]}};
 	end
 end
 

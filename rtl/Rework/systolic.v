@@ -68,7 +68,7 @@ assign mtx_mreq = mtx_mreq_obuf;
 
 // SYSTOLIC.NET (54) - mmultt : nr2
 // SYSTOLIC.NET (55) - mmult\ : nd7
-assign mmult = (~movei_data & romold & (&instruction[15:10] == 6'b110110));
+assign mmult = (~movei_data & romold & (instruction[15:10] == 6'b110110));
 
 // SYSTOLIC.NET (63) - mtx_atomic : or2
 assign mtx_atomic = mtx_active | mmult;

@@ -52,7 +52,7 @@ assign go_n = ~go;
 assign jrel_n = ~jrel;
 
 // PREFETCH.NET (312) - sub : subsize
-assign subq[22:0] = pc_obuf[22:0] - (~qs_n[2:0]) - 1'b1;
+assign subq[22:0] = pc_obuf[22:0] - {20'h0,~qs_n[2:0]} - 23'h1;
 
 // PREFETCH.NET (314) - program_count : join
 assign program_count[23:0] = {subq[22:0],1'b0};

@@ -1,4 +1,3 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
@@ -393,7 +392,7 @@ sboard sboard_inst
 );
 
 // GRAPHICS.NET (140) - arith : arith
-arith arith_inst
+arith #(.JERRY(0)) arith_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_arith_out[2:0]),
 	.gpu_dout_oe /* BUS */ (gpu_dout_arith_2_0_oe),
@@ -557,7 +556,7 @@ gpu_ram gpu_ram_inst
 );
 
 // GRAPHICS.NET (189) - gpu_cpu : gpu_cpu
-gpu_cpu gpu_cpu_inst
+gpu_cpu #(.JERRY(0)) gpu_cpu_inst
 (
 	.dread_out /* BUS */ (dread_out[15:0]),
 	.dread_oe /* BUS */ (dread_oe),
@@ -580,7 +579,7 @@ gpu_cpu gpu_cpu_inst
 );
 
 // GRAPHICS.NET (195) - gateway : gateway
-gateway gateway_inst
+gateway #(.JERRY(0)) gateway_inst
 (
 	.address_out /* BUS */ (gateway_addr_out[23:0]),
 	.address_oe /* BUS */ (gateway_addr_oe),
@@ -685,7 +684,7 @@ assign justify_out = (justify_gateway_oe & justify_gateway_out ) | (justify_blit
 assign justify_oe = justify_gateway_oe | justify_blit_oe;
 
 // --- Compiler-generated local PE for BUS address<0>
-assign address_out[23:0] = (gateway_addr_oe ? gateway_addr_out[23:0] : 24'h0) | (blit_addr_oe ? blit_addr_out[23:0] : 24'h0);
+assign address_out[23:0] = (gateway_addr_oe ? gateway_addr_out[23:0] : blit_addr_out[23:0]);
 assign address_oe = gateway_addr_oe | blit_addr_oe;
 
 // --- Compiler-generated local PE for BUS gpu_data<0>
@@ -698,10 +697,10 @@ assign gpu_data_out[31:0] = (gpu_data_ins_exec_oe ? gpu_data_ins_exec_out[31:0]:
 assign gpu_data_oe = gpu_data_ins_exec_oe | gpu_data_divider_oe | gpu_data_mem_oe | gpu_data_ram_oe | gpu_data_gateway_oe | gpu_dout_oe;
 
 // --- Compiler-generated local PE for BUS gpu_dout[0]
-assign gpu_dout_out[2:0] = (gpu_dout_arith_2_0_oe ? gpu_dout_arith_out[2:0] : 3'h0) | (gpu_dout_ctrl_5_0_oe ? gpu_dout_ctrl_out[2:0] : 3'h0) |  | (gpu_dout_blit_oe ? gpu_dout_blit_out[2:0] : 3'h0);
+assign gpu_dout_out[2:0] = (gpu_dout_arith_2_0_oe ? gpu_dout_arith_out[2:0] : 3'h0) | (gpu_dout_ctrl_5_0_oe ? gpu_dout_ctrl_out[2:0] : 3'h0) | (gpu_dout_blit_oe ? gpu_dout_blit_out[2:0] : 3'h0);
 assign gpu_dout_2_0_oe = gpu_dout_arith_2_0_oe | gpu_dout_ctrl_5_0_oe | gpu_dout_blit_oe;
 
-assign gpu_dout_out[5:3] = (gpu_dout_ins_14_3_oe ? gpu_dout_ins_out[5:3] : 3'h0) | (gpu_dout_ctrl_5_0_oe ? gpu_dout_ctrl_out[5:3] : 3'h0) |  | (gpu_dout_blit_oe ? gpu_dout_blit_out[5:3] : 3'h0);
+assign gpu_dout_out[5:3] = (gpu_dout_ins_14_3_oe ? gpu_dout_ins_out[5:3] : 3'h0) | (gpu_dout_ctrl_5_0_oe ? gpu_dout_ctrl_out[5:3] : 3'h0) | (gpu_dout_blit_oe ? gpu_dout_blit_out[5:3] : 3'h0);
 assign gpu_dout_5_3_oe = gpu_dout_ins_14_3_oe | gpu_dout_ctrl_5_0_oe | gpu_dout_blit_oe;
 
 assign gpu_dout_out[10:6] = ((gpu_dout_ins_14_3_oe | gpu_dout_ins_10_6_oe) ? gpu_dout_ins_out[10:6] : 5'h0) | (gpu_dout_blit_oe ? gpu_dout_blit_out[10:6] : 5'h0);
