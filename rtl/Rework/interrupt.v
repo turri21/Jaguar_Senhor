@@ -39,7 +39,6 @@ wire ilatch_n_1;
 wire int0t0;
 wire int0t1;
 wire int0t2;
-wire [1:0] int_;
 wire int1t0;
 wire int1t1;
 wire isrset;
@@ -136,28 +135,29 @@ assign gpu_dout_17_16_oe = (flagrd | statrd) & JERRY!=0;
 // INTER-UA.NET (72) - irq : or5
 assign irq = |ilatch[5:0];
 
+// This logic is optimized version of converting msb set to int[2:0] (5 is jerry only)
+// int[2:0] = ilatch[5] ? 3'h5 : ilatch[4] ? 3'h4 : ilatch[3] ? 3'h3 : ilatch[2] ? 3'h2 : ilatch[1] ? 3'h1 : 3'h0; 
 // INTER-UA.NET (82) - ilatch\[1] : iv
 assign ilatch_n_1 = ~ilatch[1];
 
 // INTER-UA.NET (83) - int0t0 : nr2
-assign int0t0 = ~(|ilatch[2:1]);
+assign int0t0 = ~(~ilatch[1] | ilatch[2]);
 
 // INTER-UA.NET (84) - int0t1 : nr2
 assign int0t1 = ~(ilatch[3] | int0t0);
 
 // INTER-UA.NET (85) - int[0] : nr2
 assign int0t2 = ~(ilatch[4] | int0t1);
-assign int_[0] = (ilatch[5] | int0t2);
+assign _int[0] = (ilatch[5] | int0t2);
 
 // INTER-UA.NET (86) - int1t : nr2
-assign int1t0 = ~(|ilatch[3:2]);
+assign int1t0 = |ilatch[3:2];
 
 // INTER-UA.NET (87) - int[1] : nr2
 assign int1t1 = ~(|ilatch[5:4]);
-assign int_[1] = (int1t1 & int1t0);
+assign _int[1] = (int1t1 & int1t0);
 
 // INTER-UA.NET (88) - int : join
-assign _int[1:0] = int_[1:0];
 assign _int[2] = |ilatch[5:4];
 
 // INTER-UA.NET (97) - isrset : an4
