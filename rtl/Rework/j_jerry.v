@@ -1,8 +1,7 @@
-/* verilator lint_off LITENDIAN */
 //`include "defs.v"
 // altera message_off 10036
 
-module j_jerry
+module _j_jerry
 (
 	input xdspcsl,
 	input xpclkosc,
@@ -457,7 +456,7 @@ assign nottest = ~test;
 assign testen = nottest | eint[0];
 
 // JERRY.NET (252) - dsp : dsp
-j_dsp dsp_inst
+_j_dsp dsp_inst
 (
 	.ima /* IN */ (aout[15:0]),		// I/O address.
 	.dout /* IN */ (dout[31:0]),		// slave write / master read data.
@@ -500,7 +499,7 @@ j_dsp dsp_inst
 );
 
 // JERRY.NET (263) - jiodec : jiodec
-j_jiodec jiodec_inst
+_j_jiodec jiodec_inst
 (
 	.a /* IN */ (aout[15:0]),
 	.dspcsl /* IN */ (dspcsl),
@@ -537,7 +536,7 @@ j_jiodec jiodec_inst
 );
 
 // JERRY.NET (288) - jbus : jbus
-j_jbus jbus_inst
+_j_jbus jbus_inst
 (
 	.ain /* IN */ (ain[23:0]),
 	.din /* IN */ (din[31:0]),
@@ -564,7 +563,7 @@ j_jbus jbus_inst
 );
 
 // JERRY.NET (295) - jmem : jmem
-j_jmem jmem_inst
+_j_jmem jmem_inst
 (
 	.resetl /* IN */ (resetl),
 	.clk /* IN */ (clk),
@@ -608,7 +607,7 @@ j_jmem jmem_inst
 );
 
 // JERRY.NET (303) - jclk : jclk
-j_jclk jclk_inst
+_j_jclk jclk_inst
 (
 	.resetli /* IN */ (resetli),
 	.pclkosc /* IN */ (pclkosc),
@@ -638,7 +637,7 @@ j_jclk jclk_inst
 );
 
 // JERRY.NET (318) - jmisc : jmisc
-j_jmisc jmisc_inst
+_j_jmisc jmisc_inst
 (
 	.din /* IN */ (dout[15:0]),
 	.clk /* IN */ (clk),
@@ -670,7 +669,7 @@ j_jmisc jmisc_inst
 );
 
 // JERRY.NET (341) - uart2 : uart2
-j_uart2 uart2_inst
+_j_uart2 uart2_inst
 (
 	.resetl /* IN */ (resetl),
 	.clk /* IN */ (clk),
@@ -690,7 +689,7 @@ j_uart2 uart2_inst
 );
 
 // JERRY.NET (347) - i2s : i2s
-j_i2s i2s_inst
+_j_i2s i2s_inst
 (
 	.resetl /* IN */ (resetl),
 	.clk /* IN */ (clk),
@@ -712,15 +711,15 @@ j_i2s i2s_inst
 	.i2sen /* OUT */ (i2sen),
 	.dr_out /* BUS */ (dsprd_i2s_out[15:0]),
 	.dr_oe /* BUS */ (dsprd_i2s_oe),
-	.snd_l /* OUT */ (snd_l),
-	.snd_r /* OUT */ (snd_r),
+	.snd_l /* OUT */ (snd_l[15:0]),
+	.snd_r /* OUT */ (snd_r[15:0]),
 	.snd_l_en /* OUT */ (snd_l_en),
 	.snd_r_en /* OUT */ (snd_r_en),
 	.sys_clk(sys_clk) // Generated
 );
 
 // JERRY.NET (354) - dac : dac
-j_dac dac_inst
+_j_dac dac_inst
 (
 	.resetl /* IN */ (resetl),
 	.clk /* IN */ (clk),

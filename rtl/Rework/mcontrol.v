@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module mcontrol
+module _mcontrol
 (
 	output [23:0] blit_addr_out,
 	output blit_addr_oe,	// ElectronAsh.

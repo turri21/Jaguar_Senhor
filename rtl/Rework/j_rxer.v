@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_rxer
+module _j_rxer
 (
 	output rbf,
 	output pe,

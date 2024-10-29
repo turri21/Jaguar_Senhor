@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_i2s
+module _j_i2s
 (
 	input resetl,
 	input clk,

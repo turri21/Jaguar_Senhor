@@ -1,7 +1,7 @@
 /* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
-module sadd4
+module _sadd4
 (
 	output [3:0] z,
 	input [3:0] a,

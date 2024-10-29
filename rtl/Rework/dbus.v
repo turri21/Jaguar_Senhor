@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module dbus
+module _dbus
 (
 	input [63:0] din,
 	input [15:0] dr,
@@ -45,7 +45,7 @@ assign d3[15:0] = d3i[15:0];
 assign d3[63:16] = (xdsrc) ? din[63:16] : wd[63:16];
 
 // DBUS.NET (59) - d4 : up
-up d4_inst
+_up d4_inst
 (
 	.din /* IN */ (d3[63:0]),
 	.dmuxu /* IN */ (dmuxu[2:0]),
@@ -182,7 +182,7 @@ begin
 end
 
 // DBUS.NET (92) - dout : down
-down dout_inst
+_down dout_inst
 (
 	.din /* IN */ ({d5_obuf[63:32], d5_[31:0]}),
 	.dmuxd /* IN */ (dmuxd[2:0]),

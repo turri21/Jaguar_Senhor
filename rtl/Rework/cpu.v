@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module cpu
+module _cpu
 (
 	input [1:0] sizin,
 	input rwin,

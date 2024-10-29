@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module up
+module _up
 (
 	input [63:0] din,
 	input [2:0] dmuxu,

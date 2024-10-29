@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module add16sat
+module _add16sat
 (
 	output [15:0] r,
 	output co,

@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module ins_exec
+module _ins_exec
 (
 	output [31:0] gpu_data_out,
 	output gpu_data_oe,
@@ -282,7 +282,7 @@ assign gpu_dout_out[30] = sysser;
 assign gpu_dout_out[31] = intser;
 
 // INS_EXEC.NET (132) - prefetch : prefetch
-prefetch prefetch_inst
+_prefetch prefetch_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_out[24:22]),
 //	.gpu_dout_oe /* BUS */ (gpu_dout_oe), = dbgrd
@@ -422,7 +422,7 @@ end
 assign mult_atomic = multa | multaset;
 
 // INS_EXEC.NET (227) - interrupt : interrupt
-interrupt #(.JERRY(JERRY)) interrupt_inst
+_interrupt #(.JERRY(JERRY)) interrupt_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_out[13:3]),
 	.gpu_dout_13_3_oe /* BUS */ (gpu_dout_14_3_oe), //flagrd; 14 below
@@ -445,7 +445,7 @@ interrupt #(.JERRY(JERRY)) interrupt_inst
 );
 
 // INS_EXEC.NET (234) - systolic : systolic
-systolic systolic_inst
+_systolic systolic_inst
 (
 	.mtx_atomic /* OUT */ (mtx_atomic),
 	.mtx_dover /* OUT */ (mtx_dover),
@@ -513,7 +513,7 @@ wire clkdel_n = ~clkdele;
 wire romcs = clk & (JERRY==0 ? 1'b1 : clkdel_n); // This doesnt do anything for tom or jerry with delays and ignores cs anyway
 
 // INS_EXEC.NET (270) - mcode : ra6032a
-ra6032a mcode_inst
+_ra6032a mcode_inst
 (
 	.z /* OUT */ (romword[26:0]),
 	.clk /* IN */ (romcs),
@@ -836,7 +836,7 @@ assign immdata[15:0] = immlo[15:0];
 assign immdata[31:16] = insval[15:0];
 
 // INS_EXEC.NET (467) - srcdgen : srcdgen
-srcdgen srcdgen_inst
+_srcdgen srcdgen_inst
 (
 	.locdent /* OUT */ (locdent),
 	.locsrc /* OUT */ (locsrc[31:0]),
@@ -924,7 +924,7 @@ assign srcanwi[4:0] = srcopin[4:0];
 assign srcanwi[5] = srctopi;
 
 // INS_EXEC.NET (528) - execon : execon
-execon execon_inst
+_execon execon_inst
 (
 	.dstdgate /* OUT */ (dstdgate),
 	.exe /* OUT */ (exe_obuf),

@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module mem
+module _mem
 (
 	input [1:0] bbreq,
 	input [1:0] gbreq,
@@ -364,7 +364,7 @@ assign dreqlout = dreqlout_;
 //`define ORIGINAL_RAM
 
 // MEM.NET (117) - arb : arb
-arb arb_inst
+_arb arb_inst
 (
 	.bbreq /* IN */ (bbreq[1:0]),
 	.gbreq /* IN */ (gbreq[1:0]),
@@ -395,7 +395,7 @@ arb arb_inst
 );
 
 // MEM.NET (124) - mw : memwidth
-memwidth mw_inst
+_memwidth mw_inst
 (
 	.w /* IN */ (w_in[3:0]),
 	.ba /* IN */ (a[2:0]),
@@ -414,7 +414,7 @@ memwidth mw_inst
 );
 
 // MEM.NET (130) - bus : bus
-bus bus_inst
+_bus bus_inst
 (
 	.reads /* IN */ (reads_obuf),
 	.ack /* IN */ (ack_obuf),
@@ -448,7 +448,7 @@ bus bus_inst
 );
 
 // MEM.NET (140) - cpu : cpu
-cpu cpu_inst
+_cpu cpu_inst
 (
 	.sizin /* IN */ (sizin[1:0]),
 	.rwin /* IN */ (rwin),
@@ -1058,7 +1058,7 @@ assign iospeed[3:0] = 4'h1 << iospd[1:0];
 assign romspeed[3:0] = 4'h1 << romspd[1:0];
 
 // MEM.NET (552) - rasl[0] : rasgen
-rasgen rasl_index_0_inst
+_rasgen rasl_index_0_inst
 (
 	.csl /* OUT */ (rasl[0]),
 	.on1 /* IN */ (rason),
@@ -1072,7 +1072,7 @@ rasgen rasl_index_0_inst
 );
 
 // MEM.NET (554) - rasl[1] : rasgen
-rasgen rasl_index_1_inst
+_rasgen rasl_index_1_inst
 (
 	.csl /* OUT */ (rasl[1]),
 	.on1 /* IN */ (rason),

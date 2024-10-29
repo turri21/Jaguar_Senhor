@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module ob
+module _ob
 (
 	input [15:0] din,
 	input olp1w,
@@ -1022,7 +1022,7 @@ assign w_out = 4'b1000;
 assign w_oe = oben;
 
 // OB.NET (610) - obdlatch : ack_pipe
-ack_pipe obdlatch_inst
+_ack_pipe obdlatch_inst
 (
 	.latch /* OUT */ (obdlatch),
 	.latchd /* IN */ (obdlatchd),
@@ -1033,7 +1033,7 @@ ack_pipe obdlatch_inst
 );
 
 // OB.NET (611) - obldi[0] : ack_pipe
-ack_pipe obldi_index_0_inst
+_ack_pipe obldi_index_0_inst
 (
 	.latch /* OUT */ (obldi_0),
 	.latchd /* IN */ (obldd_0),
@@ -1044,7 +1044,7 @@ ack_pipe obldi_index_0_inst
 );
 
 // OB.NET (612) - obldi[1] : ack_pipe
-ack_pipe obldi_index_1_inst
+_ack_pipe obldi_index_1_inst
 (
 	.latch /* OUT */ (obldi_1),
 	.latchd /* IN */ (obldd_1),
@@ -1055,7 +1055,7 @@ ack_pipe obldi_index_1_inst
 );
 
 // OB.NET (613) - obldi[2] : ack_pipe
-ack_pipe obldi_index_2_inst
+_ack_pipe obldi_index_2_inst
 (
 	.latch /* OUT */ (obldi_2),
 	.latchd /* IN */ (obldd_2),

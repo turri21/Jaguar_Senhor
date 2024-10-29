@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module aba032a
+module _aba032a
 (
 	output	[31:0]	z_out,
 	output		z_oe,

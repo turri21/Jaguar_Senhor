@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module blitstop
+module _blitstop
 (
 	output gpu_dout_1_out,
 	output gpu_dout_1_oe,

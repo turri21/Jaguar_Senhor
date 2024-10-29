@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module clk
+module _clk
 (
 	input resetl,
 	

@@ -1,7 +1,7 @@
 /* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
-module j_jmem
+module _j_jmem
 (
 	input resetl,
 	input clk,

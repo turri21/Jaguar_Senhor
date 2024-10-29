@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module rasgen
+module _rasgen
 (
 	output csl,
 	input on1,

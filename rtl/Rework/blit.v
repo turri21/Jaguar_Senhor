@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module blit
+module _blit
 (
 	output [23:0] blit_addr_out,
 	output blit_addr_oe,		// ElectronAsh.
@@ -139,7 +139,7 @@ assign loadstrt = tlw;
 assign load_strobe = loadstrt;
 
 // BLIT.NET (59) - data : data
-data data_inst
+_data data_inst
 (
 	.wdata_out /* BUS */ (wdata_out[63:0]),
 	.wdata_oe /* BUS */ (wdata_oe),
@@ -188,7 +188,7 @@ data data_inst
 );
 
 // BLIT.NET (74) - address : address
-address address_inst
+_address address_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_address_out[31:0]),
 	.gpu_dout_oe /* BUS */ (gpu_dout_address_oe),
@@ -244,7 +244,7 @@ address address_inst
 );
 
 // BLIT.NET (89) - state : state
-state state_inst
+_state state_inst
 (
 	.blit_addr_out /* BUS */ (blit_addr_out[23:0]),
 	.blit_addr_oe /* BUS */ (blit_addr_oe),
@@ -336,7 +336,7 @@ state state_inst
 );
 
 // BLIT.NET (111) - blitgpu : blitgpu
-blitgpu blitgpu_inst
+_blitgpu blitgpu_inst
 (
 	.a1baseld /* OUT */ (a1baseld),
 	.a1flagld /* OUT */ (a1flagld),

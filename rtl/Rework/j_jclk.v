@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_jclk
+module _j_jclk
 (
 	input resetli,
 	input pclkosc,

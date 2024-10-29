@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module alu32
+module _alu32
 (
 	output [31:0] aluq,
 	output alu_co,

@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_txer
+module _j_txer
 (
 	output serout,
 	output tbe,

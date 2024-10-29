@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module ack_pipe
+module _ack_pipe
 (
 	output latch,
 	input latchd,

@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module addrgen
+module _addrgen
 (
 	output [23:0] address,
 	output [2:0] pixa,

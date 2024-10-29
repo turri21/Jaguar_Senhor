@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module lbuf
+module _lbuf
 (
 	input aout_1,
 	input aout_15,
@@ -236,7 +236,7 @@ begin
 end
 
 // LBUF.NET (106) - rmwd2[0] : sadd8
-sadd8 rmwd2_index_0_inst
+_sadd8 rmwd2_index_0_inst
 (
 	.z /* OUT */ (rmwd2[7:0]),
 	.a /* IN */ (rmwd1[7:0]),
@@ -244,7 +244,7 @@ sadd8 rmwd2_index_0_inst
 );
 
 // LBUF.NET (107) - rmwd2[8] : sadd4
-sadd4 rmwd2_index_8_inst
+_sadd4 rmwd2_index_8_inst
 (
 	.z /* OUT */ (rmwd2[11:8]),
 	.a /* IN */ (rmwd1[11:8]),
@@ -252,7 +252,7 @@ sadd4 rmwd2_index_8_inst
 );
 
 // LBUF.NET (108) - rmwd2[12] : sadd4
-sadd4 rmwd2_index_12_inst
+_sadd4 rmwd2_index_12_inst
 (
 	.z /* OUT */ (rmwd2[15:12]),
 	.a /* IN */ (rmwd1[15:12]),
@@ -260,7 +260,7 @@ sadd4 rmwd2_index_12_inst
 );
 
 // LBUF.NET (109) - rmwd2[16] : sadd8
-sadd8 rmwd2_index_16_inst
+_sadd8 rmwd2_index_16_inst
 (
 	.z /* OUT */ (rmwd2[23:16]),
 	.a /* IN */ (rmwd1[23:16]),
@@ -268,7 +268,7 @@ sadd8 rmwd2_index_16_inst
 );
 
 // LBUF.NET (110) - rmwd2[24] : sadd4
-sadd4 rmwd2_index_24_inst
+_sadd4 rmwd2_index_24_inst
 (
 	.z /* OUT */ (rmwd2[27:24]),
 	.a /* IN */ (rmwd1[27:24]),
@@ -276,7 +276,7 @@ sadd4 rmwd2_index_24_inst
 );
 
 // LBUF.NET (111) - rmwd2[28] : sadd4
-sadd4 rmwd2_index_28_inst
+_sadd4 rmwd2_index_28_inst
 (
 	.z /* OUT */ (rmwd2[31:28]),
 	.a /* IN */ (rmwd1[31:28]),
@@ -379,7 +379,7 @@ assign lbai[8:0] = lbaad[8:0];
 assign lbbi[8:0] = lbbad[8:0];
 
 // LBUF.NET (167) - lbufal : ab8616a
-ab8616a lbufal_inst
+_ab8616a lbufal_inst
 (
 	.z_out /* BUS */ (lbadl_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbadl_ab616a_oe),
@@ -391,7 +391,7 @@ ab8616a lbufal_inst
 );
 
 // LBUF.NET (168) - lbufah : ab8616a
-ab8616a lbufah_inst
+_ab8616a lbufah_inst
 (
 	.z_out /* BUS */ (lbadh_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbadh_ab616a_oe),
@@ -403,7 +403,7 @@ ab8616a lbufah_inst
 );
 
 // LBUF.NET (169) - lbufbl : ab8616a
-ab8616a lbufbl_inst
+_ab8616a lbufbl_inst
 (
 	.z_out /* BUS */ (lbbdl_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbbdl_ab616a_oe),
@@ -415,7 +415,7 @@ ab8616a lbufbl_inst
 );
 
 // LBUF.NET (170) - lbufbh : ab8616a
-ab8616a lbufbh_inst
+_ab8616a lbufbh_inst
 (
 	.z_out /* BUS */ (lbbdh_ab616a_out[15:0]),
 	.z_oe /* BUS */ (lbbdh_ab616a_oe),

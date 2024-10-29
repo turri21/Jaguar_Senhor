@@ -1,7 +1,7 @@
 /* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
-module addradd
+module _addradd
 (
 	output [15:0] addq_x,
 	output [15:0] addq_y,

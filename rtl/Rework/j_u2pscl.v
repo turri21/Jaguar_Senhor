@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module j_u2pscl
+module _j_u2pscl
 (
 	output bx16,
 	input [15:0] din,

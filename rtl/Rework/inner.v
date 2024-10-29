@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module inner
+module _inner
 (
 	output [10:2] gpu_dout_10_2_out,
 	output gpu_dout_10_2_oe, //statrd; already handled above
@@ -626,7 +626,7 @@ end
 assign icntena = atick_obuf[0] & dwrite_obuf;
 
 // INNER.NET (373) - inner_count : inner_cnt
-inner_cnt inner_count_inst
+_inner_cnt inner_count_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_31_16_out[31:16]),
 	.gpu_dout_31_16_oe /* BUS */ (gpu_dout_31_16_oe), //= statrtd; handled above

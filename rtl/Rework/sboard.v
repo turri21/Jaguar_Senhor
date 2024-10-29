@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module sboard
+module _sboard
 (
 	output [5:0] dsta,
 	output sdatreq,

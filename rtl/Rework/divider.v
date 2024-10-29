@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module divider
+module _divider
 (
 	output [31:0] gpu_data_out,
 	output gpu_data_oe,

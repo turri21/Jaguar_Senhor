@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module vid
+module _vid
 (
 	input [11:0] din,
 	input vmwr,

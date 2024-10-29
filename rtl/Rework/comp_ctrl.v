@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module comp_ctrl
+module _comp_ctrl
 (
 	output [7:0] dbinh_n,
 	output nowrite,

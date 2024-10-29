@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module outer_cnt
+module _outer_cnt
 (
 	output outer0,
 	input clk,

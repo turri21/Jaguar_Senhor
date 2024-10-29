@@ -752,7 +752,7 @@ assign cart_oe_n[0] = xoel[0];
 assign cart_oe_n[1] = xoel[1];
 
 // TOM
-tom tom_inst
+_tom tom_inst
 (
 	.xbgl(xbgl),
 	.xdbrl(xdbrl[1:0]),
@@ -836,7 +836,7 @@ tom tom_inst
 
 wire audio_clk;
 
-j_jerry jerry_inst
+_j_jerry jerry_inst
 (
 	.xdspcsl(j_xdspcsl),
 	.xpclkosc(xvclk),

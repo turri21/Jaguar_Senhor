@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module barrel32
+module _barrel32
 (
 	output [31:0] z,
 	input [1:0] mux,

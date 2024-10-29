@@ -1,7 +1,7 @@
 /* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
-module ab8016a
+module _ab8016a
 (
 	output	[15:0]	z_out,
 	output					z_oe,

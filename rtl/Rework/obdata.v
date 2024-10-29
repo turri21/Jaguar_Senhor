@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module obdata
+module _obdata
 (
 	input aout_9,
 	input [15:0] din,
@@ -528,7 +528,7 @@ assign cs = palen | busy1;
 assign csl = ~(ncst & cs);
 
 // OBDATA.NET (189) - clut1 : ab8016a
-ab8016a clut1_inst
+_ab8016a clut1_inst
 (
 	.z_out /* BUS */ (clut_a_a0_out[15:0]),
 	.z_oe /* BUS */ (clut_a_a0_oe),
@@ -540,7 +540,7 @@ ab8016a clut1_inst
 );
 
 // OBDATA.NET (190) - clut2 : ab8016a
-ab8016a clut2_inst
+_ab8016a clut2_inst
 (
 	.z_out /* BUS */ (clut_b_a0_out[15:0]),
 	.z_oe /* BUS */ (clut_b_a0_oe),

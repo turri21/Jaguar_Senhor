@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_uart2
+module _j_uart2
 (
 	input resetl,
 	input clk,
@@ -68,7 +68,7 @@ begin
 end
 
 // UART2.NET (35) - u2prscl : u2pscl
-j_u2pscl u2prscl_inst
+_j_u2pscl u2prscl_inst
 (
 	.bx16 /* OUT */ (bx16),
 	.din /* IN */ (din[15:0]),
@@ -168,7 +168,7 @@ assign dr_u2st_out[1] = paren;
 assign dr_u2st_out[0] = even;
 
 // UART2.NET (94) - txer : txer
-j_txer txer_inst
+_j_txer txer_inst
 (
 	.serout /* OUT */ (serout),
 	.tbe /* OUT */ (tbe),
@@ -185,7 +185,7 @@ j_txer txer_inst
 );
 
 // UART2.NET (99) - rxer : rxer
-j_rxer rxer_inst
+_j_rxer rxer_inst
 (
 	.rbf /* OUT */ (rbf),
 	.pe /* OUT */ (pe),

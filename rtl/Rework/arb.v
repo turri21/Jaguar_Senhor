@@ -1,7 +1,7 @@
 /* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
-module arb
+module _arb
 (
 	input [1:0] bbreq,
 	input [1:0] gbreq,

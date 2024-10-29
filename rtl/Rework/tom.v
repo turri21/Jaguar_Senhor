@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module tom
+module _tom
 (
 	input xbgl,
 	input [1:0] xdbrl,
@@ -685,7 +685,7 @@ assign nottest = ~test;
 assign testen = nottest | dint;
 
 // TOM.NET (313) - gpu : graphics
-graphics gpu_inst
+_graphics gpu_inst
 (
 	.ima /* IN */ ({aout[15:3],maska[2:0]}),
 	.dwrite /* IN */ (dout[31:0]),
@@ -730,7 +730,7 @@ graphics gpu_inst
 );
 
 // TOM.NET (321) - iodec : iodec
-iodec iodec_inst
+_iodec iodec_inst
 (
 	.a /* IN */ ({aout[15:3],maska[2:0]}),
 	.intdev /* IN */ (intdev),
@@ -800,7 +800,7 @@ iodec iodec_inst
 );
 
 // TOM.NET (335) - vid : vid
-vid vid_inst
+_vid vid_inst
 (
 	.din /* IN */ (dout[11:0]),
 	.vmwr /* IN */ (vmodew),
@@ -884,7 +884,7 @@ vid vid_inst
 );
 
 // TOM.NET (352) - pix : pix
-pix pix_inst
+_pix pix_inst
 (
 	.din /* IN */ (dout[15:0]),
 	.dd /* IN */ (dd),
@@ -921,7 +921,7 @@ pix pix_inst
 );
 
 // TOM.NET (363) - dbus : dbus
-dbus dbus_inst
+_dbus dbus_inst
 (
 	.din /* IN */ (din[63:0]),
 	.dr /* IN */ (dr_out[15:0]),
@@ -942,7 +942,7 @@ dbus dbus_inst
 );
 
 // TOM.NET (369) - abus : abus
-abus abus_inst
+_abus abus_inst
 (
 	.ain /* IN */ (ain[23:0]),
 	.ainen /* IN */ (ainen),
@@ -1010,7 +1010,7 @@ abus abus_inst
 );
 
 // TOM.NET (386) - mem : mem
-mem mem_inst
+_mem mem_inst
 (
 	.bbreq /* IN */ (bbreq[1:0]),
 	.gbreq /* IN */ (gbreq[1:0]),
@@ -1104,7 +1104,7 @@ mem mem_inst
 );
 
 // TOM.NET (412) - ob : ob
-ob ob_inst
+_ob ob_inst
 (
 	.din /* IN */ (dout[15:0]),
 	.olp1w /* IN */ (olp1w),
@@ -1181,7 +1181,7 @@ ob ob_inst
 );
 
 // TOM.NET (427) - wbk : wbk
-wbk wbk_inst
+_wbk wbk_inst
 (
 	.d /* IN */ (d[63:0]),// only d[23:14] and d[63:43] used
 	.obld_0 /* IN */ (obld[0]),
@@ -1201,7 +1201,7 @@ wbk wbk_inst
 );
 
 // TOM.NET (435) - obd : obdata
-obdata obd_inst
+_obdata obd_inst
 (
 	.aout_9 /* IN */ (aout[9]),
 	.din /* IN */ (dout[15:0]),
@@ -1244,7 +1244,7 @@ obdata obd_inst
 );
 
 // TOM.NET (444) - lbuf : lbuf
-lbuf lbuf_inst
+_lbuf lbuf_inst
 (
 	.aout_1 /* IN */ (maska[1]),
 	.aout_15 /* IN */ (aout[15]),
@@ -1276,7 +1276,7 @@ lbuf lbuf_inst
 );
 
 // TOM.NET (453) - clk : clk
-clk clk_inst
+_clk clk_inst
 (
 	.resetl /* IN */ (resetl),
 	.pclk /* IN */ (pclk),
@@ -1292,7 +1292,7 @@ clk clk_inst
 );
 
 // TOM.NET (465) - misc_ : misc
-misc misc__inst
+_misc misc__inst
 (
 	.din /* IN */ (dout[15:0]),
 	.clk /* IN */ (clk),

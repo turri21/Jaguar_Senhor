@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module misc
+module _misc
 (
 	input [15:0] din,
 	input clk,

@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module j_saturate
+module _j_saturate
 (
 	output [31:0] q,
 	input [31:0] d,

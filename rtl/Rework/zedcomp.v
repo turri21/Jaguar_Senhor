@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module zedcomp
+module _zedcomp
 (
 	output [3:0] zcomp,
 	input [31:0] srczplo,

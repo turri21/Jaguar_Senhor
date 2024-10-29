@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module mp1010a
+module _mp1010a
 (
 	output	[19:0]	q,
 	input		[9:0]		a,

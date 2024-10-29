@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module mp16
+module _mp16
 (
 	output	[31:0]	q,
 	input		[15:0]	a,

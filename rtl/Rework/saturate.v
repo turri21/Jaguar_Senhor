@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module saturate
+module _saturate
 (
 	output [23:0] q,
 	input [31:0] d,

@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module interrupt
+module _interrupt
 (
 	output [13:3] gpu_dout_out,
 	output gpu_dout_13_3_oe,
@@ -266,6 +266,6 @@ assign ins[6] = 16'hD3C0;
 assign ins[7] = 16'hE400;
 
 // INTER-UA.NET (153) - inssel : mx8p
-assign intins[15:0] = ins[icount][15:0];
+assign intins[15:0] = ins[icount[2:0]][15:0];
 
 endmodule

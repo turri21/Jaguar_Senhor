@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module iodec
+module _iodec
 (
 	input [15:0] a,
 	input intdev,

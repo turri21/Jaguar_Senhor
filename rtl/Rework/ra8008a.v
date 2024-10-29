@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module ra8008a
+module _ra8008a
 (
 	output	[7:0]	z,
 	input					clk,

@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module graphics
+module _graphics
 (
 	input [15:0] ima,
 	input [31:0] dwrite,
@@ -250,7 +250,7 @@ end
 assign gpu_irq_[1] = dint & ~dintd;
 
 // GRAPHICS.NET (103) - ins_exec : ins_exec
-ins_exec #(.JERRY(0)) ins_exec_inst
+_ins_exec #(.JERRY(0)) ins_exec_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_ins_exec_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_ins_exec_oe),
@@ -340,7 +340,7 @@ ins_exec #(.JERRY(0)) ins_exec_inst
 );
 
 // GRAPHICS.NET (125) - sboard : sboard
-sboard sboard_inst
+_sboard sboard_inst
 (
 	.dsta /* OUT */ (dsta[5:0]),
 	.sdatreq /* OUT */ (sdatreq),
@@ -392,7 +392,7 @@ sboard sboard_inst
 );
 
 // GRAPHICS.NET (140) - arith : arith
-arith #(.JERRY(0)) arith_inst
+_arith #(.JERRY(0)) arith_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_arith_out[2:0]),
 	.gpu_dout_oe /* BUS */ (gpu_dout_arith_2_0_oe),
@@ -424,7 +424,7 @@ arith #(.JERRY(0)) arith_inst
 );
 
 // GRAPHICS.NET (149) - divide : divider
-divider divide_inst
+_divider divide_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_divider_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_divider_oe),
@@ -442,7 +442,7 @@ divider divide_inst
 );
 
 // GRAPHICS.NET (155) - registers : registers
-registers registers_inst
+_registers registers_inst
 (
 	.srcd /* OUT */ (srcd[31:0]),
 	.srcdp /* OUT */ (srcdp[31:0]),
@@ -465,7 +465,7 @@ registers registers_inst
 );
 
 // GRAPHICS.NET (162) - gpu_mem : gpu_mem
-gpu_mem gpu_mem_inst
+_gpu_mem gpu_mem_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_mem_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_mem_oe),
@@ -521,7 +521,7 @@ gpu_mem gpu_mem_inst
 );
 
 // GRAPHICS.NET (176) - gpu_ctrl : gpu_ctrl
-gpu_ctrl gpu_ctrl_inst
+_gpu_ctrl gpu_ctrl_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_ctrl_out[15:0]),
 	.gpu_dout_5_0_oe /* BUS */ (gpu_dout_ctrl_5_0_oe), 
@@ -543,7 +543,7 @@ gpu_ctrl gpu_ctrl_inst
 );
 
 // GRAPHICS.NET (184) - gpu_ram : gpu_ram
-gpu_ram gpu_ram_inst
+_gpu_ram gpu_ram_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_ram_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_ram_oe),
@@ -556,7 +556,7 @@ gpu_ram gpu_ram_inst
 );
 
 // GRAPHICS.NET (189) - gpu_cpu : gpu_cpu
-gpu_cpu #(.JERRY(0)) gpu_cpu_inst
+_gpu_cpu #(.JERRY(0)) gpu_cpu_inst
 (
 	.dread_out /* BUS */ (dread_out[15:0]),
 	.dread_oe /* BUS */ (dread_oe),
@@ -579,7 +579,7 @@ gpu_cpu #(.JERRY(0)) gpu_cpu_inst
 );
 
 // GRAPHICS.NET (195) - gateway : gateway
-gateway #(.JERRY(0)) gateway_inst
+_gateway #(.JERRY(0)) gateway_inst
 (
 	.address_out /* BUS */ (gateway_addr_out[23:0]),
 	.address_oe /* BUS */ (gateway_addr_oe),
@@ -626,7 +626,7 @@ gateway #(.JERRY(0)) gateway_inst
 );
 
 // GRAPHICS.NET (205) - blit : blit
-blit blit_inst
+_blit blit_inst
 (
 	.blit_addr_out /* BUS */ (blit_addr_out[23:0]),
 	.blit_addr_oe /* BUS */ (blit_addr_oe),	// ElectronAsh.
@@ -716,4 +716,3 @@ assign gpu_dout_out[31:16] = (gpu_dout_ins_31_16_oe ? gpu_dout_ins_out[31:16] : 
 assign gpu_dout_31_16_oe = gpu_dout_ins_31_16_oe | gpu_dout_blit_oe;
 
 endmodule
-

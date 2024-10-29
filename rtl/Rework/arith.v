@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module arith
+module _arith
 (
 	output [31:0] gpu_data_out, // jerry only
 	output gpu_data_oe, // jerry only
@@ -184,7 +184,7 @@ assign mulb[15:0] = dstdp[15:0];
 assign mula[15:0] = (multselp) ? hisrcdp[15:0] : losrcdp[15:0];
 
 // ARITH.NET (105) - mult : mp16
-mp16 mult_inst
+_mp16 mult_inst
 (
 	.q /* OUT */ (mulq[31:0]),
 	.a /* IN */ (mula[15:0]),
@@ -320,7 +320,7 @@ assign alua[31:0] = aluazero_n ? aluat[31:0] : 32'h0;
 assign alub[31:0] = mantmode ? (mant[31:0]) : (macop_pp ? mulqp[31:0] : srcdp[31:0]);
 
 // ARITH.NET (208) - alu : alu32
-alu32 alu_inst
+_alu32 alu_inst
 (
 	.aluq /* OUT */ (aluq[31:0]),
 	.alu_co /* OUT */ (alu_co),
@@ -368,7 +368,7 @@ assign gpu_data_out[31:0] = accum[31:0];
 assign gpu_data_oe = accumrd;
 
 // ARITH.NET (213) - brl : brlshift
-brlshift brl_inst
+_brlshift brl_inst
 (
 	.brlq /* OUT */ (brlq[31:0]),
 	.brl_carry /* OUT */ (brl_carry),
@@ -378,7 +378,7 @@ brlshift brl_inst
 );
 
 // ARITH.NET (218) - saturate : saturate
-saturate saturate_inst
+_saturate saturate_inst
 (
 	.q /* OUT */ (satvallo[23:0]),
 	.d /* IN */ (dstdp[31:0]),
@@ -387,7 +387,7 @@ saturate saturate_inst
 );
 
 // DSP_A-5Q.NET (276) - saturate : saturate
-j_saturate jsaturate_inst
+_j_saturate jsaturate_inst
 (
 	.q /* OUT */ (satvalhi[31:0]),
 	.d /* IN */ (dstdp[31:0]),

@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module dcontrol
+module _dcontrol
 (
 	output [2:0] daddasel,
 	output [2:0] daddbsel,

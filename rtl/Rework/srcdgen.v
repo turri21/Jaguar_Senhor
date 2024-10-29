@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module srcdgen
+module _srcdgen
 (
 	output locdent,
 	output [31:0] locsrc,

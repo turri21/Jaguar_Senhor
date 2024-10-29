@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module address
+module _address
 (
 	output [31:0] gpu_dout_out,
 	output gpu_dout_oe,
@@ -394,7 +394,7 @@ begin
 end
 
 // ADDRESS.NET (195) - addamux : addamux
-addamux addamux_inst
+_addamux addamux_inst
 (
 	.adda_x /* OUT */ (adda_x[15:0]),
 	.adda_y /* OUT */ (adda_y[15:0]),
@@ -421,7 +421,7 @@ assign addb_x[15:0] = addbsel[1] ? (addbsel[0] ? a1_x[15:0] : a1_frac_x[15:0]) :
 assign addb_y[15:0] = addbsel[1] ? (addbsel[0] ? a1_y[15:0] : a1_frac_y[15:0]) : (addbsel[0] ? a2_y[15:0] : a1_y[15:0]);
 
 // ADDRESS.NET (205) - addradd : addradd
-addradd addradd_inst
+_addradd addradd_inst
 (
 	.addq_x /* OUT */ (addq_x[15:0]),
 	.addq_y /* OUT */ (addq_y[15:0]),
@@ -442,7 +442,7 @@ assign data_x[15:0] = addqsel ? addq_x[15:0] : gpu_din[15:0];
 assign data_y[15:0] = addqsel ? addq_y[15:0] : gpu_din[31:16];
 
 // ADDRESS.NET (216) - addrgen : addrgen
-addrgen addrgen_inst
+_addrgen addrgen_inst
 (
 	.address /* OUT */ (address[23:0]),
 	.pixa /* OUT */ (pixa[2:0]),
@@ -468,7 +468,7 @@ addrgen addrgen_inst
 );
 
 // ADDRESS.NET (226) - addrcomp : addrcomp
-addrcomp addrcomp_inst
+_addrcomp addrcomp_inst
 (
 	.a1_outside /* OUT */ (a1_outside),
 	.a1_x /* IN */ (a1_x[15:0]),

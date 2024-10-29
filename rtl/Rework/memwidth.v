@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module memwidth
+module _memwidth
 (
 	input [3:0] w,
 	input [2:0] ba,

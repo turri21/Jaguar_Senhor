@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module brlshift
+module _brlshift
 (
 	output [31:0] brlq,
 	output brl_carry,
@@ -89,7 +89,7 @@ assign ashr_n = ~(~srcdp[31] & brlmux[1:0]==2'b11);
 assign mux[1] = ~(ashr_n & rotate_n);
 
 // ARITH.NET (486) - brl : barrel32
-barrel32 brl_inst
+_barrel32 brl_inst
 (
 	.z /* OUT */ (z[31:0]),
 	.mux /* IN */ (mux[1:0]),

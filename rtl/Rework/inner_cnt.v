@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module inner_cnt
+module _inner_cnt
 (
 	output [31:16] gpu_dout_out,
 	output gpu_dout_31_16_oe, //= statrd; already handled above

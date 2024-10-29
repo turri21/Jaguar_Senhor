@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module srcshift
+module _srcshift
 (
 	output [31:0] srcd_0,
 	output [31:0] srcd_1,

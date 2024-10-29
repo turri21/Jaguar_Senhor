@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module systolic
+module _systolic
 (
 	output mtx_atomic,
 	output mtx_dover,

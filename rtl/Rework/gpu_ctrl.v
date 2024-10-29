@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module gpu_ctrl
+module _gpu_ctrl
 (
 	output [15:0] gpu_dout_out,// 6-10 not used
 	output gpu_dout_5_0_oe,

@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module daddamux
+module _daddamux
 (
 	output [15:0] adda_0,
 	output [15:0] adda_1,

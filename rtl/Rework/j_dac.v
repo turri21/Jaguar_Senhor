@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_dac
+module _j_dac
 (
 	input resetl,
 	input clk,
@@ -81,7 +81,7 @@ assign go = ~(p[6] & p[7]);
 assign stop = ~go;
 
 // DAC.NET (60) - ldac[0] : pulse
-j_pulse ldac_index_0_inst
+_j_pulse ldac_index_0_inst
 (
 	.a /* IN */ (p[7:0]),
 	.b /* IN */ (dl2[8:2]),
@@ -93,7 +93,7 @@ j_pulse ldac_index_0_inst
 );
 
 // DAC.NET (61) - ldac[1] : pulse
-j_pulse ldac_index_1_inst
+_j_pulse ldac_index_1_inst
 (
 	.a /* IN */ (p[7:0]),
 	.b /* IN */ ({~dl2[15],dl2[14:9]}),//dli[15]
@@ -105,7 +105,7 @@ j_pulse ldac_index_1_inst
 );
 
 // DAC.NET (62) - rdac[0] : pulse
-j_pulse rdac_index_0_inst
+_j_pulse rdac_index_0_inst
 (
 	.a /* IN */ (p[7:0]),
 	.b /* IN */ (dr2[8:2]),
@@ -117,7 +117,7 @@ j_pulse rdac_index_0_inst
 );
 
 // DAC.NET (63) - rdac[1] : pulse
-j_pulse rdac_index_1_inst
+_j_pulse rdac_index_1_inst
 (
 	.a /* IN */ (p[7:0]),
 	.b /* IN */ ({~dr2[15],dr2[14:9]}),//dri[15]

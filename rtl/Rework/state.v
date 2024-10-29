@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module state
+module _state
 (
 	output [23:0] blit_addr_out,
 	output blit_addr_oe,	// ElectronAsh.
@@ -198,7 +198,7 @@ assign inhibent = ~(|zmode_obuf[2:0] | bcompen | dcompen);
 assign inhiben = ~(inhibent | phrase_mode_obuf | bkgwren);
 
 // STATE.NET (127) - inner : inner
-inner inner_inst
+_inner inner_inst
 (
 	.gpu_dout_10_2_out /* BUS */ (gpu_dout_out[10:2]),
 //	.gpu_dout_10_2_oe /* BUS */ (gpu_dout_10_2_oe), = statrd; already handled
@@ -259,7 +259,7 @@ inner inner_inst
 );
 
 // STATE.NET (143) - outer : outer
-outer outer_inst
+_outer outer_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_out[15:11]),
 //	.gpu_dout_15_11_oe /* BUS */ (gpu_dout_15_11_oe), = statrd; already handled
@@ -283,7 +283,7 @@ outer outer_inst
 );
 
 // STATE.NET (151) - mcontrol : mcontrol
-mcontrol mcontrol_inst
+_mcontrol mcontrol_inst
 (
 	.blit_addr_out /* BUS */ (blit_addr_out[23:0]),
 	.blit_addr_oe /* BUS */ (blit_addr_oe),	// ElectronAsh.
@@ -323,7 +323,7 @@ mcontrol mcontrol_inst
 );
 
 // STATE.NET (159) - acontrol : acontrol
-acontrol acontrol_inst
+_acontrol acontrol_inst
 (
 	.addasel /* OUT */ (addasel[2:0]),
 	.addbsel /* OUT */ (addbsel[1:0]),
@@ -381,7 +381,7 @@ acontrol acontrol_inst
 );
 
 // STATE.NET (178) - dcontrol : dcontrol
-dcontrol dcontrol_inst
+_dcontrol dcontrol_inst
 (
 	.daddasel /* OUT */ (daddasel[2:0]),
 	.daddbsel /* OUT */ (daddbsel[2:0]),
@@ -407,7 +407,7 @@ dcontrol dcontrol_inst
 );
 
 // STATE.NET (187) - comp_ctrl : comp_ctrl
-comp_ctrl comp_ctrl_inst
+_comp_ctrl comp_ctrl_inst
 (
 	.dbinh_n /* OUT */ (dbinh_n[7:0]),
 	.nowrite /* OUT */ (nowrite),
@@ -427,7 +427,7 @@ comp_ctrl comp_ctrl_inst
 );
 
 // STATE.NET (195) - blitstop : blitstop
-blitstop blitstop_inst
+_blitstop blitstop_inst
 (
 	.gpu_dout_1_out /* BUS */ (gpu_dout_out[1]),
 //	.gpu_dout_1_oe /* BUS */ (gpu_dout_1_oe), = statrd; already handled

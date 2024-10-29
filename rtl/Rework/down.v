@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module down
+module _down
 (
 	input [63:0] din,
 	input [2:0] dmuxd,

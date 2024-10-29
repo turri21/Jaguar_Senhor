@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module bus
+module _bus
 (
 	input reads,
 	input ack,

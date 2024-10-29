@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module cryrgb
+module _cryrgb
 (
 	output [7:0] r,
 	output [7:0] g,
@@ -62,7 +62,7 @@ assign i[7:0] = cry[7:0];
 assign c[7:0] = cry[15:8];
 
 // PIX.NET (201) - red : ra8008a
-ra8008a red_inst
+_ra8008a red_inst
 (
 	.z /* OUT */ (r1[7:0]),
 	.clk /* IN */ (vclk),
@@ -71,7 +71,7 @@ ra8008a red_inst
 );
 
 // PIX.NET (202) - green : ra8008b
-ra8008b green_inst
+_ra8008b green_inst
 (
 	.z /* OUT */ (g1[7:0]),
 	.clk /* IN */ (vclk),
@@ -80,7 +80,7 @@ ra8008b green_inst
 );
 
 // PIX.NET (203) - blue : ra8008c
-ra8008c blue_inst
+_ra8008c blue_inst
 (
 	.z /* OUT */ (b1[7:0]),
 	.clk /* IN */ (vclk),
@@ -135,7 +135,7 @@ assign b2a[9:0] = {2'b00, b2[7:0]};
 assign i2a[9:0] = {2'b00, i2[7:0]};
 
 // PIX.NET (249) - r3 : mp1010a
-mp1010a r3_inst
+_mp1010a r3_inst
 (
 	.q /* OUT */ (r3[19:0]),
 	.a /* IN */ (r2a[9:0]),
@@ -143,7 +143,7 @@ mp1010a r3_inst
 );
 
 // PIX.NET (250) - g3 : mp1010a
-mp1010a g3_inst
+_mp1010a g3_inst
 (
 	.q /* OUT */ (g3[19:0]),
 	.a /* IN */ (g2a[9:0]),
@@ -151,7 +151,7 @@ mp1010a g3_inst
 );
 
 // PIX.NET (251) - b3 : mp1010a
-mp1010a b3_inst
+_mp1010a b3_inst
 (
 	.q /* OUT */ (b3[19:0]),
 	.a /* IN */ (b2a[9:0]),

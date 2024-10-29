@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_jmisc
+module _j_jmisc
 (
 	input [15:0] din,
 	input clk,

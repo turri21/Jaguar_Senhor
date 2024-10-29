@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module gpu_cpu
+module _gpu_cpu
 (
 	output [15:0] dread_out,
 	output dread_oe,

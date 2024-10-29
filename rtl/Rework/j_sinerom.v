@@ -2,7 +2,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_sinerom
+module _j_sinerom
 (
 	output [31:0] gpu_data_out,
 	output gpu_data_oe,
@@ -15,15 +15,10 @@ module j_sinerom
 wire romcs;
 
 // DSP_RAM.NET (132) - romcs : clkgen
-j_clkgen romcs_inst
-(
-	.ramcs /* OUT */ (romcs),
-	.clk /* IN */ (clk),
-	.ena /* IN */ (romen)
-);
+assign romcs = clk | ~romen;
 
 // DSP_RAM.NET (133) - sinerom : raa016a
-raa016a sinerom_inst
+_raa016a sinerom_inst
 (
 	.z_out /* BUS */ (gpu_data_out[15:0]),
 	.z_oe /* BUS */ (gpu_data_oe),

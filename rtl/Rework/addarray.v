@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module addarray
+module _addarray
 (
 	output [15:0] addq_0,
 	output [15:0] addq_1,
@@ -63,7 +63,7 @@ assign sat = |daddmode[1:0];
 assign hicinh = &daddmode[1:0];
 
 // ADDARRAY.NET (84) - adder1 : add16sat
-add16sat adder1_inst
+_add16sat adder1_inst
 (
 	.r /* OUT */ (addq_0[15:0]),
 	.co /* OUT */ (co[0]),
@@ -76,7 +76,7 @@ add16sat adder1_inst
 );
 
 // ADDARRAY.NET (87) - adder2 : add16sat
-add16sat adder2_inst
+_add16sat adder2_inst
 (
 	.r /* OUT */ (addq_1[15:0]),
 	.co /* OUT */ (co[1]),
@@ -89,7 +89,7 @@ add16sat adder2_inst
 );
 
 // ADDARRAY.NET (90) - adder3 : add16sat
-add16sat adder3_inst
+_add16sat adder3_inst
 (
 	.r /* OUT */ (addq_2[15:0]),
 	.co /* OUT */ (co[2]),
@@ -102,7 +102,7 @@ add16sat adder3_inst
 );
 
 // ADDARRAY.NET (93) - adder4 : add16sat
-add16sat adder4_inst
+_add16sat adder4_inst
 (
 	.r /* OUT */ (addq_3[15:0]),
 	.co /* OUT */ (co[3]),

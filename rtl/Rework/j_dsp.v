@@ -1,7 +1,7 @@
 /* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
-module j_dsp
+module _j_dsp
 (
 	input [15:0] ima,
 	input [31:0] dout,
@@ -252,7 +252,7 @@ assign i2int_n = ~i2int;
 assign gpu_irq[1] = i2int & i2intd_n;
 
 // DSP.NET (102) - ins_exec : dsp_exec
-ins_exec #(.JERRY(1)) ins_exec_inst
+_ins_exec #(.JERRY(1)) ins_exec_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_ins_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_ins_oe),
@@ -342,7 +342,7 @@ ins_exec #(.JERRY(1)) ins_exec_inst
 );
 
 // DSP.NET (124) - sboard : sboard
-sboard sboard_inst
+_sboard sboard_inst
 (
 	.dsta /* OUT */ (dsta[5:0]),
 	.sdatreq /* OUT */ (sdatreq),
@@ -394,7 +394,7 @@ sboard sboard_inst
 );
 
 // DSP.NET (139) - arith : dsp_arith
-arith #(.JERRY(1)) arith_inst
+_arith #(.JERRY(1)) arith_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_arith_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_arith_oe),
@@ -428,7 +428,7 @@ arith #(.JERRY(1)) arith_inst
 );
 
 // DSP.NET (148) - divide : divide
-divider divide_inst
+_divider divide_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_div_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_div_oe),
@@ -446,7 +446,7 @@ divider divide_inst
 );
 
 // DSP.NET (154) - registers : registers
-registers registers_inst
+_registers registers_inst
 (
 	.srcd /* OUT */ (srcd[31:0]),
 	.srcdp /* OUT */ (srcdp[31:0]),
@@ -469,7 +469,7 @@ registers registers_inst
 );
 
 // DSP.NET (161) - dsp_mem : dsp_mem
-gpu_mem #(.JERRY(1)) dsp_mem_inst
+_gpu_mem #(.JERRY(1)) dsp_mem_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_mem_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_mem_oe),
@@ -527,7 +527,7 @@ gpu_mem #(.JERRY(1)) dsp_mem_inst
 );
 
 // DSP.NET (174) - dsp_ctrl : dsp_ctrl
-gpu_ctrl dsp_ctrl_inst
+_gpu_ctrl dsp_ctrl_inst
 (
 	.gpu_dout_out /* BUS */ (gpu_dout_ctrl_out[15:0]),
 	.gpu_dout_5_0_oe /* BUS */ (gpu_dout_ctrl_5_0_oe),
@@ -549,7 +549,7 @@ gpu_ctrl dsp_ctrl_inst
 );
 
 // DSP.NET (182) - dsp_ram : dsp_ram
-j_dsp_ram dsp_ram_inst
+_j_dsp_ram dsp_ram_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_ram_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_ram_oe),
@@ -563,7 +563,7 @@ j_dsp_ram dsp_ram_inst
 );
 
 // DSP.NET (187) - dsp_slave : dsp_slave
-gpu_cpu #(.JERRY(1)) dsp_slave_inst
+_gpu_cpu #(.JERRY(1)) dsp_slave_inst
 (
 	.dread_out /* BUS */ (dread_out[15:0]),
 	.dread_oe /* BUS */ (dread_oe),
@@ -587,7 +587,7 @@ gpu_cpu #(.JERRY(1)) dsp_slave_inst
 
 wire dummy;
 // DSP.NET (193) - gateway : dsp_gate
-gateway #(.JERRY(1)) gateway_inst
+_gateway #(.JERRY(1)) gateway_inst
 (
 	.gpu_data_out /* BUS */ (gpu_data_gate_out[31:0]),
 	.gpu_data_oe /* BUS */ (gpu_data_gate_oe),

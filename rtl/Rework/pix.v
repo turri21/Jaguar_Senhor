@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module pix
+module _pix
 (
 	input [15:0] din,
 	input dd,
@@ -183,7 +183,7 @@ end
 assign ppd = ppdi;
 
 // PIX.NET (82) - pd3 : cryrgb
-cryrgb pd3_inst
+_cryrgb pd3_inst
 (
 	.r /* OUT */ (pd3[7:0]),
 	.g /* OUT */ (pd3[15:8]),

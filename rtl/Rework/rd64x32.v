@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module rd64x32
+module _rd64x32
 (
 	output	[31:0]	qa,
 	output	[31:0]	qb,

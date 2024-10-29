@@ -1,7 +1,7 @@
 /* verilator lint_off LITENDIAN */
 //`include "defs.v"
 
-module raa016a
+module _raa016a
 (
 	output	[15:0]	z_out,
 	output	z_oe,

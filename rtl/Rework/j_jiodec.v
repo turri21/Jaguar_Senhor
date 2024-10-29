@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module j_jiodec
+module _j_jiodec
 (
 	input [15:0] a,
 	input dspcsl,

@@ -18,15 +18,10 @@ wire ramcs;
 // assign ena_n = ~ena;
 // assign ramcs = clk | ena_n;
 //
-j_clkgen ramcs_inst
-(
-	.ramcs /* OUT */ (ramcs),	// Inverted!
-	.clk /* IN */ (clk),
-	.ena /* IN */ (ramen)
-);
+assign ramcs = clk | ~ramen;
 
 // DSP_RAM.NET (114) - ram : aba032a
-aba032a ram_inst
+_aba032a ram_inst
 (
 	.z_out /* BUS */ (gpu_data_out[31:0]),
 	.z_oe /* BUS */ (gpu_data_oe),

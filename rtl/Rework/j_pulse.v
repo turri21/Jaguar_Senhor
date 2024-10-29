@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module j_pulse
+module _j_pulse
 (
 	input [7:0] a,
 	input [6:0] b,

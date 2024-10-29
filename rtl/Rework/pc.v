@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module pc
+module _pc
 (
 	output [22:0] pc,
 	output [23:0] program_count,

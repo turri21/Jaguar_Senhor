@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module data
+module _data
 (
 	output [63:0] wdata_out,
 	output wdata_oe,
@@ -209,7 +209,7 @@ begin
 end
 
 // DATA.NET (108) - src_shift : srcshift
-srcshift src_shift_inst
+_srcshift src_shift_inst
 (
 	.srcd_0 /* OUT */ (srcdlo[31:0]),
 	.srcd_1 /* OUT */ (srcdhi[31:0]),
@@ -480,7 +480,7 @@ begin
 end
 
 // DATA.NET (259) - zedcomp : zedcomp
-zedcomp zedcomp_inst
+_zedcomp zedcomp_inst
 (
 	.zcomp /* OUT */ (zcomp[3:0]),
 	.srczplo /* IN */ (srczp_0[31:0]),
@@ -503,7 +503,7 @@ begin
 end
 
 // DATA.NET (273) - addamux : daddamux
-daddamux addamux_inst
+_daddamux addamux_inst
 (
 	.adda_0 /* OUT */ (adda_0[15:0]),
 	.adda_1 /* OUT */ (adda_1[15:0]),
@@ -523,7 +523,7 @@ daddamux addamux_inst
 );
 
 // DATA.NET (279) - addbmux : daddbmux
-daddbmux addbmux_inst
+_daddbmux addbmux_inst
 (
 	.addb_0 /* OUT */ (addb_0[15:0]),
 	.addb_1 /* OUT */ (addb_1[15:0]),
@@ -537,7 +537,7 @@ daddbmux addbmux_inst
 );
 
 // DATA.NET (284) - addarray : addarray
-addarray addarray_inst
+_addarray addarray_inst
 (
 	.addq_0 /* OUT */ (addq_0[15:0]),
 	.addq_1 /* OUT */ (addq_1[15:0]),
@@ -582,7 +582,7 @@ assign local_data1lo[15:0] = local_data1[15:0];
 assign local_data1hi[15:0] = local_data1[31:16];
 
 // DATA.NET (301) - data_out : data_mux
-data_mux data_out_inst
+_data_mux data_out_inst
 (
 	.wdata_out /* BUS */ (wdata_out[63:0]),
 	.wdata_oe /* BUS */ (wdata_oe),
@@ -609,4 +609,3 @@ data_mux data_out_inst
 	.srczhi /* IN */ (srczo_1[31:0])
 );
 endmodule
-

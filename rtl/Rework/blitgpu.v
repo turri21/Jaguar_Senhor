@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module blitgpu
+module _blitgpu
 (
 	output a1baseld,
 	output a1flagld,

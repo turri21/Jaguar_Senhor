@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module abus
+module _abus
 (
 	input [23:0] ain,
 	input ainen,
@@ -237,12 +237,12 @@ assign iospd[1:0] = iospd_obuf[1:0];
 assign bs[3:0] = bs_obuf[3:0];
 assign cpu32 = cpu32_obuf;
 
-assign refrate[3:0] = refrate_obuf[3:0];
+//assign refrate[3:0] = refrate_obuf[3:0];
 
 // Inhibit the old DRAM refresh pulses.
 // Will help a bit with debugging via SignalTap, and might also help certain games to run a bit faster. ElectronAsh.
 //
-//assign refrate[3:0] = 4'b0000;
+assign refrate[3:0] = 4'b0000;
 
 assign nocpu = nocpu_obuf;
 assign hilo = hilo_obuf;

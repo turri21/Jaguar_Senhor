@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module prefetch
+module _prefetch
 (
 	output [24:22] gpu_dout_out,
 	output gpu_dout_oe,
@@ -346,7 +346,7 @@ assign progreq = ~(&prst[3:0]);
 assign pabort = jrel | jabs;
 
 // PREFETCH.NET (249) - pc : pc
-pc pc_inst
+_pc pc_inst
 (
 	.pc /* OUT */ (pc[22:0]),
 	.program_count /* OUT */ (program_count[23:0]),

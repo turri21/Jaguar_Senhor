@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module j_jbus
+module _j_jbus
 (
 	input [23:0] ain,
 	input [31:0] din,

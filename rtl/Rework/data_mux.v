@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module data_mux
+module _data_mux
 (
 	output [63:0] wdata_out,
 	output wdata_oe,

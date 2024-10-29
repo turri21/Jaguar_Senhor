@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module execon
+module _execon
 (
 	output dstdgate,
 	output exe,

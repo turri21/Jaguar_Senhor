@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module registers
+module _registers
 (
 	output [31:0] srcd,
 	output [31:0] srcdp,
@@ -103,7 +103,7 @@ assign stbe = stbd;
 assign stb = stbe;
 
 // REGIS-WA.NET (93) - reg_ram : rd64x32
-rd64x32 reg_ram_inst
+_rd64x32 reg_ram_inst
 (
 	.qa /* OUT */ (srcdr[31:0]),
 	.qb /* OUT */ (dstdr[31:0]),

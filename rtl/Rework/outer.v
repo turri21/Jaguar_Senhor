@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module outer
+module _outer
 (
 	output [15:11] gpu_dout_out,
 	output gpu_dout_15_11_oe, // statrd; already handled above

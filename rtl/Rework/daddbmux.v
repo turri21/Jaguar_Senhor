@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module daddbmux
+module _daddbmux
 (
 	output [15:0] addb_0,
 	output [15:0] addb_1,

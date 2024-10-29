@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module ra6032a
+module _ra6032a
 (
 	output	[26:0]	z,
 	input						clk,

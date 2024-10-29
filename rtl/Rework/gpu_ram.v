@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module gpu_ram
+module _gpu_ram
 (
 	output [31:0] gpu_data_out,
 	output gpu_data_oe,
@@ -14,8 +14,6 @@ module gpu_ram
 wire [9:0] rama;
 wire ramwe;
 wire ramcs;
-wire [31:0] gpu_data_oe_;
-assign gpu_data_oe = gpu_data_oe_[0];
 
 // GPU_RAM.NET (27) - ramad[0-9] : nivniv
 assign rama[9:0] = ram_addr[11:2];
@@ -26,10 +24,10 @@ assign ramwe = ~(ramen & gpu_memw);
 assign ramcs = clk | ~ramen;
 
 // GPU_RAM.NET (69) - ram : aba032a
-aba032a ram_inst
+_aba032a ram_inst
 (
 	.z_out /* BUS */ (gpu_data_out[31:0]),
-	.z_oe /* BUS */ (gpu_data_oe_[31:0]),
+	.z_oe /* BUS */ (gpu_data_oe),
 	.z_in /* BUS */ (gpu_data_in[31:0]),
 	.cs /* IN */ (ramcs),
 	.we /* IN */ (ramwe),

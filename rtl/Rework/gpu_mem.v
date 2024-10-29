@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module gpu_mem
+module _gpu_mem
 (
 	output [31:0] gpu_data_out,
 	output gpu_data_oe,

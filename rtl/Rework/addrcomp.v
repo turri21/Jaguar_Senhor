@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module addrcomp
+module _addrcomp
 (
 	output a1_outside,
 	input [15:0] a1_x,

@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module gateway
+module _gateway
 (
 	output [23:0] address_out,
 	output address_oe,	// ElectronAsh.

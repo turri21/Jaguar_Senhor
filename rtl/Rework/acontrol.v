@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module acontrol
+module _acontrol
 (
 	output [2:0] addasel,
 	output [1:0] addbsel,

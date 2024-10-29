@@ -1,7 +1,7 @@
 //`include "defs.v"
 // altera message_off 10036
 
-module wbk
+module _wbk
 (
 	input [63:0] d,// only d[23:14] and d[63:43] used
 	input obld_0,

@@ -1,6 +1,6 @@
 //`include "defs.v"
 
-module addamux
+module _addamux
 (
 	output [15:0] adda_x,
 	output [15:0] adda_y,
