@@ -401,27 +401,39 @@ assign j_xtest = 1'b0;	// "test" pins on both Tom and Jerry are tied to GND on t
 // --- assign xsiz_in[0] = (xba_in) ? ~j68_byte_ena[0] : xsiz_out[0];
 // --- assign xsiz_in[1] = (xba_in) ? ~j68_byte_ena[1] : xsiz_out[1];
 
+//assign rw =
+//	(aen)   ? xrw_out :
+//	(j_aen) ? j_xrw_out :
+//	          fx68k_rw;
 assign rw =
-	(aen)   ? xrw_out :
-	(j_aen) ? j_xrw_out :
+	(xrw_oe)   ? xrw_out :
+	(j_xrw_oe) ? j_xrw_out :
 	          fx68k_rw;
 
 assign xrw_in = rw;
 assign j_xrw_in = rw;
 
 
+//assign siz[1:0] =
+//	(aen) ? xsiz_out[1:0]
+//	: (j_aen) ? j_xsiz_out[1:0]
+//	: {fx68k_uds_n, fx68k_lds_n};
 assign siz[1:0] =
-	(aen) ? xsiz_out[1:0]
-	: (j_aen) ? j_xsiz_out[1:0]
+	(|xsiz_oe) ? xsiz_out[1:0]
+	: (|j_xsiz_oe) ? j_xsiz_out[1:0]
 	: {fx68k_uds_n, fx68k_lds_n};
 
 assign xsiz_in = siz;
 assign j_xsiz_in = siz;
 
 
+//assign dreql =
+//	((aen) ? xdreql_out : 1'd1) & 
+//	((j_aen) ? j_xdreql_out : 1'd1) &
+//	fx68k_as_n;
 assign dreql =
-	((aen) ? xdreql_out : 1'd1) & 
-	((j_aen) ? j_xdreql_out : 1'd1) &
+	((xdreql_oe) ? xdreql_out : 1'd1) & 
+	((j_xdreql_oe) ? j_xdreql_out : 1'd1) &
 	fx68k_as_n;
 
 assign xdreql_in = dreql;
@@ -431,16 +443,23 @@ assign j_xdreql_in = dreql;
 // Busses between TOM/JERRY/68000
 
 // Address bus
+//assign abus[23:0] =
+//	(aen) ? xa_out[23:0]				// Tom.
+//	: (j_aen) ? j_xa_out[23:0]		// Jerry.
+//	: fx68k_byte_addr[23:0];		// 68000.
 assign abus[23:0] =
-	(aen) ? xa_out[23:0]				// Tom.
-	: (j_aen) ? j_xa_out[23:0]		// Jerry.
+	(|xa_oe) ? xa_out[23:0]				// Tom.
+	: (|j_xa_oe) ? j_xa_out[23:0]		// Jerry.
 	: fx68k_byte_addr[23:0];		// 68000.
 
 assign xa_in[23:0] = abus[23:0];
 
 // assign j_xa_in = abus;
+//assign j_xa_in[23:0] =
+//	(aen) ? xa_out[23:0]				// Tom.
+//	: fx68k_byte_addr[23:0]; 		// 68000.
 assign j_xa_in[23:0] =
-	(aen) ? xa_out[23:0]				// Tom.
+	(|xa_oe) ? xa_out[23:0]				// Tom.
 	: fx68k_byte_addr[23:0]; 		// 68000.
 
 // Data bus
@@ -1190,7 +1209,7 @@ begin
 		cnt <= 4'd0;
 		ir <= 9'd0;
 		dr <= 16'd0;
-		r_dout <= 1'b0;
+		r_dout <= 1'b1;
 
 		wraddr <= 6'b000000;
 		wrdata <= 16'hFFFF;
