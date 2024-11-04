@@ -36,9 +36,13 @@ module sdram
 	output            SDRAM_CLK,   // clock for chip
 
 	input      [26:1] ch1_addr,    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+	input      [12:0] ch1_caddr,   // direct control.
 	output reg [31:0] ch1_dout,    // data output to cpu
 	input      [31:0] ch1_din,     // data input from cpu
 	input             ch1_req,     // request
+	input             ch1_ref,     // refquest
+	input             ch1_act,     // actquest
+	input             ch1_pch,     // pchquest
 	input             ch1_rnw,     // 1 - read, 0 - write
 	input      [3:0]  ch1_be,      // Byte enable (bits) for burst writes. TODO
 	output reg        ch1_ready,
@@ -67,7 +71,7 @@ assign {SDRAM_DQMH,SDRAM_DQML} = SDRAM_A[12:11];
 
 
 // Burst length = 4
-localparam BURST_LENGTH        = 4;
+localparam BURST_LENGTH        = 2;
 localparam BURST_CODE          = (BURST_LENGTH == 8) ? 3'b011 : (BURST_LENGTH == 4) ? 3'b010 : (BURST_LENGTH == 2) ? 3'b001 : 3'b000;  // 000=1, 001=2, 010=4, 011=8
 localparam ACCESS_TYPE         = 1'b0;     // 0=sequential, 1=interleaved
 localparam CAS_LATENCY         = 3'd2;     // 2 for < 100MHz, 3 for >100MHz
@@ -80,8 +84,9 @@ localparam cycles_per_refresh  = 14'd780;  // (64000*100)/8192-1 Calc'd as (64ms
 //localparam cycles_per_refresh  = 14'd608;  // (64000*78)/8192-1 Calc'd as (64ms @ 78MHz)/8192 rose
 localparam startup_refresh_max = 14'b11111111111111;
 
-// SDRAM commands
+// SDRAM commands - ras, cas, we
 wire [2:0] CMD_NOP             = 3'b111;
+wire [2:0] CMD_BURST_STOP      = 3'b110;
 wire [2:0] CMD_ACTIVE          = 3'b011;
 wire [2:0] CMD_READ            = 3'b101;
 wire [2:0] CMD_WRITE           = 3'b100;
@@ -106,6 +111,7 @@ localparam STATE_IDLE_5  = 9;
 localparam STATE_RFSH    = 10;
 localparam STATE_RW3     = 11;
 localparam STATE_RW4     = 12;
+localparam STATE_REF_1   = 13;
 
 always @(posedge clk) begin
 	(*noprune*) reg [CAS_LATENCY+BURST_LENGTH:0] data_ready_delay1, data_ready_delay2, data_ready_delay3;
@@ -117,11 +123,16 @@ always @(posedge clk) begin
 	reg  [3:0] state = STATE_STARTUP;
 
 	reg       ch1_rq, ch2_rq, ch3_rq;
+	reg       ch1_rf, ch1_ac, ch1_pc;
 	reg [1:0] ch;
+	reg       ch1_active;
 
 	ch1_rq <= ch1_rq | ch1_req;
 	ch2_rq <= ch2_rq | ch2_req;
 	ch3_rq <= ch3_rq | ch3_req;
+	ch1_rf <= ch1_rf | ch1_ref;
+	ch1_ac <= ch1_ac | ch1_act;
+	ch1_pc <= (ch1_pc | ch1_pch) && ch1_active;
 
 	ch1_ready <= 0;
 	ch2_ready <= 0;
@@ -136,9 +147,9 @@ always @(posedge clk) begin
 	dq_reg <= SDRAM_DQ;
 	
 	// MSB Byte is read/written FIRST now. ElectronAsh.
-	if(data_ready_delay1[3]) ch1_dout[31:16] <= dq_reg;
-	if(data_ready_delay1[2]) ch1_dout[15:00] <= dq_reg;
-	if(data_ready_delay1[3]) ch1_ready <= 1;
+	if(data_ready_delay1[1]) ch1_dout[31:16] <= dq_reg;
+	if(data_ready_delay1[0]) ch1_dout[15:00] <= dq_reg;
+	if(data_ready_delay1[0]) ch1_ready <= 1;
 	
 	if(data_ready_delay2[3]) ch2_dout[15:00] <= dq_reg;
 	if(data_ready_delay2[2]) ch2_dout[31:16] <= dq_reg;
@@ -193,7 +204,19 @@ always @(posedge clk) begin
 		STATE_IDLE_1: begin
 			state      <= STATE_IDLE;
 			// mask possible refresh to reduce colliding.
-			if (refresh_count > cycles_per_refresh) begin
+//			if (refresh_count > cycles_per_refresh) begin
+//				//------------------------------------------------------------------------
+//				//-- Start the refresh cycle. 
+//				//-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
+//				//------------------------------------------------------------------------
+//				state    <= STATE_RFSH;
+//				command  <= CMD_AUTO_REFRESH;
+//				refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
+//				chip     <= 0;
+//			end
+		end
+
+		STATE_REF_1: begin
 				//------------------------------------------------------------------------
 				//-- Start the refresh cycle. 
 				//-- This tasks tRFC (66ns), so 7 idle cycles are needed @ 120MHz
@@ -202,7 +225,6 @@ always @(posedge clk) begin
 				command  <= CMD_AUTO_REFRESH;
 				refresh_count <= refresh_count - cycles_per_refresh + 1'd1;
 				chip     <= 0;
-			end
 		end
 
 		STATE_RFSH: begin
@@ -212,20 +234,65 @@ always @(posedge clk) begin
 		end
 
 		STATE_IDLE: begin
-			if (refresh_count > (cycles_per_refresh << 1)) begin
-				// Priority is to issue a refresh if one is outstanding
-				state <= STATE_IDLE_1;
-			end
-			else if(ch1_rq | ch1_req) begin	// Trying to save one clock cycle, by checking for ch1_req here.
+			if(ch1_rf | ch1_ref) begin	// Trying to save one clock cycle, by checking for ch1_req here.
 														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
-				{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, 1'b1, ch1_addr[25:1]};
-				chip       <= ch1_addr[26];
-				saved_data <= ch1_din;
-				saved_wr   <= ~ch1_rnw;
+				state <= STATE_REF_1;
+				ch1_active <= 0;
+				ch1_rf <= 0;
+			end
+			else if(ch1_ac | ch1_act) begin	// Trying to save one clock cycle, by checking for ch1_req here.
+														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
+				{SDRAM_BA,SDRAM_A} <= {2'b00,ch1_caddr[12:0]}; // no auto precharge
+				chip       <= 0;
 				ch         <= 0;
 				//ch1_rq     <= 0;
 				command    <= CMD_ACTIVE;
-				state      <= STATE_WAIT;
+				state      <= STATE_IDLE_1;
+				ch1_ac     <= 0;
+				ch1_active <= 1;
+			end
+			else if((ch1_pc | ch1_pch) && ch1_active) begin	// Trying to save one clock cycle, by checking for ch1_req here.
+														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
+				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,10'h0}; // no auto precharge
+				chip       <= 0;
+				ch         <= 0;
+				//ch1_rq     <= 0;
+				command    <= CMD_PRECHARGE;
+				state      <= STATE_IDLE_1;
+				ch1_pc     <= 0;
+				ch1_active <= 0;
+			end
+//			if (refresh_count > (cycles_per_refresh << 1)) begin
+//				// Priority is to issue a refresh if one is outstanding
+//				state <= STATE_IDLE_1;
+//			end
+			else if(ch1_rq | ch1_req) begin	// Trying to save one clock cycle, by checking for ch1_req here.
+														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
+				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,ch1_caddr[8:0],1'b0}; // no auto precharge
+				if(~ch1_rnw) begin
+					command  <= CMD_WRITE;
+					saved_data <= ch1_din;
+					saved_wr   <= ~ch1_rnw;
+					//if (ch==0) begin
+						SDRAM_DQ    <= ch1_din[31:16];
+						SDRAM_A[12:11] <= ~ch1_be[3:2];
+					//end
+					//else begin
+					//	SDRAM_DQ <= ch1_din[15:0];
+					//	SDRAM_A[12:11] <= 2'b00;
+					//end
+					state <= STATE_RW2;
+				end
+				else begin
+					command <= CMD_READ;
+					state   <= STATE_IDLE_3;
+					//if(ch == 0) 
+					data_ready_delay1[CAS_LATENCY+BURST_LENGTH] <= 1;
+					//if(ch == 1) data_ready_delay2[CAS_LATENCY+BURST_LENGTH] <= 1;
+					//if(ch == 2) data_ready_delay3[CAS_LATENCY+BURST_LENGTH] <= 1;
+				end
+				//if (ch==0) 
+				ch1_rq <= 0;
 			end
 			else if(ch2_rq | ch2_req) begin
 				{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, ch2_rnw, ch2_addr[25:1]};
@@ -253,7 +320,7 @@ always @(posedge clk) begin
 			if (ch==0) ch1_rq <= 0;
 			if (ch==1) ch2_rq <= 0;
 			if (ch==2) ch3_rq <= 0;
-			state <= STATE_RW1;	// Wait state (NOP) for CL=2.
+			state <= ch1_rq ? STATE_RW1 : STATE_IDLE;	// Wait state (NOP) for CL=2.
 										// CL=3 would need an extra wait state here, I think? ElectronAsh.
 		end
 		
@@ -280,7 +347,7 @@ always @(posedge clk) begin
 			end
 			else begin
 				command <= CMD_READ;
-				state   <= STATE_IDLE_5;
+				state   <= STATE_IDLE_3;
 				if(ch == 0) data_ready_delay1[CAS_LATENCY+BURST_LENGTH] <= 1;
 				if(ch == 1) data_ready_delay2[CAS_LATENCY+BURST_LENGTH] <= 1;
 				if(ch == 2) data_ready_delay3[CAS_LATENCY+BURST_LENGTH] <= 1;
@@ -289,7 +356,7 @@ always @(posedge clk) begin
 
 		STATE_RW2: begin
 			if (ch == 0) begin
-				state       <= STATE_IDLE_2;
+				state       <= STATE_IDLE;
 				command     <= CMD_NOP;
 				SDRAM_DQ <= saved_data[15:0];
 				SDRAM_A[12:11] <= ~ch1_be[1:0];
