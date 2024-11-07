@@ -397,7 +397,8 @@ assign joy1w = ~joy1wl;
 assign joyenl = ~joyen;
 
 // --- Compiler-generated PE for BUS dr[0]
-assign dr_out[15:0] = (dr_a0_oe ? dr_a0_out[15:0] : 16'h0) | (dr_a1_oe ? dr_a1_out[15:0] : 16'h0) | (dr_a2_oe ? dr_a2_out[15:0] : 16'h0) | (dr_a3_oe ? dr_a3_out[15:0] : 16'h0) | (dr_a4_oe ? dr_a4_out[15:0] : 16'h0);
+// Ternaries/muxes are better than stacking ors; assumes no bus conflicts
+assign dr_out[15:0] = (dr_a0_oe ? dr_a0_out[15:0] : dr_a1_oe ? dr_a1_out[15:0] : dr_a2_oe ? dr_a2_out[15:0] : dr_a3_oe ? dr_a3_out[15:0] : dr_a4_oe ? dr_a4_out[15:0] : 16'h0);
 assign dr_oe = dr_a0_oe | dr_a1_oe | dr_a2_oe | dr_a3_oe | dr_a4_oe;
 
 endmodule

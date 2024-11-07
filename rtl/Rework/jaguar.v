@@ -369,7 +369,7 @@ wire [1:0] bbreq;
 //assign xbgl = 1'b0;	// Bus Grant from the CPU
 
 assign xdbrl[0] = j_xdbrl[0];	// Requests the bus for the DSP
-assign xdbrl[1] = 1'b1; // Unconnected
+assign xdbrl[1] = j_xdbrl[0] | xdbgl;//1'b1; // Unconnected
 assign xlp = 1'b0; 		// Light Pen
 assign xdint = j_xint;
 assign xtest = 1'b0;		// "test" pins on both Tom and Jerry are tied to GND on the Jag.
@@ -964,8 +964,19 @@ wire fx68k_bg_n;
 assign fx68k_byte_addr = {fx68k_address, 1'b0};
 
 wire fx68k_br_n = xbrl_in;		// Bus Request.
-assign xbgl = fx68k_bg_n;		// Bus Grant.
+assign xbgl = xbgl_;//fx68k_bg_n;		// Bus Grant.
 wire fx68k_bgack_n = xba_in;	// Bus Grant Acknowledge.
+
+reg old_fx68k_bg_n;
+reg xbgl_;
+always @(posedge sys_clk)
+begin
+	old_fx68k_bg_n <= fx68k_bg_n;
+	if ((~fx68k_bg_n && old_fx68k_bg_n) | (~xba_in)) begin
+		xbgl_ <= ~xba_in;
+	end
+end
+
 
 reg old_cpuclk;
 reg oRESETn_old;

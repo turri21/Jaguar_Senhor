@@ -1329,9 +1329,10 @@ _misc misc__inst
 );
 
 // --- Compiler-generated local PE for BUS wd[0]
-assign wdata_out[31:0] = (wdata_gpu_31_0_oe ? wdata_gpu_out[31:0] : 32'h0) | (wdata_ob_oe ? wdata_ob_out[31:0] : 32'h0);
+// Ternaries/muxes are better than stacking ors; assumes no bus conflicts
+assign wdata_out[31:0] = wdata_gpu_31_0_oe ? wdata_gpu_out[31:0] : (wdata_ob_oe ? wdata_ob_out[31:0] : 32'h0);
 assign wdata_31_0_oe = wdata_gpu_31_0_oe | wdata_ob_oe;
-assign wdata_out[63:32] = (wdata_gpu_63_32_oe ? wdata_gpu_out[63:32] : 32'h0) | (wdata_ob_oe ? wdata_ob_out[63:32] : 32'h0);
+assign wdata_out[63:32] = wdata_gpu_63_32_oe ? wdata_gpu_out[63:32] : (wdata_ob_oe ? wdata_ob_out[63:32] : 32'h0);
 assign wdata_63_32_oe = wdata_gpu_63_32_oe | wdata_ob_oe;
 
 // --- Compiler-generated local PE for BUS a[0]

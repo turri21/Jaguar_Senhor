@@ -734,11 +734,13 @@ _j_dac dac_inst
 );
 
 // --- Compiler-generated local PE for BUS dsprd[0]
-assign dsprd_out[15:0] = (dsprd_dsp_oe ? dsprd_dsp_out[15:0] : 16'h0) | (dsprd_i2s_oe ? dsprd_i2s_out[15:0] : 16'h0);
+// Ternaries/muxes are better than stacking ors; assumes no bus conflicts
+assign dsprd_out[15:0] = (dsprd_dsp_oe ? dsprd_dsp_out[15:0] : dsprd_i2s_oe ? dsprd_i2s_out[15:0] : 16'h0);
 assign dsprd_oe = dsprd_dsp_oe | dsprd_i2s_oe;
 
 // --- Compiler-generated local PE for BUS dr[0]
-assign dr_out[15:0] = (dr_dsp_oe ? dr_dsp_out[15:0] : 16'h0) | (dr_jio_oe ? dr_jio_out[15:0] : 16'h0) | (dr_misc_oe ? dr_misc_out[15:0] : 16'h0) | (dr_u2_oe ? dr_u2_out[15:0] : 16'h0);
+// Ternaries/muxes are better than stacking ors; assumes no bus conflicts
+assign dr_out[15:0] = (dr_dsp_oe ? dr_dsp_out[15:0] : dr_jio_oe ? dr_jio_out[15:0] : dr_misc_oe ? dr_misc_out[15:0] : dr_u2_oe ? dr_u2_out[15:0] : 16'h0);
 assign dr_oe = dr_dsp_oe | dr_jio_oe | dr_misc_oe | dr_u2_oe;
 
 endmodule

@@ -32,11 +32,11 @@ wire [31:0] ddatlo;
 wire [31:0] ddathi;
 wire phrase_mode_n;
 wire edis_n;
-wire [7:0] e_coarse_n;
-wire [7:0] e_fine_n;
-wire [7:0] s_coarse;
+reg [7:0] e_coarse_n;
+reg [7:0] e_fine_n;
+reg [7:0] s_coarse;
 wire sfen_n;
-wire [7:0] s_fine;
+reg [7:0] s_fine;
 wire [14:0] maskt;
 wire masktla;
 wire mir_bit;
@@ -55,19 +55,78 @@ assign phrase_mode_n = ~phrase_mode;
 assign edis_n = |dend[5:0];
 
 // DATAMUX.NET (203) - ecoarse : decl38e
-assign e_coarse_n[7:0] = edis_n ? ~(8'h01 << dend[5:3]) : 8'hFF;
+// Bit shift is slow
+//assign e_coarse_n[7:0] = edis_n ? ~(8'h01 << dend[5:3]) : 8'hFF;
+always @(*)
+begin
+	case({edis_n,dend[5:3]}) // is this fast enough? could use ternaries
+		4'b1000		: e_coarse_n[7:0] = 8'hFE;
+		4'b1001		: e_coarse_n[7:0] = 8'hFD;
+		4'b1010		: e_coarse_n[7:0] = 8'hFB;
+		4'b1011		: e_coarse_n[7:0] = 8'hF7;
+		4'b1100		: e_coarse_n[7:0] = 8'hEF;
+		4'b1101		: e_coarse_n[7:0] = 8'hDF;
+		4'b1110		: e_coarse_n[7:0] = 8'hBF;
+		4'b1111		: e_coarse_n[7:0] = 8'h7F;
+		default		: e_coarse_n[7:0] = 8'hFF;
+	endcase
+end
 
 // DATAMUX.NET (205) - efine : decl38e
-assign e_fine_n[7:0] = (~e_coarse_n[0] ? ~(8'h01 << dend[2:0]) : 8'hFF);
+// Bit shift is slow
+//assign e_fine_n[7:0] = (~e_coarse_n[0] ? ~(8'h01 << dend[2:0]) : 8'hFF);
+always @(*)
+begin
+	case({edis_n,dend[5:0]}) // is this fast enough? could use ternaries
+		7'b1000000		: e_fine_n[7:0] = 8'hFE;
+		7'b1000001		: e_fine_n[7:0] = 8'hFD;
+		7'b1000010		: e_fine_n[7:0] = 8'hFB;
+		7'b1000011		: e_fine_n[7:0] = 8'hF7;
+		7'b1000100		: e_fine_n[7:0] = 8'hEF;
+		7'b1000101		: e_fine_n[7:0] = 8'hDF;
+		7'b1000110		: e_fine_n[7:0] = 8'hBF;
+		7'b1000111		: e_fine_n[7:0] = 8'h7F;
+		default			: e_fine_n[7:0] = 8'hFF;
+	endcase
+end
 
 // DATAMUX.NET (208) - scoarse : dech38
-assign s_coarse[7:0] = 8'h01 << dstart[5:3];
+// Bit shift is slow
+//assign s_coarse[7:0] = 8'h01 << dstart[5:3];
+always @(*)
+begin
+	case(dstart[5:3]) // is this fast enough? could use ternaries
+		3'b000		: s_coarse[7:0] = 8'h01;
+		3'b001		: s_coarse[7:0] = 8'h02;
+		3'b010		: s_coarse[7:0] = 8'h04;
+		3'b011		: s_coarse[7:0] = 8'h08;
+		3'b100		: s_coarse[7:0] = 8'h10;
+		3'b101		: s_coarse[7:0] = 8'h20;
+		3'b110		: s_coarse[7:0] = 8'h40;
+		3'b111		: s_coarse[7:0] = 8'h80;
+	endcase
+end
 
 // DATAMUX.NET (209) - sfen\ : iv
 assign sfen_n = ~s_coarse[0];
 
 // DATAMUX.NET (210) - sfine : dech38el
-assign s_fine[7:0] = ~sfen_n ? (8'h01 << dstart[2:0]) : 8'h00;
+// Bit shift is slow
+//assign s_fine[7:0] = ~sfen_n ? (8'h01 << dstart[2:0]) : 8'h00;
+always @(*)
+begin
+	case(dstart[5:0]) // is this fast enough? could use ternaries
+		6'b000000		: s_fine[7:0] = 8'h01;
+		6'b000001		: s_fine[7:0] = 8'h02;
+		6'b000010		: s_fine[7:0] = 8'h04;
+		6'b000011		: s_fine[7:0] = 8'h08;
+		6'b000100		: s_fine[7:0] = 8'h10;
+		6'b000101		: s_fine[7:0] = 8'h20;
+		6'b000110		: s_fine[7:0] = 8'h40;
+		6'b000111		: s_fine[7:0] = 8'h80;
+		default			: s_fine[7:0] = 8'h00;
+	endcase
+end
 
 // DATAMUX.NET (212) - maskt[0] : niv
 assign maskt[0] = s_fine[0];
