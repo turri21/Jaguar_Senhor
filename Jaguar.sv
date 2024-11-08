@@ -235,7 +235,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
 // X XXXXXXX
 
-// 	
+//
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -274,6 +274,8 @@ wire [10:0] ps2_key;
 wire [24:0] ps2_mouse;
 wire [21:0] gamma_bus;
 wire [15:0] sdram_sz;
+wire [15:0] analog_0;
+wire [15:0] analog_1;
 
 hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 (
@@ -287,6 +289,8 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
+	.joystick_l_analog_0(analog_0),
+	.joystick_l_analog_1(analog_1),
 
 	.new_vmode(0),
 
@@ -400,10 +404,8 @@ wire [63:0] dram_q = ch1_dout[63:0];
 wire [23:0] abus_out;
 wire [7:0] os_rom_q;
 
-wire pix_clk;
 wire hblank;
 wire vblank;
-wire vga_bl;
 wire vga_hs_n;
 wire vga_vs_n;
 wire vid_ce;
@@ -439,35 +441,22 @@ jaguar jaguar_inst
 	.dram_q( dram_q ) ,			// input [63:0] dram_q
 	.dram_oe( dram_oe ) ,		// input [3:0] dram_oe
 
-	.fdram( fdram ) ,				// output  fdram
 	.ram_rdy( ram_rdy ) ,		// input  ram_rdy
 
 	.abus_out( abus_out ) ,			// output [23:0] Main Address bus for Tom/Jerry/68K/BIOS/CART.
-
-	//.os_rom_ce_n( os_rom_ce_n ) ,	// output  os_rom_ce_n
-	//.os_rom_oe_n( os_rom_oe_n ) ,	// output  os_rom_oe_n
-	//.os_rom_oe( os_rom_oe ) ,		// input  os_rom_oe
 	.os_rom_q( os_rom_q ) ,			// input [7:0] os_rom_q
 
-	//.cart_oe_n( cart_oe_n ) ,	// output [1:0] cart_oe_n
 	.cart_ce_n( cart_ce_n ) ,	// output  cart_ce_n
 	.cart_q( cart_q ) ,			// input [31:0] cart_q
-	//.cart_oe( cart_oe ) ,		// input [1:0] cart_oe
 
-	.vga_bl( vga_bl ) ,		// output  vga_bl
 	.vga_vs_n( vga_vs_n ) ,	// output  vga_vs_n
 	.vga_hs_n( vga_hs_n ) ,	// output  vga_hs_n
 	.vga_r( vga_r ) ,			// output [7:0] vga_r
 	.vga_g( vga_g ) ,			// output [7:0] vga_g
 	.vga_b( vga_b ) ,			// output [7:0] vga_b
 
-	.pix_clk( pix_clk ) ,	// output  pix_clk
-
 	.hblank( hblank ) ,		// output hblank
 	.vblank( vblank ) ,		// output vblank
-
-//	.aud_l_pwm( aud_l_pwm ) ,	// output  aud_l_pwm
-//	.aud_r_pwm( aud_r_pwm ) , 	// output  aud_r_pwm
 
 	.aud_16_l( aud_16_l ) ,		// output  [15:0] aud_16_l
 	.aud_16_r( aud_16_r ) ,		// output  [15:0] aud_16_r
@@ -477,6 +466,11 @@ jaguar jaguar_inst
 	.vid_ce( vid_ce ) ,
 
 	.joystick_0( joystick_0 ) ,
+	.joystick_1( joystick_1 ) ,
+	.analog_0( $signed(analog_0[7:0]) + 9'sd127 ),
+	.analog_1( $signed(analog_0[15:8]) + 9'sd127 ),
+	.analog_2( $signed(analog_1[7:0]) + 9'sd127 ),
+	.analog_3( $signed(analog_1[15:8]) + 9'sd127 ),
 
 	.startcas( startcas ) ,
 
@@ -589,7 +583,7 @@ assign DDRAM_BURSTCNT = 1;
 // The cart ROM is loaded at 0x30800000, as the Jag normally expects the cart to be mapped at offset 0x800000.
 // DRAM address is using "abus_out" here (byte address, so three LSB bits are ignored!)
 // so the MSB bit [23] will be set by the Jag core when reading the cart at 0x800000. TODO - confirm this is always the case!
-assign DDRAM_ADDR = (loader_en)  ? {8'b0110000, loader_addr[23:3]} : {8'b0110000, abus_out[23:3]}; 
+assign DDRAM_ADDR = (loader_en)  ? {8'b0110000, loader_addr[23:3]} : {8'b0110000, abus_out[23:3]};
 assign DDRAM_RD = (loader_en) ? 1'b0 : cart_rd_trig;
 assign DDRAM_WE = (loader_en) ? loader_wr : 1'b0;
 
@@ -633,7 +627,6 @@ assign cart_q = (!abus_out[2]) ? DDRAM_DOUT[63:32] : DDRAM_DOUT[31:00];
 reg [3:0] ram_count;
 
 wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
-wire fdram;
 wire ram_rdy = ~ch1_req;// && ((mem_cyc == `RAM_IDLE) || ch1_ready);	// Latency kludge.
 
 // From the core into SDRAM.
