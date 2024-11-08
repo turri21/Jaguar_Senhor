@@ -62,8 +62,24 @@ begin
 end
 
 // INNER.NET (757) - bcompbt : mx8
-wire [7:0] srcdtt = srcd[7:0] << bcompsel[2:0];
-assign bcompbitpt = srcdtt[7];
+// Bit shift is slow
+//wire [7:0] srcdtt = srcd[7:0] << bcompsel[2:0];
+reg srcdtt;
+//assign bcompbitpt = srcdtt[7];
+assign bcompbitpt = srcdtt;
+always @(*)
+begin
+	case(bcompsel[2:0]) // is this fast enough? could use ternaries
+		3'b000		: srcdtt = srcd[7];
+		3'b001		: srcdtt = srcd[6];
+		3'b010		: srcdtt = srcd[5];
+		3'b011		: srcdtt = srcd[4];
+		3'b100		: srcdtt = srcd[3];
+		3'b101		: srcdtt = srcd[2];
+		3'b110		: srcdtt = srcd[1];
+		default		: srcdtt = srcd[0];
+	endcase
+end
 
 // INNER.NET (760) - bcompbitp : fd1q
 always @(posedge sys_clk)

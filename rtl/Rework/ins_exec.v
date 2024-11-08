@@ -224,8 +224,8 @@ wire other_flag;
 wire other_flag_n;
 wire [3:0] cond;
 wire [1:0] dataseli;
-reg [5:0] datasel0 = 6'h0;
-reg [5:0] datasel1 = 6'h0;
+reg datasel0 = 1'b0;
+reg datasel1 = 1'b0;
 reg [23:0] srcaddrl = 24'h0;
 wire addrlatt;
 wire addrlat;
@@ -990,8 +990,8 @@ assign dataseli[1] = resaddrldi | mtx_doveri;
 always @(posedge sys_clk)
 begin
 	if (~old_clk && clk) begin
-		datasel0[5:0] <= {6{dataseli[0]}};
-		datasel1[5:0] <= {6{dataseli[1]}};
+		datasel0 <= dataseli[0];
+		datasel1 <= dataseli[1];
 	end
 end
 
@@ -1001,15 +1001,16 @@ end
 // INS_EXEC.NET (585) - dataddr[12-15] : mx4p
 // INS_EXEC.NET (588) - dataddr[16-19] : mx4p
 // INS_EXEC.NET (591) - dataddr[20-23] : mx4p
-assign dataddr[3:0] = datasel1[0] ? (datasel0[0] ? mtx_addr[3:0] : result[3:0]) : (datasel0[0] ? srcdpa[3:0] : srcaddrl[3:0]);
-assign dataddr[7:4] = datasel1[1] ? (datasel0[1] ? mtx_addr[7:4] : result[7:4]) : (datasel0[1] ? srcdpa[7:4] : srcaddrl[7:4]);
-assign dataddr[11:8] = datasel1[2] ? (datasel0[2] ? mtx_addr[11:8] : result[11:8]) : (datasel0[2] ? srcdpa[11:8] : srcaddrl[11:8]);
-assign dataddr[15:12] = datasel1[3] ? (datasel0[3] ? mtx_addr[15:12] : result[15:12]) : (datasel0[3] ? srcdpa[15:12] : srcaddrl[15:12]);
-assign dataddr[19:16] = datasel1[4] ? (datasel0[4] ? mtx_addr[19:16] : result[19:16]) : (datasel0[4] ? srcdpa[19:16] : srcaddrl[19:16]);
-assign dataddr[23:20] = datasel1[5] ? (datasel0[5] ? mtx_addr[23:20] : result[23:20]) : (datasel0[5] ? srcdpa[23:20] : srcaddrl[23:20]);
+//assign dataddr[3:0] = datasel1[0] ? (datasel0[0] ? mtx_addr[3:0] : result[3:0]) : (datasel0[0] ? srcdpa[3:0] : srcaddrl[3:0]);
+//assign dataddr[7:4] = datasel1[1] ? (datasel0[1] ? mtx_addr[7:4] : result[7:4]) : (datasel0[1] ? srcdpa[7:4] : srcaddrl[7:4]);
+//assign dataddr[11:8] = datasel1[2] ? (datasel0[2] ? mtx_addr[11:8] : result[11:8]) : (datasel0[2] ? srcdpa[11:8] : srcaddrl[11:8]);
+//assign dataddr[15:12] = datasel1[3] ? (datasel0[3] ? mtx_addr[15:12] : result[15:12]) : (datasel0[3] ? srcdpa[15:12] : srcaddrl[15:12]);
+//assign dataddr[19:16] = datasel1[4] ? (datasel0[4] ? mtx_addr[19:16] : result[19:16]) : (datasel0[4] ? srcdpa[19:16] : srcaddrl[19:16]);
+//assign dataddr[23:20] = datasel1[5] ? (datasel0[5] ? mtx_addr[23:20] : result[23:20]) : (datasel0[5] ? srcdpa[23:20] : srcaddrl[23:20]);
+assign dataddr[23:0] = datasel1 ? (datasel0 ? mtx_addr[23:0] : result[23:0]) : (datasel0 ? srcdpa[23:0] : srcaddrl[23:0]);
 
 // INS_EXEC.NET (598) - addrlatt : oan1
-assign addrlatt = (datasel0[5] | datasel1[5]) & tlw;
+assign addrlatt = (datasel0 | datasel1) & tlw;
 
 // INS_EXEC.NET (600) - addrlat : nivu
 assign addrlat = addrlatt;

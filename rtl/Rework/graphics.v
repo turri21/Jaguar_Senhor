@@ -688,12 +688,13 @@ assign address_out[23:0] = (gateway_addr_oe ? gateway_addr_out[23:0] : blit_addr
 assign address_oe = gateway_addr_oe | blit_addr_oe;
 
 // --- Compiler-generated local PE for BUS gpu_data<0>
-assign gpu_data_out[31:0] = (gpu_data_ins_exec_oe ? gpu_data_ins_exec_out[31:0]:32'h0)
-                          | (gpu_data_divider_oe ? gpu_data_divider_out[31:0] :32'h0)
-                          | (gpu_data_mem_oe ? gpu_data_mem_out[31:0] :32'h0)
-                          | (gpu_data_ram_oe ? gpu_data_ram_out[31:0] :32'h0)
-                          | (gpu_data_gateway_oe ? gpu_data_gateway_out[31:0] :32'h0)
-                          | (gpu_dout_oe ? gpu_dout_out[31:0] :32'h0);
+// Ternaries/muxes are better than stacking ors; assumes no bus conflicts
+assign gpu_data_out[31:0] = gpu_data_ins_exec_oe ? gpu_data_ins_exec_out[31:0]:
+                           gpu_data_divider_oe ? gpu_data_divider_out[31:0] :
+                           gpu_data_mem_oe ? gpu_data_mem_out[31:0] :
+                           gpu_data_ram_oe ? gpu_data_ram_out[31:0] :
+                           gpu_data_gateway_oe ? gpu_data_gateway_out[31:0] :
+                           (gpu_dout_oe ? gpu_dout_out[31:0] :32'h0);
 assign gpu_data_oe = gpu_data_ins_exec_oe | gpu_data_divider_oe | gpu_data_mem_oe | gpu_data_ram_oe | gpu_data_gateway_oe | gpu_dout_oe;
 
 // --- Compiler-generated local PE for BUS gpu_dout[0]
