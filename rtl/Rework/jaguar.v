@@ -1159,23 +1159,26 @@ assign right = output_buffer_r;
 always @(posedge sys_clk) begin : i2s_proc
 	reg [15:0] i2s_buf[2];
 	reg  [4:0] i2s_cnt;
-	reg        old_clk, old_ws, side;
+	reg        old_clk, old_ws, side, i2s_next;
 
 	// Latch data on falling edge
 	old_clk <= i2s_clk;
 	if (~i2s_clk && old_clk) begin
 		if (~i2s_cnt[4]) begin // Ignore any bits that overflow
 			i2s_cnt <= i2s_cnt + 1'd1;
-			i2s_buf[side][4'd15 - i2s_cnt[3:0]] <= i2s_data;
+			i2s_buf[side][~i2s_cnt[3:0]] <= i2s_data;
 		end
+		old_ws <= i2s_ws;
+		if (old_ws != i2s_ws)
+			i2s_next <= 1;
 	end
 
 	// Check WS on rising edge
 	if (i2s_clk && ~old_clk) begin
-		old_ws <= i2s_ws;
-		if (old_ws != i2s_ws) begin
+		if (i2s_next) begin
 			i2s_cnt <= 0;
 			side <= i2s_ws;
+			i2s_next <= 0;
 
 			if (~i2s_ws) begin
 				i2s_buf[0] <= 16'd0;
