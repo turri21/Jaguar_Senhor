@@ -2149,7 +2149,7 @@ j_saturate saturate_inst
 (
 	.q /* OUT */ ({satval[0],satval[1],satval[2],satval[3],satval[4],satval[5],satval[6],satval[7],satval[8],satval[9],satval[10],satval[11],satval[12],satval[13],satval[14],satval[15],satval[16],satval[17],satval[18],satval[19],satval[20],satval[21],satval[22],satval[23],satval[24],satval[25],satval[26],satval[27],satval[28],satval[29],satval[30],satval[31]}),
 	.d /* IN */ ({dstdp[0],dstdp[1],dstdp[2],dstdp[3],dstdp[4],dstdp[5],dstdp[6],dstdp[7],dstdp[8],dstdp[9],dstdp[10],dstdp[11],dstdp[12],dstdp[13],dstdp[14],dstdp[15],dstdp[16],dstdp[17],dstdp[18],dstdp[19],dstdp[20],dstdp[21],dstdp[22],dstdp[23],dstdp[24],dstdp[25],dstdp[26],dstdp[27],dstdp[28],dstdp[29],dstdp[30],dstdp[31]}),
-	.satszp /* IN */ (satszp),
+	.satszp /* IN */ (~satszp),
 	.accum_32 /* IN */ (acctop_32),
 	.accum_33 /* IN */ (acctop_33),
 	.accum_34 /* IN */ (acctop_34),
