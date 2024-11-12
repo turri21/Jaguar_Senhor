@@ -418,9 +418,11 @@ assign j_xrw_in = rw;
 //	(aen) ? xsiz_out[1:0]
 //	: (j_aen) ? j_xsiz_out[1:0]
 //	: {fx68k_uds_n, fx68k_lds_n};
+// Note xsiz_oe[1:0] is 2 copies of aen; could just use aen or any bit of xsiz_oe
+// Note j_xsiz_oe[1:0] is 2 copies of j_aen; could just use j_aen or any bit of j_xsiz_oe
 assign siz[1:0] =
-	(|xsiz_oe) ? xsiz_out[1:0]
-	: (|j_xsiz_oe) ? j_xsiz_out[1:0]
+	(xsiz_oe[0]) ? xsiz_out[1:0]
+	: (j_xsiz_oe[0]) ? j_xsiz_out[1:0]
 	: {fx68k_uds_n, fx68k_lds_n};
 
 assign xsiz_in = siz;
@@ -447,9 +449,15 @@ assign j_xdreql_in = dreql;
 //	(aen) ? xa_out[23:0]				// Tom.
 //	: (j_aen) ? j_xa_out[23:0]		// Jerry.
 //	: fx68k_byte_addr[23:0];		// 68000.
+//assign abus[23:0] =
+//	(|xa_oe) ? xa_out[23:0]				// Tom.
+//	: (|j_xa_oe) ? j_xa_out[23:0]		// Jerry.
+//	: fx68k_byte_addr[23:0];		// 68000.
+// Note xa_oe[23:0] is 24 copies of aen; could just use aen or any bit of xa_oe
+// Note j_xa_oe[23:0] is 24 copies of j_aen; could just use j_aen or any bit of j_xa_oe
 assign abus[23:0] =
-	(|xa_oe) ? xa_out[23:0]				// Tom.
-	: (|j_xa_oe) ? j_xa_out[23:0]		// Jerry.
+	(xa_oe[0]) ? xa_out[23:0]				// Tom.
+	: (j_xa_oe[0]) ? j_xa_out[23:0]		// Jerry.
 	: fx68k_byte_addr[23:0];		// 68000.
 
 assign xa_in[23:0] = abus[23:0];
@@ -458,8 +466,12 @@ assign xa_in[23:0] = abus[23:0];
 //assign j_xa_in[23:0] =
 //	(aen) ? xa_out[23:0]				// Tom.
 //	: fx68k_byte_addr[23:0]; 		// 68000.
+//assign j_xa_in[23:0] =
+//	(|xa_oe) ? xa_out[23:0]				// Tom.
+//	: fx68k_byte_addr[23:0]; 		// 68000.
+// Note xa_oe[23:0] is 24 copies of aen; could just use aen or any bit of xa_oe
 assign j_xa_in[23:0] =
-	(|xa_oe) ? xa_out[23:0]				// Tom.
+	(xa_oe[0]) ? xa_out[23:0]				// Tom.
 	: fx68k_byte_addr[23:0]; 		// 68000.
 
 // Data bus
@@ -519,7 +531,7 @@ assign j_xd_in[15:8] = 	(den[0]) ? xd_out[15:8] :
 								(joy_bus_oe) ? joy_bus[15:8] :
 															8'h0;//zz;
 
-assign j_xd_in[31:16] = 16'b11111111_11111111;	// Data bus bits [31:16] on Jerry are pulled High on the Jag schematic.
+assign j_xd_in[31:16] = (j_den) ? j_xd_out[31:16] : 16'b11111111_11111111;	// Data bus bits [31:16] on Jerry are pulled High on the Jag schematic.
 
 
 // TOM-specific tristates
