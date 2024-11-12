@@ -391,7 +391,7 @@ _j_saturate jsaturate_inst
 (
 	.q /* OUT */ (satvalhi[31:0]),
 	.d /* IN */ (dstdp[31:0]),
-	.satszp /* IN */ (~satszp[0]),
+	.satszp /* IN */ (satszp[0]),
 	.accum /* IN */ (acctop[39:32])
 );
 

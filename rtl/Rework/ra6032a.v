@@ -7,6 +7,7 @@ module _ra6032a
 	input		[5:0]		a,
 	input	sys_clk
 );
+parameter JERRY = 0;
 
 parameter WARNING = 0;
 
@@ -58,8 +59,12 @@ initial begin
 	rom_blk['h1D] <= 32'h00063811;
 	rom_blk['h1E] <= 32'h00041900;
 	rom_blk['h1F] <= 32'h0004B900;
-	rom_blk['h20] <= 32'h00069802;
-	rom_blk['h21] <= 32'h00069822;
+	rom_blk['h20] <=
+	      JERRY==0 ? 32'h00069802  //gpu - sat8
+	               : 32'h00071906; //dsp - subqmod
+	rom_blk['h21] <= 
+	      JERRY==0 ? 32'h00069822  //gpu - sat16 
+	               : 32'h00069802; //dsp - sat16s //could inverts satszp in arith instead and keep equal to gpu-sat16 (bit 5)
 	rom_blk['h22] <= 32'h02000000;
 	rom_blk['h23] <= 32'h02002000;
 	rom_blk['h24] <= 32'h02000002;
@@ -68,13 +73,17 @@ initial begin
 	rom_blk['h27] <= 32'h00080000;
 	rom_blk['h28] <= 32'h00080008;
 	rom_blk['h29] <= 32'h00080010;
-	rom_blk['h2A] <= 32'h00080018;
+	rom_blk['h2A] <= 
+	      JERRY==0 ? 32'h00080018  //gpu - loadp
+	               : 32'h00069822; //dsp - sat32s // if inverting satzp as mentioned ifor sat16s, this swaps with it (bit 5)
 	rom_blk['h2B] <= 32'h002C5010;
 	rom_blk['h2C] <= 32'h002C5410;
 	rom_blk['h2D] <= 32'h001C0000;
 	rom_blk['h2E] <= 32'h001C0008;
 	rom_blk['h2F] <= 32'h001C0010;
-	rom_blk['h30] <= 32'h001C0018;
+	rom_blk['h30] <=
+	      JERRY==0 ? 32'h001C0018  //gpu - storep
+	               : 32'h00069807; //dsp - mirror
 	rom_blk['h31] <= 32'h003C5010;
 	rom_blk['h32] <= 32'h003C5410;
 	rom_blk['h33] <= 32'h0200E000;
@@ -88,8 +97,12 @@ initial begin
 	rom_blk['h3B] <= 32'h002C1410;
 	rom_blk['h3C] <= 32'h003C1010;
 	rom_blk['h3D] <= 32'h003C1410;
-	rom_blk['h3E] <= 32'h04069802;
-	rom_blk['h3F] <= 32'h00069806;
+	rom_blk['h3E] <= 
+	      JERRY==0 ? 32'h04069802  //gpu - sat24
+	               : 32'h00008000; //dsp - illegal -- nop
+	rom_blk['h3F] <= 
+	      JERRY==0 ? 32'h00069006  //gpu - pack     // pack/unpack do not change flags
+	               : 32'h00071806; //dsp - addqmod
 end
 
 	always@(posedge sys_clk)
