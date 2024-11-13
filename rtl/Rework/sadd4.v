@@ -42,6 +42,6 @@ assign overflowi = ~(co_3 ^ b[3]);
 assign overflow = ~overflowi;
 
 // LBUF.NET (264) - z[0-3] : mx2
-assign z = (overflow) ? co_3 : s;
+assign z[3:0] = (overflow) ? {4{co_3}} : s[3:0];
 endmodule
 /* verilator lint_on LITENDIAN */

@@ -66,6 +66,6 @@ assign overflow = ~overflowi;
 assign cob_7 = co_7;
 
 // LBUF.NET (283) - z[0-7] : mx2
-assign z = (overflow) ? cob_7 : s;
+assign z[7:0] = (overflow) ? {8{cob_7}} : s[7:0];
 endmodule
 /* verilator lint_on LITENDIAN */
