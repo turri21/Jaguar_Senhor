@@ -513,7 +513,7 @@ wire clkdel_n = ~clkdele;
 wire romcs = clk & (JERRY==0 ? 1'b1 : clkdel_n); // This doesnt do anything for tom or jerry with delays and ignores cs anyway
 
 // INS_EXEC.NET (270) - mcode : ra6032a
-_ra6032a mcode_inst
+_ra6032a #(.JERRY(JERRY)) mcode_inst
 (
 	.z /* OUT */ (romword[26:0]),
 	.clk /* IN */ (romcs),
