@@ -57,13 +57,15 @@ module emu
 	output        VGA_F1,
 	output [1:0]  VGA_SL,
 	output        VGA_SCALER, // Force VGA scaler
+	output        VGA_DISABLE, // analog out is off
 
 	input  [11:0] HDMI_WIDTH,
 	input  [11:0] HDMI_HEIGHT,
 	output        HDMI_FREEZE,
+	output        HDMI_BLACKOUT,
 
 `ifdef MISTER_FB
-	// Use framebuffer in DDRAM (USE_FB=1 in qsf)
+	// Use framebuffer in DDRAM
 	// FB_FORMAT:
 	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
 	//    [3]   : 0=16bits 565 1=16bits 1555
@@ -187,7 +189,9 @@ assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign VGA_SL = 0;
 assign VGA_F1 = 0;
 assign VGA_SCALER = 0;
+assign VGA_DISABLE = 0;
 assign HDMI_FREEZE = 0;
+assign HDMI_BLACKOUT = 0;
 
 assign LED_DISK = 0;
 assign LED_POWER = 0;
@@ -235,7 +239,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
 // X XXXXXXX
 
-// 	
+//
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -540,7 +544,7 @@ assign CLK_VIDEO = clk_sys;
 
 //assign VGA_SL = {~interlace,~interlace} & sl[1:0];
 
-video_mixer #(.LINE_LENGTH(1410), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
+video_mixer #(.LINE_LENGTH(700), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 (
 	.CLK_VIDEO(CLK_VIDEO),      // input clk_sys
 	.ce_pix( vid_ce ),          // input ce_pix
@@ -589,7 +593,7 @@ assign DDRAM_BURSTCNT = 1;
 // The cart ROM is loaded at 0x30800000, as the Jag normally expects the cart to be mapped at offset 0x800000.
 // DRAM address is using "abus_out" here (byte address, so three LSB bits are ignored!)
 // so the MSB bit [23] will be set by the Jag core when reading the cart at 0x800000. TODO - confirm this is always the case!
-assign DDRAM_ADDR = (loader_en)  ? {8'b0110000, loader_addr[23:3]} : {8'b0110000, abus_out[23:3]}; 
+assign DDRAM_ADDR = (loader_en)  ? {8'b0110000, loader_addr[23:3]} : {8'b0110000, abus_out[23:3]};
 assign DDRAM_RD = (loader_en) ? 1'b0 : cart_rd_trig;
 assign DDRAM_WE = (loader_en) ? loader_wr : 1'b0;
 
