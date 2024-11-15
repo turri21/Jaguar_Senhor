@@ -69,7 +69,7 @@ wire os_rom_oe = (~os_rom_ce_n & ~os_rom_oe_n);	// os_rom_oe feeds back TO the c
 // Note: Turns out the custom chips use synchronous resets.
 // So these clocks need to be left running during reset, else the core won't start up correctly the next time the HPS resets it. ElectronAsh.
 
-reg [3:0] clkdiv = 0;
+reg [1:0] clkdiv = 0;
 
 wire xpclk;                         // Processor (Tom & Jerry) Clock.
 wire xvclk;                         // Video Clock.
@@ -77,17 +77,15 @@ wire tlw;                           // Transparent Latch Write?
 
 reg cpu_toggle;                     // Toggles at 26.6MHz to act as an additional divider for the pixel clock and cpu.
 
-wire ce_26_6 = clkdiv[1:0] == 2'd3; // single clk_sys pulse at the rate of 26.6MHz occuring on the last sys_clk cycle of a 26.6MHz cycle
-wire clk_26_6 = clkdiv[1:0] < 2'd2; // symetrical clk at the rate of 26.6MHz
+reg old_reset = 1'b0;
 
 reg ce_26_6_p0 = 1;
 reg ce_26_6_p1 = 0;
 reg ce_26_6_p2 = 0;
 reg ce_26_6_p3 = 0;
-reg cpuclk_latch = 0;
 
 always @(posedge sys_clk) begin
-	clkdiv <= clkdiv + 4'd1;
+	clkdiv <= clkdiv + 2'd1;
 	ce_26_6_p0 <= &clkdiv[1:0];
 	ce_26_6_p1 <= ce_26_6_p0;
 	ce_26_6_p2 <= ce_26_6_p1;
@@ -95,13 +93,22 @@ always @(posedge sys_clk) begin
 
 	if (ce_26_6_p3) begin
 		cpu_toggle <= ~cpu_toggle;
-		cpuclk_latch <= j_xcpuclk;
-		clkdiv <= 4'd0;
+	end
+
+	old_reset <= xresetl;
+	// Reduce non-deterministic behavior.
+	if (~old_reset && xresetl) begin
+		clkdiv <= 0;
+		ce_26_6_p0 <= 1;
+		ce_26_6_p1 <= 0;
+		ce_26_6_p2 <= 0;
+		ce_26_6_p3 <= 0;
+		cpu_toggle <= 0;
 	end
 end
 
 assign xvclk = ce_26_6_p0 | ce_26_6_p1;
-assign tlw = ce_26_6_p3;                      // Transparent Latch Write
+assign tlw = ce_26_6_p3;                  // Transparent Latch Write. This really should just be negedge xvclk, but in our design we need it to be CE.
 assign vid_ce = ce_26_6_p3 & cpu_toggle;  // Video Clock Enable
 
 // TOM
@@ -569,8 +576,8 @@ wire [5:0] joy1_row_n;
 
 jag_controller_mux controller_mux_1
 (
-	.col_n      (u374_reg[3:0]),       // input [3:0] col_n
-	.row_n      (joy1_row_n),          // output [5:0] row_n
+	.col_n      (~j_xjoy_in[3] ? u374_reg[3:0] : 4'b1111),
+	.row_n      (joy1_row_n),
 
 	.but_right  (joystick_0[0]),
 	.but_left   (joystick_0[1]),
@@ -595,10 +602,12 @@ jag_controller_mux controller_mux_1
 	.but_hash   (joystick_0[20])
 );
 
+wire [3:0] joy2_col_reversed = {u374_reg[4], u374_reg[5], u374_reg[6], u374_reg[7]};
+
 jag_controller_mux controller_mux_2
 (
-	.col_n      (u374_reg[7:4]),       // input [3:0] col_n FIXME this is technically wrong to use the register directly
-	.row_n      (joy2_row_n),          // output [5:0] row_n
+	.col_n      (~j_xjoy_in[3] ? joy2_col_reversed : 4'b1111),
+	.row_n      (joy2_row_n),
 
 	.but_right  (joystick_1[0]),
 	.but_left   (joystick_1[1]),
@@ -646,7 +655,7 @@ jag_controller_mux controller_mux_2
 // 15     PAD0Y     PAD1Y
 //
 assign joy[0] = ee_do;
-assign joy[7:1] = 7'b1111111;           // Port 1, pins 4:2. / Port 2, pins 4:1.
+assign joy[7:1] = ~j_xjoy_in[3] ? u374_reg[7:1] : 7'b1111_111;      // Port 1, pins 4:2. / Port 2, pins 4:1.
 
 assign joy[8]  = (!mouse_ena_1) ? joy1_row_n[5] : mouseX2;          // Port 1, pin 14. Mouse XB.
 assign joy[9]  = (!mouse_ena_1) ? joy1_row_n[4] : mouseX1;          // Port 1, pin 13. Mouse XA.
@@ -684,14 +693,10 @@ always @(posedge sys_clk) begin
 end
 
 assign joy_bus[7:0] =
-	(~j_xjoy_in[0]) ? (~j_xjoy_in[3] ? u374_reg[7:0] : joy[7:0]) : // j_xjoy_in[0] enables joystick on the ebus, which can be either the latch if xjoy_in[3] is low, or the joystick inputs.
-	(~j_xjoy_in[1]) ? b[7:0] :                                     // j_xjoy_in[1]. Enables system jumper "b bus" output onto the external bus.
-	8'b11111111;                                                   // Pulled up.
+	((~j_xjoy_in[0]) ? joy[7:0] : 8'hFF) &  // j_xjoy_in[0] enables joystick on the ebus, which can be either the latch if xjoy_in[3] is low, or the joystick inputs.
+	((~j_xjoy_in[1]) ? b[7:0] : 8'hFF);     // j_xjoy_in[1]. Enables system jumper "b bus" output onto the external bus.
 
-assign joy_bus[15:8] =
-	(~j_xjoy_in[0]) ? joy[15:8] :                                  // j_xjoy_in[0]. Output enables the 16 joystick input pins onto the ebus. (upper byte).
-	8'b11111111;                                                   // Pulled up.
-
+assign joy_bus[15:8] = (~j_xjoy_in[0]) ? joy[15:8] : 8'b11111111; // j_xjoy_in[0]. Output enables the 16 joystick input pins onto the ebus. (upper byte).
 assign joy_bus_oe = (~j_xjoy_in[0] | ~j_xjoy_in[1]);
 
 // EEPROM INTERFACE
@@ -908,8 +913,8 @@ flipflop xbgl_ff
 
 reg old_j_xcpuclk;
 
-wire fx68k_phi1 = turbo ? ce_26_6_p0 : (~old_j_xcpuclk & j_xcpuclk);
-wire fx68k_phi2 = turbo ? ce_26_6_p3 : (old_j_xcpuclk & ~j_xcpuclk);
+wire fx68k_phi1 = turbo ? (ce_26_6_p0 | ce_26_6_p2) : (~old_j_xcpuclk & j_xcpuclk);
+wire fx68k_phi2 = turbo ? (ce_26_6_p1 | ce_26_6_p3) : (old_j_xcpuclk & ~j_xcpuclk);
 
 always @(posedge sys_clk) begin
 	old_j_xcpuclk <= j_xcpuclk;

@@ -265,8 +265,8 @@ localparam CONF_STR = {
 
 wire [63:0] status;
 wire  [1:0] buttons;
-wire [15:0] joystick_0;
-wire [15:0] joystick_1;
+wire [31:0] joystick_0;
+wire [31:0] joystick_1;
 wire        ioctl_download;
 wire        ioctl_wr;
 wire [24:0] ioctl_addr;
@@ -570,6 +570,14 @@ video_mixer #(.LINE_LENGTH(700), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 	.VGA_DE( VGA_DE ),          // output VGA_DE
 	.CE_PIXEL(CE_PIXEL)
 );
+
+// assign VGA_R = vga_r;
+// assign VGA_G = vga_g;
+// assign VGA_B = vga_b;
+// assign VGA_VS = vga_vs_n;
+// assign VGA_HS = vga_hs_n;
+// assign VGA_DE = hblank & vblank;
+// assign CE_PIXEL = vid_ce;
 
 wire aud_l_pwm;
 wire aud_r_pwm;
