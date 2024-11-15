@@ -913,8 +913,8 @@ flipflop xbgl_ff
 
 reg old_j_xcpuclk;
 
-wire fx68k_phi1 = turbo ? (ce_26_6_p0 | ce_26_6_p2) : (~old_j_xcpuclk & j_xcpuclk);
-wire fx68k_phi2 = turbo ? (ce_26_6_p1 | ce_26_6_p3) : (old_j_xcpuclk & ~j_xcpuclk);
+wire fx68k_phi1 = turbo ? (ce_26_6_p0) : (~old_j_xcpuclk & j_xcpuclk);
+wire fx68k_phi2 = turbo ? (ce_26_6_p3) : (old_j_xcpuclk & ~j_xcpuclk);
 
 always @(posedge sys_clk) begin
 	old_j_xcpuclk <= j_xcpuclk;
