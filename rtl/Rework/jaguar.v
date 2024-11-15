@@ -69,7 +69,7 @@ wire os_rom_oe = (~os_rom_ce_n & ~os_rom_oe_n);	// os_rom_oe feeds back TO the c
 // Note: Turns out the custom chips use synchronous resets.
 // So these clocks need to be left running during reset, else the core won't start up correctly the next time the HPS resets it. ElectronAsh.
 
-reg [3:0] clkdiv;
+reg [3:0] clkdiv = 0;
 
 wire xpclk;                         // Processor (Tom & Jerry) Clock.
 wire xvclk;                         // Video Clock.
@@ -80,17 +80,29 @@ reg cpu_toggle;                     // Toggles at 26.6MHz to act as an additiona
 wire ce_26_6 = clkdiv[1:0] == 2'd3; // single clk_sys pulse at the rate of 26.6MHz occuring on the last sys_clk cycle of a 26.6MHz cycle
 wire clk_26_6 = clkdiv[1:0] < 2'd2; // symetrical clk at the rate of 26.6MHz
 
+reg ce_26_6_p0 = 1;
+reg ce_26_6_p1 = 0;
+reg ce_26_6_p2 = 0;
+reg ce_26_6_p3 = 0;
+reg cpuclk_latch = 0;
+
 always @(posedge sys_clk) begin
 	clkdiv <= clkdiv + 4'd1;
-	if (ce_26_6) begin
+	ce_26_6_p0 <= &clkdiv[1:0];
+	ce_26_6_p1 <= ce_26_6_p0;
+	ce_26_6_p2 <= ce_26_6_p1;
+	ce_26_6_p3 <= ce_26_6_p2;
+
+	if (ce_26_6_p3) begin
 		cpu_toggle <= ~cpu_toggle;
+		cpuclk_latch <= j_xcpuclk;
 		clkdiv <= 4'd0;
 	end
 end
 
-assign xvclk = clk_26_6;
-assign tlw = ce_26_6;                  // Transparent Latch Write
-assign vid_ce = ce_26_6 & cpu_toggle;  // Video Clock Enable
+assign xvclk = ce_26_6_p0 | ce_26_6_p1;
+assign tlw = ce_26_6_p3;                      // Transparent Latch Write
+assign vid_ce = ce_26_6_p3 & cpu_toggle;  // Video Clock Enable
 
 // TOM
 
@@ -316,23 +328,39 @@ assign j_xgpiol_5 = j_xgpiol_out[5]; // Jerry's GPIO line 5 is connected to the 
 wire adc_oe = ~j_xgpiol_5 & ~j_xiordl;
 wire adc_we = ~j_xgpiol_5 & ~j_xiowrl;
 reg [7:0] adc_data = 8'd0;
-reg [3:0] adc_reg = 4'b0000;
 
-// Technically the ADC supports 3 modes, selected by the top two bits of adc_reg, however, only early
-// versions of the hardware had a ADC at all, and only one game made use of it: Battle Sphere. So we
-// only support the simple non-differential mode here. More info is needed on what the output values should really be.
 always @(posedge sys_clk) begin
-	case (adc_reg[1:0])
-		2'b00: adc_data <= analog_0;
-		2'b01: adc_data <= analog_1;
-		2'b10: adc_data <= analog_2;
-		2'b11: adc_data <= analog_3;
-	endcase
 	if (adc_we) begin
-		adc_reg <= e_dbus[3:0];
+		case (e_dbus[3:2])
+			2'b00, 2'b10: begin
+				case (e_dbus[1:0])
+					2'b00: adc_data <= analog_0 < analog_1 ? 8'd0 : analog_0 - analog_1;
+					2'b01: adc_data <= analog_1 < analog_0 ? 8'd0 : analog_1 - analog_0;
+					2'b10: adc_data <= analog_2 < analog_3 ? 8'd0 : analog_2 - analog_3;
+					2'b11: adc_data <= analog_3 < analog_2 ? 8'd0 : analog_3 - analog_2;
+				endcase
+			end
+			2'b01: begin
+				case (e_dbus[1:0])
+					2'b00: adc_data <= analog_0;
+					2'b01: adc_data <= analog_1;
+					2'b10: adc_data <= analog_2;
+					2'b11: adc_data <= analog_3;
+				endcase
+			end
+			2'b11: begin
+				case (e_dbus[1:0])
+					2'b00: adc_data <= analog_0 < analog_3 ? 8'd0 : analog_0 - analog_3;
+					2'b01: adc_data <= analog_1 < analog_3 ? 8'd0 : analog_1 - analog_3;
+					2'b10: adc_data <= analog_2 < analog_3 ? 8'd0 : analog_2 - analog_3;
+					2'b11: adc_data <= adc_data;
+				endcase
+			end
+		endcase
 	end
+
 	if (~xresetl) begin
-		adc_reg <= 4'd0;
+		adc_data <= 8'd0; // Power on to undefined state
 	end
 end
 
@@ -523,7 +551,7 @@ ps2_mouse mouse
 	.reset(~xresetl),
 
 	.clk(sys_clk),
-	.ce(ce_26_6),
+	.ce(ce_26_6_p3),
 
 	.ps2_mouse(ps2_mouse),      // 25-bit bus, from hps_io.
 
@@ -841,6 +869,9 @@ _j_jerry jerry_inst
 	.xi2stxd         (j_xi2stxd),
 	.xcpuclk         (j_xcpuclk),
 	.tlw             (tlw),
+	.tlw_0           (tlw),
+	.tlw_1           (tlw),
+	.tlw_2           (tlw),
 //	.tlw_out         (jerry_tlw),
 	.aen             (j_aen),
 	.den             (j_den),
@@ -877,8 +908,8 @@ flipflop xbgl_ff
 
 reg old_j_xcpuclk;
 
-wire fx68k_phi1 = j_xcpuclk & ~old_j_xcpuclk;
-wire fx68k_phi2 = ~j_xcpuclk & old_j_xcpuclk;
+wire fx68k_phi1 = turbo ? ce_26_6_p0 : (~old_j_xcpuclk & j_xcpuclk);
+wire fx68k_phi2 = turbo ? ce_26_6_p3 : (old_j_xcpuclk & ~j_xcpuclk);
 
 always @(posedge sys_clk) begin
 	old_j_xcpuclk <= j_xcpuclk;
@@ -1166,7 +1197,7 @@ always @(posedge sys_clk) begin : i2s_proc
 	if (~i2s_clk && old_clk) begin
 		if (~i2s_cnt[4]) begin // Ignore any bits that overflow
 			i2s_cnt <= i2s_cnt + 1'd1;
-			i2s_buf[side][~i2s_cnt[3:0]] <= i2s_data;
+			i2s_buf[side][4'd15 - i2s_cnt[3:0]] <= i2s_data;
 		end
 		old_ws <= i2s_ws;
 		if (old_ws != i2s_ws)
