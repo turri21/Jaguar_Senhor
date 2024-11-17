@@ -107,9 +107,9 @@ always @(posedge sys_clk) begin
 	end
 end
 
-assign xvclk = ce_26_6_p0 | ce_26_6_p1;
+assign xvclk = ce_26_6_p0;// | ce_26_6_p1;
 assign tlw = ce_26_6_p3;                  // Transparent Latch Write. This really should just be negedge xvclk, but in our design we need it to be CE.
-assign vid_ce = ce_26_6_p3 & cpu_toggle;  // Video Clock Enable
+assign vid_ce = xvclk & cpu_toggle;
 
 // TOM
 
@@ -374,25 +374,31 @@ end
 // Tristates between TOM/JERRY/68000
 
 assign rw =
-	((xrw_oe)         ? xrw_out   : 1'b1) &
-	((j_xrw_oe)       ? j_xrw_out : 1'b1) &
-	((fx68k_bus_en)   ? fx68k_rw  : 1'b1);
+	(xrw_oe)         ? xrw_out   : //1'b1) &
+	(j_xrw_oe)       ? j_xrw_out : //1'b1) &
+	                   fx68k_rw;
+//	(fx68k_bus_en)   ? fx68k_rw  : 1'b1;
 
 assign xrw_in = rw;
 assign j_xrw_in = rw;
 
+// Note xsiz_oe[1:0] is 2 copies of aen; could just use aen or any bit of xsiz_oe
+// Note j_xsiz_oe[1:0] is 2 copies of j_aen; could just use j_aen or any bit of j_xsiz_oe
 assign siz =
-	((xsiz_oe)         ? xsiz_out    : 2'b11) &
-	((j_xsiz_oe)       ? j_xsiz_out  : 2'b11) &
-	((fx68k_bus_en)    ? {fx68k_uds_n, fx68k_lds_n} : 2'b11);
+	(xsiz_oe[0])      ? xsiz_out    : //2'b11) &
+	(j_xsiz_oe[0])    ? j_xsiz_out  : //2'b11) &
+	                    {fx68k_uds_n, fx68k_lds_n};
+//	(fx68k_bus_en)    ? {fx68k_uds_n, fx68k_lds_n} : 2'b11;
 
 assign xsiz_in = siz;
 assign j_xsiz_in = siz;
 
+// Note xdreql_oe is aen; could just use aen
 assign dreql =
-	((xdreql_oe)     ? xdreql_out   : 1'b1) &
-	((j_xdreql_oe)   ? j_xdreql_out : 1'b1) &
-	((fx68k_bus_en)  ? fx68k_as_n   : 1'b1);
+	(xdreql_oe)     ? xdreql_out   : //1'b1) &
+	(j_xdreql_oe)   ? j_xdreql_out : //1'b1) &
+	                  fx68k_as_n;
+//	(fx68k_bus_en)  ? fx68k_as_n   : 1'b1;
 
 assign xdreql_in = dreql;
 assign j_xdreql_in = dreql;
@@ -400,19 +406,24 @@ assign j_xdreql_in = dreql;
 // Busses between TOM/JERRY/68000
 
 // Address bus
+// Note xa_oe[23:0] is 24 copies of aen; could just use aen or any bit of xa_oe
+// Note j_xa_oe[23:0] is 24 copies of j_aen; could just use j_aen or any bit of j_xa_oe
 assign abus[23:0] =
-	(|xa_oe)       ? xa_out[23:0]           : // Tom.
-	(|j_xa_oe)     ? j_xa_out[23:0]         : // Jerry.
-	(fx68k_bus_en) ? fx68k_byte_addr[23:0]  : // 68000.
-	24'hFFFFFF;
+	(xa_oe[0])     ? xa_out[23:0]           : // Tom.
+	(j_xa_oe[0])   ? j_xa_out[23:0]         : // Jerry.
+	                 fx68k_byte_addr[23:0];   // 68000.
+//	(fx68k_bus_en) ? fx68k_byte_addr[23:0]  : // 68000.
+//	24'hFFFFFF;
 
 assign xa_in[23:0] = abus[23:0];
 
 // Avoid inputting jerry's own output for timing reasons
+// Note xa_oe[23:0] is 24 copies of aen; could just use aen or any bit of xa_oe
 assign j_xa_in[23:0] =
-	(|xa_oe)       ? xa_out[23:0]          : // Tom.
-	(fx68k_bus_en) ? fx68k_byte_addr[23:0] : // 68000.
-	24'hFFFFFF;
+	(xa_oe[0])     ? xa_out[23:0]          : // Tom.
+	                 fx68k_byte_addr[23:0];  // 68000.
+//	(fx68k_bus_en) ? fx68k_byte_addr[23:0] : // 68000.
+//	24'hFFFFFF;
 
 // Data Bus
 
@@ -488,7 +499,7 @@ assign dbus = {dbus_63_48, dbus_47_32, dbus_31_16, dbus_15_0};
 
 assign xd_in[63:0] = dbus[63:0];
 assign j_xd_in[15:0] = dbus_15_0_no_j;         // If we let jerry mux it's own lines it creates tons of logic loops
-assign j_xd_in[31:16] = 16'b11111111_11111111; // Data bus bits [31:16] on Jerry are pulled High on the Jag schematic.
+assign j_xd_in[31:16] = (j_den) ? j_xd_out[31:16] : 16'b11111111_11111111;	// Data bus bits [31:16] on Jerry are pulled High on the Jag schematic.
 
 // DRAM
 
@@ -501,6 +512,11 @@ assign dram_lw_n[3:0] = {xwel[6], xwel[4], xwel[2], xwel[0]};
 assign dram_oe_n[3:0] = {xoel[2], xoel[2], xoel[1], xoel[0]}; // Note: OEL bit 2 is hooked up twice. This is true for the Jag schematic as well.
 
 // TOM-specific tristates
+
+// 8 FC[0..2] should be ignored when Jerry owns the bus
+// Level 0 hardware
+// Description These signals have to be tied off with resistors, as otherwise Tom can assume Jerry bus
+// master cycles are the wrong type.
 
 // Resistors are tied to 2 1 0 = vcc gnd vcc = 3'b101
 assign xfc_in[0] = ((xfc_oe[0] ? xfc_out[0] : 1'd1) & (~fx68k_bus_en ? 1'd1 : fx68k_fc[0]));
@@ -703,7 +719,7 @@ assign joy_bus_oe = (~j_xjoy_in[0] | ~j_xjoy_in[1]);
 // Weird, but I don't see how it could work otherwise...
 assign ee_cs = j_xgpiol_in[1];
 assign ee_sk = j_xgpiol_in[0];
-assign ee_di = e_dbus[0];
+assign ee_di = dbus[0];
 
 eeprom eeprom_inst // FIXME: this should really be saved as a save file
 (
@@ -816,7 +832,7 @@ wire [15:0] dspwd;
 _j_jerry jerry_inst
 (
 	.xdspcsl         (j_xdspcsl),
-	.xpclkosc        (j_xpclkosc),
+	.xpclkosc        (xvclk),
 	.xpclkin         (j_xpclkin),
 	.xdbgl           (j_xdbgl),
 	.xoel_0          (j_xoel_0),
@@ -913,8 +929,8 @@ flipflop xbgl_ff
 
 reg old_j_xcpuclk;
 
-wire fx68k_phi1 = turbo ? (ce_26_6_p0) : (~old_j_xcpuclk & j_xcpuclk);
-wire fx68k_phi2 = turbo ? (ce_26_6_p3) : (old_j_xcpuclk & ~j_xcpuclk);
+wire fx68k_phi1 = xvclk & (~j_xcpuclk || turbo);
+wire fx68k_phi2 = tlw & (j_xcpuclk || turbo);
 
 always @(posedge sys_clk) begin
 	old_j_xcpuclk <= j_xcpuclk;
@@ -963,7 +979,8 @@ fx68k fx68k_inst
 // VIDEO / 15 KHz (native) output...
 assign vga_r = xr[7:0];
 assign vga_g = xg[7:0];
-assign vga_b = {xb[7:1], 1'b0}; // FIXME: heck if I know why they did this, maybe it's best not to
+assign vga_b = xb[7:0];
+//assign vga_b = {xb[7:1], 1'b0}; // FIXME: heck if I know why they did this, maybe it's best not to
 
 // AUDIO / I2S receiver
 wire   i2s_ws   = j_xws_in;
@@ -1051,7 +1068,7 @@ always @(posedge sys_clk) begin
 		wraddr <= 6'b000000;
 		wrdata <= 16'hFFFF;
 		wrloop <= 1'b0;
-		ewen <= 1'b0; // Seems like it should be here
+
 	end else if (~sk_prev & sk) begin
 		if (status == `EE_IDLE) begin
 			ir <= { ir[7:0], din };
