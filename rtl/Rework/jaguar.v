@@ -22,6 +22,11 @@ module jaguar
 	output              cart_ce_n,
 	input       [31:0]  cart_q,
 
+	output       [9:0]  bram_addr,
+	output      [15:0]  bram_data,
+	input       [15:0]  bram_q,
+	output              bram_wr,
+
 	output              vga_vs_n,
 	output              vga_hs_n,
 	output              hblank,
@@ -727,7 +732,12 @@ eeprom eeprom_inst // FIXME: this should really be saved as a save file
 	.cs      (ee_cs),
 	.sk      (ee_sk),
 	.din     (ee_di),
-	.dout    (ee_do)
+	.dout    (ee_do),
+	
+	.bram_addr( bram_addr ),
+	.bram_data( bram_data ),
+	.bram_q   ( bram_q ),
+	.bram_wr  ( bram_wr )
 );
 
 assign abus_out[23:0] = {abus[23:3], xmaska[2:0]};
@@ -1030,7 +1040,12 @@ module eeprom
 	input  cs,
 	input  sk,
 	input  din,
-	output dout
+	output dout,
+	
+	output       [9:0]  bram_addr,
+	output      [15:0]  bram_data,
+	input       [15:0]  bram_q,
+	output              bram_wr
 );
 
 `define EE_IDLE      3'b000
@@ -1043,7 +1058,7 @@ module eeprom
 `define EE_WR_END    3'b111
 
 reg          sk_prev = 1'b0;
-reg [15:0]   mem[0:(1<<6)-1];
+//reg [15:0]   mem[0:(1<<6)-1];
 reg          ewen = 1'b0;
 reg [2:0]    status = `EE_IDLE;
 reg [3:0]    cnt = 4'd0;           // Bit counter
@@ -1056,8 +1071,14 @@ reg [5:0]    wraddr = 6'b000000;
 reg [15:0]   wrdata = 16'hFFFF;
 reg          wrloop = 1'b0;
 
+assign       bram_addr = {4'h0,status[2] ? wraddr : { ir[4:0], din }};
+assign       bram_data = wrdata;
+assign       bram_wr = bram_wr_;
+reg          bram_wr_;
+
 always @(posedge sys_clk) begin
 	sk_prev <= sk;
+	bram_wr_ <= 1'b0;
 	if (~cs) begin
 		// Reset
 		status <= `EE_IDLE;
@@ -1069,13 +1090,14 @@ always @(posedge sys_clk) begin
 		wrdata <= 16'hFFFF;
 		wrloop <= 1'b0;
 
+
 	end else if (~sk_prev & sk) begin
 		if (status == `EE_IDLE) begin
 			ir <= { ir[7:0], din };
 			if (ir[7]) begin // Instruction complete
 				if (ir[6:5] == 2'b10) begin
 					// READ
-					dr[15:0] <= mem[{ ir[4:0], din }][15:0];
+					dr[15:0] <= bram_q[15:0];
 					r_dout <= 1'b0; // Dummy bit
 					status <= `EE_READ;
 				end else if (ir[6:3] == 4'b0011) begin
@@ -1137,7 +1159,7 @@ always @(posedge sys_clk) begin
 			end
 		end else if (status == `EE_WR_WRITE) begin
 			if (ewen) begin
-				mem[wraddr] <= wrdata;
+				bram_wr_ <= 1'b1;
 			end
 			status <= `EE_WR_LOOP;
 		end else if (status == `EE_WR_LOOP) begin

@@ -197,7 +197,7 @@ assign LED_DISK = 0;
 assign LED_POWER = 0;
 assign BUTTONS = 0;
 
-assign LED_USER  = ioctl_download;
+assign LED_USER  = ioctl_download | bk_state | bk_pending;
 
 `define RAM_IDLE  4'b0000
 `define RDY_WAIT  4'b0001
@@ -237,7 +237,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXX
+// X XXXXXXXXXX
 
 //
 
@@ -247,6 +247,10 @@ localparam CONF_STR = {
 	"-;",
 	"FS1,JAGJ64ROMBIN;",
 	"FC2,ROM,Load Bios;",
+	"-;",
+	"D0RC,Load Backup RAM;",
+	"D0RB,Save Backup RAM;",
+	"D0OD,Autosave,OFF,ON;",
 	"-;",
 	"O4,Region Setting,NTSC,PAL;",
 	"O2,Cart Checksum Patch,Off,On;",
@@ -273,6 +277,17 @@ wire [24:0] ioctl_addr;
 wire [15:0] ioctl_data;
 wire  [7:0] ioctl_index;
 reg         ioctl_wait;
+reg  [31:0] sd_lba;
+reg         sd_rd = 0;
+reg         sd_wr = 0;
+wire        sd_ack;
+wire  [7:0] sd_buff_addr;
+wire [15:0] sd_buff_dout;
+wire [15:0] sd_buff_din;
+wire        sd_buff_wr;
+wire        img_mounted;
+wire        img_readonly;
+wire [63:0] img_size;
 wire        forced_scandoubler;
 wire [10:0] ps2_key;
 wire [24:0] ps2_mouse;
@@ -302,7 +317,7 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 
 	// .status_in({status[31:8],region_req,status[5:0]}),
 	// .status_set(region_set),
-	//.status_menumask('0),
+	.status_menumask({~bk_ena}),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
@@ -310,6 +325,18 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_data),
 	.ioctl_wait(ioctl_wait),
+
+	.sd_lba('{sd_lba}),
+	.sd_rd(sd_rd),
+	.sd_wr(sd_wr),
+	.sd_ack(sd_ack),
+	.sd_buff_addr(sd_buff_addr),
+	.sd_buff_dout(sd_buff_dout),
+	.sd_buff_din('{sd_buff_din}),
+	.sd_buff_wr(sd_buff_wr),
+	.img_mounted(img_mounted),
+	.img_readonly(img_readonly),
+	.img_size(img_size),
 
 	.ps2_key(ps2_key),
 	.ps2_mouse(ps2_mouse),
@@ -336,6 +363,7 @@ reg       old_download;
 //integer   timeout = 0;
 
 wire rom_index = ioctl_index[5:0] == 1;
+wire cart_download   = ioctl_download & rom_index;
 
 always @(posedge clk_sys)
 if (reset) begin
@@ -452,6 +480,11 @@ jaguar jaguar_inst
 
 	.cart_ce_n( cart_ce_n ) ,	// output  cart_ce_n
 	.cart_q( cart_q ) ,			// input [31:0] cart_q
+	
+	.bram_addr( bram_addr ),
+	.bram_data( bram_data ),
+	.bram_q( bram_q ),
+	.bram_wr( bram_wr ),
 
 	.vga_vs_n( vga_vs_n ) ,	// output  vga_vs_n
 	.vga_hs_n( vga_hs_n ) ,	// output  vga_hs_n
@@ -639,15 +672,16 @@ assign cart_q = (!abus_out[2]) ? DDRAM_DOUT[63:32] : DDRAM_DOUT[31:00];
 reg [3:0] ram_count;
 
 wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
-wire ram_rdy = ~ch1_req;// && ((mem_cyc == `RAM_IDLE) || ch1_ready);	// Latency kludge.
+wire ram_rdy = ~ch1_req || ram_write_req;// && ((mem_cyc == `RAM_IDLE) || ch1_ready);	// Latency kludge.
 
 // From the core into SDRAM.
 wire ram_read_req = (dram_oe_n != 4'b1111); // The use of "startcas" lets us get a bit lower latency for READ requests. (dram_oe_n bits only asserted for reads? - confirm!")
 wire ram_write_req = ({dram_uw_n, dram_lw_n} != 8'b11111111);	// Can (currently) only tell a WRITE request when any of the dram byte enables are asserted.
 
 wire ch1_rnw = !ram_write_req;
+wire ram_reread = !ram_write_req && (dram_addr_old == {1'b0,dram_addr});
 
-wire ch1_req = dram_cas_edge && ~dram_ras_n;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
+wire ch1_req = dram_cas_edge && ~dram_ras_n && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 //wire ch1_req = dram_read_edge || dram_write_edge || (ram_read_req && dram_cas_nedge);// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 wire ch1_ref = dram_cas_edge && dram_ras_n;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 wire ch1_act = dram_ras_edge && dram_cas_n;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
@@ -676,6 +710,7 @@ wire dram_read_edge = ram_read_req && ~old_ram_read_req;
 wire dram_write_edge = ram_write_req && ~old_ram_write_req;
 
 wire [19:0] dram_addr = {ras_latch, dram_a};//abus_out[22:3];//{ras_latch, dram_a};
+reg [20:0] dram_addr_old;
 wire ch1a_ready, ch1b_ready;
 
 assign ch1_ready = ch1a_ready || ch1b_ready;//~|ram_count[3:2];
@@ -760,6 +795,8 @@ else begin
 	old_ram_write_req <= ram_write_req;
 	if (old_ras_n && ~dram_ras_n)
 		ras_latch <= dram_a;
+	if (ch1_req)
+		dram_addr_old <= {ram_write_req,dram_addr};
 
 	if (|ram_count)
 		ram_count <= ram_count - 1'd1;
@@ -771,5 +808,99 @@ else begin
 		`RAM_END: if (dram_cas_n) mem_cyc <= `RAM_IDLE;// Have to wait for dram_cas_n to go high here.
 	endcase
 end
+
+
+
+reg bk_pending;
+
+always @(posedge clk_sys) begin
+	if (bk_ena && ~OSD_STATUS && bram_wr)
+		bk_pending <= 1'b1;
+	else if (bk_state)
+		bk_pending <= 1'b0;
+end
+
+wire  [9:0] bram_addr;
+wire [15:0] bram_data;
+wire [15:0] bram_q;
+wire        bram_wr;
+
+wire        bk_int = !sd_lba[31:2];
+wire [15:0] bk_int_dout;
+
+assign      sd_buff_din = bk_int_dout;
+
+dpram #(10,16) backram
+(
+	.clock(clk_sys),
+   .address_a(bram_addr),
+	.data_a(bram_data),
+	.wren_a(bram_wr),
+	.q_a(bram_q),
+
+	.address_b({sd_lba[1:0],sd_buff_addr}),
+	.data_b(sd_buff_dout),
+	.wren_b(bk_int & sd_buff_wr & sd_ack),
+	.q_b(bk_int_dout)
+);
+
+wire downloading = cart_download;
+reg old_downloading = 0;
+
+reg bk_ena = 0;
+always @(posedge clk_sys) begin
+
+	old_downloading <= downloading;
+	if(~old_downloading & downloading) bk_ena <= 0;
+
+	//Save file always mounted in the end of downloading state.
+	if(downloading && img_mounted && !img_readonly) bk_ena <= 1;
+end
+
+wire bk_load    = status[12];
+wire bk_save    = status[11] | (bk_pending & OSD_STATUS && status[13]);
+reg  bk_loading = 0;
+reg  bk_state   = 0;
+
+always @(posedge clk_sys) begin
+	reg old_load = 0, old_save = 0, old_ack;
+
+	old_load <= bk_load;
+	old_save <= bk_save;
+	old_ack  <= sd_ack;
+
+	if(~old_ack & sd_ack) {sd_rd, sd_wr} <= 0;
+
+	if(!bk_state) begin
+		if(bk_ena & ((~old_load & bk_load) | (~old_save & bk_save))) begin
+			bk_state <= 1;
+			bk_loading <= bk_load;
+			sd_lba <= 0;
+			sd_rd <=  bk_load;
+			sd_wr <= ~bk_load;
+		end
+		if(old_downloading & ~downloading & bk_ena) begin
+			bk_state <= 1;
+			bk_loading <= 1;
+			sd_lba <= 0;
+			sd_rd <= 1;
+			sd_wr <= 0;
+		end
+	end else begin
+		if(old_ack & ~sd_ack) begin
+			if(&sd_lba[1:0]) begin
+				bk_loading <= 0;
+				bk_state <= 0;
+				sd_lba <= 0;
+			end else begin
+				sd_lba <= sd_lba + 1'd1;
+				sd_rd  <=  bk_loading;
+				sd_wr  <= ~bk_loading;
+			end
+		end
+	end
+
+end
+
 
 endmodule
