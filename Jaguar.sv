@@ -276,7 +276,8 @@ wire        ioctl_wr;
 wire [24:0] ioctl_addr;
 wire [15:0] ioctl_data;
 wire  [7:0] ioctl_index;
-reg         ioctl_wait;
+//reg         ioctl_wait;
+wire        ioctl_wait;
 reg  [31:0] sd_lba;
 reg         sd_rd = 0;
 reg         sd_wr = 0;
@@ -364,10 +365,11 @@ reg       old_download;
 
 wire rom_index = ioctl_index[5:0] == 1;
 wire cart_download   = ioctl_download & rom_index;
+assign ioctl_wait = !rom_wrack;
 
 always @(posedge clk_sys)
 if (reset) begin
-	ioctl_wait <= 0;
+//	ioctl_wait <= 0;
 //	status_reg <= 0;
 	old_download <= 0;
 //	timeout <= 0;
@@ -385,7 +387,7 @@ else begin
 		                                // (The ROM actually gets written at 0x30800000 in DDR, which is done when load_addr gets assigned to DDRAM_ADDR below).
 		loader_en <= 1;
 //		status_reg <= 0;
-		ioctl_wait <= 0;
+//		ioctl_wait <= 0;
 //		timeout <= 3000000;
 	end
 
@@ -393,9 +395,9 @@ else begin
 
 	if (ioctl_wr && rom_index) begin
 		loader_wr <= 1;
-		ioctl_wait <= 1;
+//		ioctl_wait <= 1;
 	end
-	else if (rom_wrack) ioctl_wait <= 1'b0;
+//	else if (rom_wrack) ioctl_wait <= 1'b0;
 
 	//if (loader_en && DDRAM_BUSY) ioctl_wait <= 1;
 	//else ioctl_wait <= 0;
@@ -413,9 +415,9 @@ else begin
 
 	if(old_download && ~ioctl_download) begin
 		loader_en <= 0;
-		ioctl_wait <= 0;
+//		ioctl_wait <= 0;
 	end
-	if (RESET) ioctl_wait <= 0;
+//	if (RESET) ioctl_wait <= 0;
 end
 
 wire reset = RESET | status[0] | buttons[1];
@@ -640,7 +642,7 @@ wire [15:0] loader_data_bs = {loader_data[7:0], loader_data[15:8]};
 assign DDRAM_DIN = {loader_data_bs, loader_data_bs, loader_data_bs, loader_data_bs};
 assign DDRAM_BE = (loader_en) ? loader_be : 8'b11111111;	// IIRC, the DDR controller needs the byte enables to be High during READS! ElectronAsh.
 
-wire rom_wrack = 1'b1;	// TESTING!!
+//wire rom_wrack = 1'b1;	// TESTING!!
 
 
 reg [23:0] old_abus_out;
@@ -655,9 +657,11 @@ if (reset) begin
 end else begin
 	cart_ce_n_1 <= cart_ce_n;
 	old_abus_out <= abus_out;
+	cart_diff <= cart_q1 != cart_q;
+
 
 	if (cart_rd_trig) begin
-		xwaitl_latch <= 1'b0; // Assert this (low) until the Cart data is ready.
+//		xwaitl_latch <= 1'b0; // Assert this (low) until the Cart data is ready.
 	end else if (DDRAM_DOUT_READY)
 		xwaitl_latch <= 1'b1; // De-assert, to let the core know.
 end
@@ -667,7 +671,7 @@ wire [1:0] cart_oe;
 
 // 32-bit cart mode...
 //
-assign cart_q = (!abus_out[2]) ? DDRAM_DOUT[63:32] : DDRAM_DOUT[31:00];
+assign cart_q1 = (!abus_out[2]) ? DDRAM_DOUT[63:32] : DDRAM_DOUT[31:00];
 
 reg [3:0] ram_count;
 
@@ -715,6 +719,10 @@ wire ch1a_ready, ch1b_ready;
 
 assign ch1_ready = ch1a_ready || ch1b_ready;//~|ram_count[3:2];
 
+wire [31:0] cart_q1;
+wire rom_wrack;// = 1'b1;	// TESTING!!
+reg cart_diff;
+
 sdram sdram
 (
 	.init               (~pll_locked),
@@ -734,7 +742,7 @@ sdram sdram
 	.SDRAM_CLK          (SDRAM_CLK),
 
 	// Port 2
-	.ch1_addr           ({5'b00000, dram_addr, 2'b00}),
+//	.ch1_addr           ({5'b00000, dram_addr, 2'b00}),
 	.ch1_caddr          ({3'b000, dram_a}),
 	.ch1_dout           ({ch1_dout[47:32], ch1_dout[15:0]}),
 	.ch1_din            ({ch1_din[47:32], ch1_din[15:0]}),
@@ -744,7 +752,16 @@ sdram sdram
 	.ch1_pch            (ch1_pch),
 	.ch1_rnw            (ch1_rnw),
 	.ch1_be             ({ch1_be[5:4], ch1_be[1:0]}),
-	.ch1_ready          (ch1a_ready)
+	.ch1_ready          (ch1a_ready),
+
+	.ch2_addr           ((loader_en) ? loader_addr[22:1] : {abus_out[22:2],1'b0}),    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+	.ch2_dout           (cart_q),             // data output to cpu
+	.ch2_din            (loader_data_bs),     // data input from cpu
+	.ch2_req            ((loader_en) ? loader_wr & rom_index : cart_rd_trig),     // request
+	.ch2_rnw            ((loader_en) ? !loader_wr & rom_index : 1'b1),     // 1 - read, 0 - write
+	.ch2_ready          (rom_wrack),
+
+	.self_refresh       (loader_en || !xresetl)
 );
 
 sdram sdram2
@@ -765,7 +782,6 @@ sdram sdram2
 	.SDRAM_CLK          (SDRAM2_CLK),
 
 	// Port 2
-	.ch1_addr           ({5'b00000, dram_addr, 2'b00}),
 	.ch1_caddr          ({3'b000, dram_a}),
 	.ch1_dout           ({ch1_dout[63:48], ch1_dout[31:16]}),
 	.ch1_din            ({ch1_din[63:48], ch1_din[31:16]}),
@@ -775,7 +791,15 @@ sdram sdram2
 	.ch1_pch            (ch1_pch),
 	.ch1_rnw            (ch1_rnw),
 	.ch1_be             ({ch1_be[7:6], ch1_be[3:2]}),
-	.ch1_ready          (ch1b_ready)
+	.ch1_ready          (ch1b_ready),
+
+	.ch2_addr           ({22'h0}),    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
+	.ch2_dout           (),    // data output to cpu
+	.ch2_din            ({16'h0}),     // data input from cpu
+	.ch2_req            (0),     // request
+	.ch2_rnw            (0),     // 1 - read, 0 - write
+
+	.self_refresh       (loader_en)
 );
 
 reg [3:0] mem_cyc;

@@ -102,7 +102,9 @@ always @(posedge sys_clk) begin
 
 	old_reset <= xresetl;
 	// Reduce non-deterministic behavior.
-	if (~old_reset && xresetl) begin
+//	if (~old_reset && xresetl) begin
+	// Just testing this; Might put back
+	if (old_reset && ~xresetl) begin
 		clkdiv <= 0;
 		ce_26_6_p0 <= 1;
 		ce_26_6_p1 <= 0;
@@ -823,7 +825,7 @@ _tom tom_inst
 	.blank           (blank),
 	.hblank          (hblank),
 	.vblank          (vblank),
-	.hsync           (vga_hs_n),
+//	.hsync           (vga_hs_n),
 	.vsync           (vga_vs_n),
 	.tlw             (tlw),
 //	.tlw_out         (tom_tlw),
@@ -833,6 +835,9 @@ _tom tom_inst
 	.sys_clk         (sys_clk),
 	.startcas        (startcas)
 );
+
+assign vga_hs_n = ~xhs_out;
+//assign vga_vs_n = ~xvs_out;
 
 wire audio_clk;
 wire jerry_tlw;
