@@ -79,6 +79,12 @@ module _tom
 	output [2:0] den,
 	input sys_clk, // Generated
 	output startcas,
+	output d3a,
+	output d3b,
+	output [7:0] we,
+	output startwep,
+	output startwe,
+	output [10:3] atp,
 	
 	output wire hsl,
 	output wire vsl
@@ -941,6 +947,7 @@ _dbus dbus_inst
 	.sys_clk(sys_clk) // Generated
 );
 
+assign atp[10:3] = at[10:3]; 
 // TOM.NET (369) - abus : abus
 _abus abus_inst
 (
@@ -1100,6 +1107,11 @@ _mem mem_inst
 	.tlw /* IN */ (tlw),
 	.ram_rdy /* IN */ (ram_rdy),
 	.sys_clk(sys_clk), // Generated
+	.d3a(d3a),
+	.d3b(d3b),
+	.we_(we[7:0]),
+	.startwep(startwep),
+	.startwe_out(startwe),
 	.startcas_out(startcas)
 );
 

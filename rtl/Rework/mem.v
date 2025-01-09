@@ -92,6 +92,11 @@ module _mem
 	input ram_rdy,
 	input sys_clk, // Generated
 	
+	output d3a,
+	output d3b,
+	output [7:0] we_,
+	output startwep,
+	output startwe_out,
 	output startcas_out
 );
 wire notreadt;
@@ -127,9 +132,9 @@ wire d2b;
 reg q2c = 1'b0;
 wire d2c;
 reg q3a = 1'b0;
-wire d3a;
+//wire d3a;
 reg q3b = 1'b0;
-wire d3b;
+//wire d3b;
 reg q4a = 1'b0;
 wire d4a;
 reg q4b = 1'b0;
@@ -917,8 +922,8 @@ assign oet_obuf = oeti;
 
 // MEM.NET (473) - startcas : an2
 wire startcas = q3a & dram;
-assign startcas_out = d3a & dram;	// Saving one clock cycle for SDRAM reads, using d3a. ElectronAsh.
-//assign startcas_out = q3a & dram;
+//assign startcas_out = d3a & dram;	// Saving one clock cycle for SDRAM reads, using d3a. ElectronAsh.
+assign startcas_out = q3a & dram;
 
 // MEM.NET (475) - dinl0 : nd2
 assign dinl0 = ~(q3b & reads_obuf);
@@ -960,6 +965,8 @@ begin
 		startwe <= swd;
 	end
 end
+assign startwe_out = startwe;
+assign startwep = swd;
 
 // MEM.NET (493) - notrw : iv
 assign notrw = ~rw_in;
@@ -1260,9 +1267,11 @@ assign we[3] = ~(we30 & we31 & we32);
 
 // MEM.NET (666) - wel[0-3] : nd2
 assign wel[3:0] = wet_obuf ? ~(we[3:0]) : 4'b1111;
+assign we_[3:0] = (we[3:0]);
 
 // MEM.NET (667) - wel[4-7] : nd3
 assign wel[7:4] = (wet_obuf & mws64) ? ~(bm[7:4]) : 4'b1111;
+assign we_[7:4] = (mws64) ? (bm[7:4]) : 4'b0000;
 
 // MEM.NET (691) - oe00 : nd2
 assign oe00 = ~(oet_obuf & mws8);

@@ -14,6 +14,14 @@ module jaguar
 	input       [63:0]  dram_q,
 	input       [3:0]   dram_oe,
 	input               ram_rdy,
+	output              dram_go,
+	output              dram_go_rd,
+	output              dram_rw,
+	output      [23:0]  dram_addr,
+	output      [7:0]   dram_be,
+	output              dram_startwep,
+	output              dram_startwe,
+	output      [10:3]  dram_addrp,
 
 	output      [23:0]  abus_out,      // Main external address bus output, used for OS ROM (BIOS), cart, etc. Lower 3 bits are masked.
 
@@ -66,6 +74,19 @@ wire [1:0] cart_oe;
 
 assign cart_oe[0] = (~cart_oe_n[0] & ~cart_ce_n);
 assign cart_oe[1] = (~cart_oe_n[1] & ~cart_ce_n);
+
+wire d3a;
+wire d3b;
+wire [7:0] we;
+wire startwe;
+wire startwep;
+assign dram_go_rd = d3a && !startwep && tlw;
+//assign dram_go_rd = d3a && !ram_rdy && xrw_in;
+assign dram_go_wr = d3b && !xrw_in;
+assign dram_rw = xrw_in;
+assign dram_addr[23:0] = xa_in[23:0];
+assign dram_be[7:0] = we[7:0];
+assign dram_startwep = startwep;
 
 wire os_rom_ce_n;
 wire os_rom_oe_n;
@@ -833,7 +854,13 @@ _tom tom_inst
 	.aen             (aen),
 	.den             (den[2:0]),
 	.sys_clk         (sys_clk),
-	.startcas        (startcas)
+	.startcas        (startcas),
+	.d3a             (d3a),
+	.d3b             (d3b),
+	.we              (we[7:0]),
+	.startwep        (startwep),
+	.startwe         (startwe),
+	.atp             (dram_addrp[10:3])
 );
 
 assign vga_hs_n = ~xhs_out;
