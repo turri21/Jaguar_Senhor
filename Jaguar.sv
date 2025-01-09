@@ -237,7 +237,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXXXXX
+// X XXXXXXXXXXXXX
 
 //
 
@@ -258,6 +258,7 @@ localparam CONF_STR = {
 	"O9A,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
 	"O3,CPU Speed,Normal,Turbo;",
+	"OE,VSync,vvs,hvs(debug);",
 	"-;",
 	"R0,Reset;",
 	"J1,A,B,C,Option,Pause,1,2,3,4,5,6,7,8,9,0,Star,Hash;",
@@ -318,7 +319,7 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 
 	// .status_in({status[31:8],region_req,status[5:0]}),
 	// .status_set(region_set),
-	.status_menumask({d3a,d3b,~bk_ena}),
+	.status_menumask({~bk_ena}),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
@@ -442,6 +443,7 @@ wire hblank;
 wire vblank;
 wire vga_hs_n;
 wire vga_vs_n;
+wire vvs;
 wire vid_ce;
 
 wire [7:0] vga_r;
@@ -461,7 +463,7 @@ wire [15:0] aud_16_r;
 
 jaguar jaguar_inst
 (
-	.xresetl( xresetl ) ,		// input  xresetl
+	.xresetl_in( xresetl ) ,	// input  xresetl
 
 	.sys_clk( clk_sys ) ,		// input  clk_sys
 
@@ -495,6 +497,7 @@ jaguar jaguar_inst
 	.bram_q( bram_q ),
 	.bram_wr( bram_wr ),
 
+	.vvs( vvs ),
 	.vga_vs_n( vga_vs_n ) ,	// output  vga_vs_n
 	.vga_hs_n( vga_hs_n ) ,	// output  vga_hs_n
 	.vga_r( vga_r ) ,			// output [7:0] vga_r
@@ -600,7 +603,7 @@ video_mixer #(.LINE_LENGTH(700), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 
 	// Positive pulses.
 	.HSync(vga_hs_n),           // input HSync
-	.VSync(vga_vs_n),           // input VSync
+	.VSync(status[14] ? vga_vs_n : vvs),// input VSync
 	.HBlank(hblank),            // input HBlank
 	.VBlank(vblank),            // input VBlank
 
@@ -696,7 +699,7 @@ wire ram_reread = (dram_addr_old == {1'b0,dram_addr});
 
 wire ch1_reqr = dram_go_rd;// && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 //wire ch1_reqr = startcas && ~old_startcas && !dram_startwe;// && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-wire ch1_req = dram_cas_edge && ~dram_ras_n && !ram_write_req;// && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
+//wire ch1_req = dram_cas_edge && ~dram_ras_n && !ram_write_req;// && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 //wire ch1_reqr = dram_cas_edge && ~dram_ras_n && !ram_write_req && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 wire ch1_reqw = dram_cas_edge && ~dram_ras_n && ram_write_req;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
 //wire ch1_req = dram_read_edge || dram_write_edge || (ram_read_req && dram_cas_nedge);// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)

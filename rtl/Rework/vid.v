@@ -56,6 +56,7 @@ module _vid
 	output hblank_out,
 	output hsync_out,
 	output vsync_out,
+	output vvs_o,
 	output nextpixa,
 	output nextpixd,
 	output cry16,
@@ -778,6 +779,7 @@ assign blank = ~(notvblank & nothblank);
 assign hvstart = hvsb & vvs;
 
 assign vsync_out = hvs;
+assign vvs_o = vvs;
 assign hsync_out = hes;
 
 // VID.NET (309) - hestart : an2

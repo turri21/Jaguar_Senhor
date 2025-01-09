@@ -1,6 +1,6 @@
 module jaguar
 (
-	input               xresetl,
+	input               xresetl_in,
 
 	input               sys_clk,
 
@@ -35,6 +35,7 @@ module jaguar
 	input       [15:0]  bram_q,
 	output              bram_wr,
 
+	output              vvs,
 	output              vga_vs_n,
 	output              vga_hs_n,
 	output              hblank,
@@ -103,7 +104,8 @@ wire tlw;                           // Transparent Latch Write?
 
 reg cpu_toggle;                     // Toggles at 26.6MHz to act as an additional divider for the pixel clock and cpu.
 
-reg old_reset = 1'b0;
+reg old_reset = 1'b1;
+reg xresetl = 1'b0;
 
 reg ce_26_6_p0 = 1;
 reg ce_26_6_p1 = 0;
@@ -121,17 +123,20 @@ always @(posedge sys_clk) begin
 		cpu_toggle <= ~cpu_toggle;
 	end
 
-	old_reset <= xresetl;
+	old_reset <= xresetl_in;
 	// Reduce non-deterministic behavior.
-//	if (~old_reset && xresetl) begin
+	if (xresetl_in && ce_26_6_p3 && cpu_toggle) begin
+		xresetl    <= 1;
+	end
 	// Just testing this; Might put back
-	if (old_reset && ~xresetl) begin
+	if (old_reset && ~xresetl_in) begin
 		clkdiv <= 0;
 		ce_26_6_p0 <= 1;
 		ce_26_6_p1 <= 0;
 		ce_26_6_p2 <= 0;
 		ce_26_6_p3 <= 0;
 		cpu_toggle <= 0;
+		xresetl    <= 0;
 	end
 end
 
@@ -848,6 +853,7 @@ _tom tom_inst
 	.vblank          (vblank),
 //	.hsync           (vga_hs_n),
 	.vsync           (vga_vs_n),
+	.vvs             (vvs),
 	.tlw             (tlw),
 //	.tlw_out         (tom_tlw),
 	.ram_rdy         (ram_rdy),
