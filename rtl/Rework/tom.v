@@ -60,6 +60,7 @@ module _tom
 	output [1:0] xrasl,
 	output xdtackl,
 	output xintl,
+	// below signals NOT_NETLIST
 	output hs_o,
 	output hhs_o,
 	output vs_o,
@@ -85,8 +86,8 @@ module _tom
 	output [7:0] we,
 	output startwep,
 	output startwe,
-	output [10:3] atp,
-	
+	output [10:3] atp,	
+	input turbo,
 	output wire hsl,
 	output wire vsl
 );

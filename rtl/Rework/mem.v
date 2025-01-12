@@ -89,15 +89,17 @@ module _mem
 	output justify_oe,
 	input justify_in,
 	input tlw,
+
+	// below signals NOT_NETLIST
 	input ram_rdy,
 	input sys_clk, // Generated
-	
 	output d3a,
 	output d3b,
 	output [7:0] we_,
 	output startwep,
 	output startwe_out,
-	output startcas_out
+	output startcas_out,
+	input turbo
 );
 wire notreadt;
 wire intbm;
@@ -798,10 +800,10 @@ assign mt5b1 = ~(q5b & notwaitdone);
 assign d5b = ~(mt5b0 & mt5b1);
 
 // MEM.NET (404) - slowrom : iv
-assign slowrom = ~fastrom;
+assign slowrom = ~(fastrom || turbo); // turbo NOT_NETLIST
 
 // MEM.NET (405) - mt5c0 : nd2
-assign mt5c0 = ~(q5a & fastrom);
+assign mt5c0 = ~(q5a & (fastrom || turbo)); // turbo NOT_NETLIST
 
 // MEM.NET (406) - mt5c1 : nd2
 assign mt5c1 = ~(q5b & waitdone);

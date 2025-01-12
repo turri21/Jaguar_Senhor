@@ -841,6 +841,7 @@ _tom tom_inst
 	.xrasl           (xrasl[1:0]),
 	.xdtackl         (xdtackl),
 	.xintl           (xintl),
+	// below signals NOT_NETLIST
 	.hs_o            (hs_o),
 	.hhs_o           (hhs_o),
 	.vs_o            (vs_o),
@@ -866,7 +867,8 @@ _tom tom_inst
 	.we              (we[7:0]),
 	.startwep        (startwep),
 	.startwe         (startwe),
-	.atp             (dram_addrp[10:3])
+	.atp             (dram_addrp[10:3]),
+	.turbo           (turbo)
 );
 
 assign vga_hs_n = ~xhs_out;
@@ -988,6 +990,8 @@ end
 // 68000: 6525   GPU Internal: 88554   GPU External: 89907
 // H/W NTSC:
 // 68000: 2101   GPU Internal: 10545   GPU External: 11057
+// H/W PAL:
+// 68000: 2679   GPU Internal: 12865   GPU External: 13452
 // Mister NTSC:
 // 68000: 2168   GPU Internal: 10819   GPU External: 11380
 

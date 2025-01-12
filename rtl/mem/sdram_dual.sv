@@ -42,16 +42,17 @@ module sdram
 //	input      [26:1] ch1_addr,    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
 	input      [10:3] ch1_addr,    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
 	input      [12:0] ch1_caddr,   // direct control.
-	output     [31:0] ch1_dout,    // data output to cpu
-	input      [31:0] ch1_din,     // data input from cpu
+	output     [63:0] ch1_dout,    // data output to cpu
+	input      [63:0] ch1_din,     // data input from cpu
 	input             ch1_reqr,    // request
 	input             ch1_reqw,    // request
 	input             ch1_ref,     // refquest
 	input             ch1_act,     // actquest
 	input             ch1_pch,     // pchquest
 	input             ch1_rnw,     // 1 - read, 0 - write
-	input      [3:0]  ch1_be,      // Byte enable (bits) for burst writes. TODO
+	input      [7:0]  ch1_be,      // Byte enable (bits) for burst writes. TODO
 	output reg        ch1_ready,
+	input             ch1_64,
 	
 	input      [22:1] ch2_addr,    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
 	output reg [31:0] ch2_dout,    // data output to cpu
@@ -59,6 +60,8 @@ module sdram
 	input             ch2_req,     // request
 	input             ch2_rnw,     // 1 - read, 0 - write
 	output reg        ch2_ready,
+	
+	output reg        ram64,
 
 	input             self_refresh // 1 - self control, 0 - refresh on ch1_ref
 );
@@ -112,8 +115,12 @@ localparam STATE_IDLE_6  = 10;
 localparam STATE_RFSH    = 11;
 localparam STATE_RW3     = 12;
 localparam STATE_RW4     = 13;
+localparam STATE_ACT1    = 14;
+localparam STATE_ACT2    = 15;
+localparam STATE_PRE1    = 16;
+localparam STATE_PRE2    = 17;
 
-(*noprune*) reg [CAS_LATENCY+BURST_LENGTH:0] data_ready_delay1, data_ready_delay2;
+(*noprune*) reg [CAS_LATENCY+BURST_LENGTH+2:0] data_ready_delay1, data_ready_delay2;
 reg [15:0] dq_reg;
 //reg [31:0] ch1_dout_;
 //assign ch1_dout[31:0] = {ch1_dout_[31:16],data_ready_delay1[0] ? dq_reg[15:0] : ch1_dout_[15:0]};
@@ -122,9 +129,10 @@ always @(posedge clk) begin
 
 	reg        saved_wr;
 	reg [12:0] cas_addr;
-	reg [31:0] saved_data;
-	reg  [3:0] state = STATE_STARTUP;
-	reg  [3:0] saved_mask;
+	reg [63:0] saved_data;
+	reg  [4:0] state = STATE_STARTUP;
+	reg  [7:0] saved_mask;
+	reg [10:3] saved_addr;
 	
 	reg [15:0] ch2_data;
 	reg [22:1] ch2_add;
@@ -149,9 +157,12 @@ always @(posedge clk) begin
 	dq_reg <= SDRAM_DQ;
 	
 	// MSB Byte is read/written FIRST now. ElectronAsh.
-	if(data_ready_delay1[1]) ch1_dout[31:16] <= dq_reg;
-	if(data_ready_delay1[0]) ch1_dout[15:00] <= dq_reg;
-	if(data_ready_delay1[0]) ch1_ready <= 1;
+	if(data_ready_delay1[3]) ch1_dout[31:16] <= dq_reg;
+	if(data_ready_delay1[2]) ch1_dout[15:00] <= dq_reg;
+	if(data_ready_delay1[1]) ch1_dout[63:48] <= dq_reg;
+	if(data_ready_delay1[0]) ch1_dout[47:32] <= dq_reg;
+	if(data_ready_delay1[2] && ~ch1_64) ch1_ready <= 1;
+	if(data_ready_delay1[0] && ch1_64) ch1_ready <= 1;
 	
 	if(data_ready_delay2[1]) ch2_dout[31:16] <= dq_reg;
 	if(data_ready_delay2[0]) ch2_dout[15:00] <= dq_reg;
@@ -166,6 +177,10 @@ always @(posedge clk) begin
 		ch2_wr    <= !ch2_rnw;
 		ch2_ready <= 0;
 	end
+	if (ch1_reqr) begin
+		saved_addr <= ch1_addr;
+	end
+	
 
 	command <= CMD_NOP;
 	case (state)
@@ -191,6 +206,47 @@ always @(posedge clk) begin
 				// Now load the mode register
 				command     <= CMD_LOAD_MODE;
 				SDRAM_A     <= MODE;
+			end
+			if (refresh_count == startup_refresh_max-32) begin
+				// Determine chip size is 64MB or 32MB
+				{SDRAM_BA,SDRAM_A} <= {2'b00,13'h0}; // no auto precharge
+				ch         <= 0;
+				command    <= CMD_ACTIVE;
+			end
+			if (refresh_count == startup_refresh_max-30) begin
+				// activate bank 0
+				SDRAM_A <= {13'h0000}; // no auto precharge
+				command  <= CMD_WRITE;
+				SDRAM_DQ <= 16'h0;
+				SDRAM_A[12:11] <= 2'b00; //~be; always write
+			end
+			if (refresh_count == startup_refresh_max-28) begin
+				// Write 2 to column 0
+				SDRAM_A <= {13'h0000}; // no auto precharge
+				command  <= CMD_WRITE;
+				SDRAM_DQ <= 16'h2;
+				SDRAM_A[12:11] <= 2'b00; //~be; always write
+			end
+			if (refresh_count == startup_refresh_max-27) begin
+				// Write 1 to column bit-9
+				SDRAM_A <= {13'h0200}; // no auto precharge
+				command  <= CMD_WRITE;
+				SDRAM_DQ <= 16'h1;
+				SDRAM_A[12:11] <= 2'b00; //~be; always write
+			end
+			if (refresh_count == startup_refresh_max-26) begin
+				// Read column 0
+				SDRAM_A <= {13'h0000}; // no auto precharge
+				command <= CMD_READ;
+			end
+			if (refresh_count == startup_refresh_max-24+CAS_LATENCY) begin
+				// If column 9-bit write didn't overwrite column 0 then 64MB
+				ram64 <= (dq_reg[0] == 1'b0);
+			end
+			if (refresh_count == startup_refresh_max-24+CAS_LATENCY+BURST_LENGTH) begin
+				// Close bank
+				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,10'h0}; // no auto precharge
+				command    <= CMD_PRECHARGE;
 			end
 
 			if (!refresh_count) begin
@@ -237,7 +293,7 @@ always @(posedge clk) begin
 				{SDRAM_BA,SDRAM_A} <= {2'b00,ch1_caddr[12:0]}; // no auto precharge
 				ch         <= 0;
 				command    <= CMD_ACTIVE;
-				state      <= STATE_IDLE_1;
+				state      <= STATE_ACT1;
 				ch1_ac     <= 0;
 				ch1_active <= 1;
 			end
@@ -246,37 +302,38 @@ always @(posedge clk) begin
 				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,10'h0}; // no auto precharge
 				ch         <= 0;
 				command    <= CMD_PRECHARGE;
-				state      <= STATE_IDLE_1;
+				state      <= STATE_PRE1;
 				ch1_pc     <= 0;
 				ch1_active <= 0;
 			end
 			else if((ch1_rqr | ch1_reqr)) begin	// Trying to save one clock cycle, by checking for ch1_req here.
 														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
 //				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,1'b0,ch1_caddr[7:0],1'b0}; // no auto precharge
-				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,1'b0,ch1_addr[10:3],1'b0}; // no auto precharge
+				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,1'b0,ch1_reqr?ch1_addr[10:3]:saved_addr[10:3],1'b0}; // no auto precharge
 				command <= CMD_READ;
-				state   <= STATE_IDLE_2; // early exit to allow abort if write
-				data_ready_delay1[CAS_LATENCY+BURST_LENGTH] <= 1;
+				state   <= ch1_64 ? STATE_RW1 : STATE_IDLE_4;
+				data_ready_delay1[CAS_LATENCY+BURST_LENGTH+2] <= 1;
+				saved_addr <= ch1_reqr?ch1_addr[10:3]:saved_addr[10:3];
+				saved_wr   <= 0;
 				ch1_rqr <= 0;
 				ch     <= 0;
 			end
 			else if((ch1_rqw | ch1_reqw)) begin	// Trying to save one clock cycle, by checking for ch1_req here.
 														// Note: this will only work for accesses where we're in STATE_IDLE when ch1_req pulses High.
-				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,1'b0,9'h0}; // no auto precharge
-				cas_addr <= {2'b00,1'b0,1'b0,ch1_caddr[7:0],1'b0}; // no auto precharge
-				command  <= CMD_NOP; // interrupt burst read if in progress 
+				{SDRAM_BA,SDRAM_A} <= {2'b00,2'b00,1'b0,1'b0,ch1_caddr[7:0],1'b0}; // no auto precharge
+				command  <= CMD_WRITE;
+				SDRAM_DQ <= ch1_din[31:16];
+				SDRAM_A[12:11] <= ~ch1_be[3:2];
+				state <= STATE_RW2;
 				saved_data <= ch1_din;
 				saved_wr   <= ~ch1_rnw;
-				//SDRAM_DQ    <= ch1_din[31:16];
-				SDRAM_A[12:11] <= 2'b11; // interrupt burst read if in progress
-				saved_mask[3:0] <= ~ch1_be[3:0];
-				state <= STATE_RW1;
+				saved_mask[7:0] <= ~ch1_be[7:0];
 				ch1_rqw <= 0;
 				ch     <= 0;
 			end
 			else if(ch2_rq) begin
 				{cas_addr[12:9],SDRAM_BA,SDRAM_A,cas_addr[8:0]} <= {2'b00, 1'b1, 1'b0, 1'b1, ch2_add[22:10], 1'b0, ch2_add[9:1]}; // auto precharge
-				saved_data <= {ch2_data,ch2_data};
+				saved_data <= {ch2_data,ch2_data,ch2_data,ch2_data};
 				saved_wr   <= ch2_wr;
 				ch         <= 1;
 				ch2_rq     <= 0;
@@ -298,23 +355,66 @@ always @(posedge clk) begin
 				SDRAM_DQ <= saved_data[31:16];
 				SDRAM_A[12:11] <= (ch == 0) ? saved_mask[3:2] : 2'b00; //~be; always write
 				state <= (ch == 0) ? STATE_RW2 : STATE_IDLE_3;
-			end
-			else begin
+			end else if (ch == 1) begin
 				command <= CMD_READ;
 				state   <= STATE_IDLE_3;
 				data_ready_delay2[CAS_LATENCY+BURST_LENGTH] <= 1;
+			end else begin
+				state   <= STATE_RW2;
 			end
 		end
 
 		STATE_RW2: begin
-			if (ch == 0) begin
-				state       <= STATE_IDLE;
+			if (saved_wr) begin
+				state       <= ch1_64 ? STATE_RW3 : STATE_IDLE;
 				command     <= CMD_WRITE;
 				SDRAM_DQ <= saved_data[15:0];
 				SDRAM_A[12:11] <= saved_mask[1:0];
 				SDRAM_A[0] <= 1'b1;
-				ch1_ready   <= 1;
-			end
+				ch1_ready   <= ch1_64 ? 0 : 1;
+			end else begin
+				{SDRAM_BA,SDRAM_A} <= {2'b01,2'b00,1'b0,1'b0,saved_addr[10:3],1'b0}; // no auto precharge
+				command <= CMD_READ;
+				state   <= STATE_IDLE_4;
+			end;
+		end
+		
+		STATE_RW3: begin
+			state       <= STATE_RW4;
+			command     <= CMD_WRITE;
+			SDRAM_DQ <= saved_data[63:48];
+			SDRAM_A[12:11] <= saved_mask[7:6];
+			SDRAM_BA <= {2'b01};
+			SDRAM_A[0] <= 1'b0;
+		end
+
+		STATE_RW4: begin
+			state       <= STATE_IDLE;
+			command     <= CMD_WRITE;
+			SDRAM_DQ <= saved_data[47:32];
+			SDRAM_A[12:11] <= saved_mask[5:4];
+			SDRAM_A[0] <= 1'b1;
+			ch1_ready   <= 1;
+		end
+
+		STATE_ACT1: begin
+			state      <= STATE_ACT2;
+		end
+		
+		STATE_ACT2: begin
+			{SDRAM_BA,SDRAM_A} <= {2'b01,ch1_caddr[12:0]}; // no auto precharge
+			command    <= CMD_ACTIVE;
+			state      <= STATE_IDLE;
+		end
+		
+		STATE_PRE1: begin
+			state      <= STATE_PRE2;
+		end
+		
+		STATE_PRE2: begin
+			{SDRAM_BA,SDRAM_A} <= {2'b01,2'b00,1'b0,10'h0}; // no auto precharge
+			command    <= CMD_PRECHARGE;
+			state      <= STATE_IDLE;
 		end
 	endcase
 

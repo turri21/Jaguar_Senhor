@@ -199,10 +199,6 @@ assign BUTTONS = 0;
 
 assign LED_USER  = ioctl_download | bk_state | bk_pending;
 
-`define RAM_IDLE  4'b0000
-`define RDY_WAIT  4'b0001
-`define RAM_END   4'b1111
-
 `define FAST_CLOCK
 
 wire clk_106m, clk_26m, clk_53m;
@@ -237,7 +233,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXXXXXXXX
+// X XXXXXXXXXXXXXXX
 
 //
 
@@ -259,6 +255,8 @@ localparam CONF_STR = {
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
 	"O3,CPU Speed,Normal,Turbo;",
 	"OE,VSync,vvs,hvs(debug);",
+	"RF,Reset RAM(debug);",
+	"D1OG,SDRAM,2,1(debug);",
 	"-;",
 	"R0,Reset;",
 	"J1,A,B,C,Option,Pause,1,2,3,4,5,6,7,8,9,0,Star,Hash;",
@@ -298,6 +296,8 @@ wire [15:0] sdram_sz;
 wire [15:0] analog_0;
 wire [15:0] analog_1;
 
+wire ram64;
+
 hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 (
 	.clk_sys(clk_sys),
@@ -319,7 +319,7 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 
 	// .status_in({status[31:8],region_req,status[5:0]}),
 	// .status_set(region_set),
-	.status_menumask({~bk_ena}),
+	.status_menumask({ram64,hide_64,~bk_ena}),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
@@ -362,6 +362,7 @@ wire [7:0] loader_be = (loader_en && loader_addr[2:0]==0) ? 8'b11000000 :
 
 //reg [1:0] status_reg = 0;
 reg       old_download;
+reg       old_ramreset;
 //integer   timeout = 0;
 
 wire rom_index = ioctl_index[5:0] == 1;
@@ -382,6 +383,7 @@ else begin
 	old_download <= ioctl_download;
 
 	loader_wr <= 0;	// Default!
+	old_ramreset <= status[15];
 
 	if (~old_download && ioctl_download && rom_index) begin
 		loader_addr <= 32'h0080_0000;   // Force the cart ROM to load at 0x00800000 in DDR for Jag core. (byte address!)
@@ -421,7 +423,7 @@ else begin
 //	if (RESET) ioctl_wait <= 0;
 end
 
-wire reset = RESET | status[0] | buttons[1];
+wire reset = RESET | status[0] | buttons[1] | status[14];
 
 wire xresetl = !(reset | ioctl_download);	// Forces reset on BIOS (boot.rom) load (ioctl_index==0), AND cart ROM.
 wire [9:0] dram_a;
@@ -432,9 +434,15 @@ wire [3:0] dram_uw_n;
 wire [3:0] dram_lw_n;
 wire [63:0] dram_d;
 wire ch1_ready;
+`ifdef MISTER_DUAL_SDRAM
+wire ch1_64 = status[16];
+wire hide_64 = 0;
+`else
+wire ch1_64 = 1;
+wire hide_64 = 1;
+`endif
 // From SDRAM to the core.
-wire [63:0] dram_q = ch1_dout[63:0];
-
+wire [63:0] dram_q = ch1_64 ? use_fastram ? {fastram[63:32], ch1_dout[31:0]} : ch1_dout[63:0] : {ch1_dout2[63:32], ch1_dout[31:0]};
 
 wire [23:0] abus_out;
 wire [7:0] os_rom_q;
@@ -683,10 +691,8 @@ wire [1:0] cart_oe;
 //
 assign cart_q1 = (!abus_out[2]) ? DDRAM_DOUT[63:32] : DDRAM_DOUT[31:00];
 
-reg [3:0] ram_count;
-
 wire [3:0] dram_oe = (~dram_cas_n) ? ~dram_oe_n[3:0] : 4'b0000;
-wire ram_rdy = 1;//~ch1_req;// && ((mem_cyc == `RAM_IDLE) || ch1_ready);	// Latency kludge.
+wire ram_rdy = ~ch1_64 || ~ch1_req || use_fastram;// && (ch1_ready);	// Latency kludge.
 wire d3a;
 wire d3b;
 
@@ -695,17 +701,17 @@ wire ram_read_req = (dram_oe_n != 4'b1111); // The use of "startcas" lets us get
 wire ram_write_req = ({dram_uw_n, dram_lw_n} != 8'b11111111);	// Can (currently) only tell a WRITE request when any of the dram byte enables are asserted.
 
 wire ch1_rnw = !ram_write_req;
-wire ram_reread = (dram_addr_old == {1'b0,dram_addr});
+wire ram_reread = (dram_addr_old == {1'b1,dram_addressp[10:3]});
 
-wire ch1_reqr = dram_go_rd;// && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-//wire ch1_reqr = startcas && ~old_startcas && !dram_startwe;// && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-//wire ch1_req = dram_cas_edge && ~dram_ras_n && !ram_write_req;// && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-//wire ch1_reqr = dram_cas_edge && ~dram_ras_n && !ram_write_req && !ram_reread;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-wire ch1_reqw = dram_cas_edge && ~dram_ras_n && ram_write_req;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-//wire ch1_req = dram_read_edge || dram_write_edge || (ram_read_req && dram_cas_nedge);// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-wire ch1_ref = dram_cas_edge && dram_ras_n;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-wire ch1_act = dram_ras_edge && dram_cas_n;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
-wire ch1_pch = dram_ras_nedge && dram_cas_n;// Latency kludge. (the check for `RAM_IDLE ensures ch1_req only pulses for ONE clock cycle.)
+wire ch1_reqr = dram_go_rd;// && !ram_reread;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+//wire ch1_reqr = startcas && ~old_startcas && !dram_startwe;// && !ram_reread;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+wire ch1_req = dram_cas_edge && ~dram_ras_n && !ram_write_req;// && !ram_reread;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+//wire ch1_reqr = dram_cas_edge && ~dram_ras_n && !ram_write_req && !ram_reread;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+wire ch1_reqw = dram_cas_edge && ~dram_ras_n && ram_write_req;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+//wire ch1_req = dram_read_edge || dram_write_edge || (ram_read_req && dram_cas_nedge);// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+wire ch1_ref = dram_cas_edge && dram_ras_n;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+wire ch1_act = dram_ras_edge && dram_cas_n;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
+wire ch1_pch = dram_ras_nedge && dram_cas_n;// Latency kludge. (ensure ch1_req only pulses for ONE clock cycle.)
 
 wire [63:0] ch1_din = dram_d;	// Write data, from core to SDRAM.
 
@@ -724,6 +730,7 @@ wire [7:0] ch1_be = ~{
 };
 
 wire [63:0] ch1_dout;	// Read data, TO the core.
+wire [63:0] ch1_dout2;	// Read data, TO the core.
 reg [9:0] ras_latch;
 reg old_cas_n;
 reg old_ram_read_req;
@@ -738,18 +745,84 @@ wire dram_read_edge = ram_read_req && ~old_ram_read_req;
 wire dram_write_edge = ram_write_req && ~old_ram_write_req;
 
 wire [19:0] dram_addr = {ras_latch, dram_a};//abus_out[22:3];//{ras_latch, dram_a};
-reg [20:0] dram_addr_old;
+reg [11:3] dram_addr_old;
 wire ch1a_ready, ch1b_ready;
 
-assign ch1_ready = ch1a_ready || ch1b_ready;//~|ram_count[3:2];
+assign ch1_ready = ch1a_ready || ch1b_ready;
 
 wire [31:0] cart_q1;
 wire rom_wrack;// = 1'b1;	// TESTING!!
 reg cart_diff;
 
+`define FAST_SDRAM
+`ifdef FAST_SDRAM
+reg [7:0] cas_latch;
+wire [17:0] sdram_addr;
+assign sdram_addr[17:8] = ras_latch[9:0];
+assign sdram_addr[7:0] = cas_latch[7:0];
+wire use_fastram = (sdram_addr[17:15] == 3'h0) || (sdram_addr[17:15] == 3'h7); // 256K = 1/4 of address coverage
+wire [63:32] fastram;
+reg fastram_w;
+reg old_ch1_reqw;
+always @(posedge clk_ram)
+begin
+	fastram_w <= 0;
+	old_ch1_reqw <= ch1_reqw;
+	if (ch1_reqr)
+		cas_latch <= dram_addressp[10:3];
+	if (ch1_reqw)
+		cas_latch <= dram_a[7:0];
+	if (old_ch1_reqw && use_fastram)
+		fastram_w <= 1;
+end
+spram #(.addr_width(16), .data_width(8)) dram_bram_inst0
+(
+	.clock   ( clk_sys ),
+
+	.address ( sdram_addr[15:0] ),
+	.data    ( ch1_din[63:56] ),
+	.wren    ( fastram_w && ch1_be[7] ),
+
+	.q       ( fastram[63:56] )
+);
+spram #(.addr_width(16), .data_width(8)) dram_bram_inst1
+(
+	.clock   ( clk_sys ),
+
+	.address ( sdram_addr[15:0] ),
+	.data    ( ch1_din[55:48] ),
+	.wren    ( fastram_w && ch1_be[6] ),
+
+	.q       ( fastram[55:48] )
+);
+spram #(.addr_width(16), .data_width(8)) dram_bram_inst2
+(
+	.clock   ( clk_sys ),
+
+	.address ( sdram_addr[15:0] ),
+	.data    ( ch1_din[47:40] ),
+	.wren    ( fastram_w && ch1_be[5] ),
+
+	.q       ( fastram[47:40] )
+);
+spram #(.addr_width(16), .data_width(8)) dram_bram_inst3
+(
+	.clock   ( clk_sys ),
+
+	.address ( sdram_addr[15:0] ),
+	.data    ( ch1_din[39:32] ),
+	.wren    ( fastram_w && ch1_be[4] ),
+
+	.q       ( fastram[39:32] )
+);
+`else
+wire use_fastram = 0;
+wire [63:32] fastram;
+`endif
+
 sdram sdram
 (
-	.init               (~pll_locked),
+	.init               (~pll_locked || (~old_ramreset && status[15])),
 
 	.clk                (clk_ram),
 
@@ -768,16 +841,17 @@ sdram sdram
 	// Port 2
 	.ch1_addr           (dram_addressp[10:3]),
 	.ch1_caddr          ({3'b000, dram_a}),
-	.ch1_dout           ({ch1_dout[47:32], ch1_dout[15:0]}),
-	.ch1_din            ({ch1_din[47:32], ch1_din[15:0]}),
+	.ch1_dout           ({ch1_dout[63:48], ch1_dout[47:32], ch1_dout[31:16], ch1_dout[15:0]}),
+	.ch1_din            ({ch1_din[63:48], ch1_din[47:32], ch1_din[31:16], ch1_din[15:0]}),
 	.ch1_reqr           (ch1_reqr),
 	.ch1_reqw           (ch1_reqw),
 	.ch1_ref            (ch1_ref),
 	.ch1_act            (ch1_act),
 	.ch1_pch            (ch1_pch),
 	.ch1_rnw            (ch1_rnw),
-	.ch1_be             ({ch1_be[5:4], ch1_be[1:0]}),
+	.ch1_be             ({ch1_be[7:6], ch1_be[5:4], ch1_be[3:2], ch1_be[1:0]}),
 	.ch1_ready          (ch1a_ready),
+	.ch1_64             (ch1_64),
 
 	.ch2_addr           ((loader_en) ? loader_addr[22:1] : {abus_out[22:2],1'b0}),    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
 	.ch2_dout           (cart_q),             // data output to cpu
@@ -785,13 +859,16 @@ sdram sdram
 	.ch2_req            ((loader_en) ? loader_wr & rom_index : cart_rd_trig),     // request
 	.ch2_rnw            ((loader_en) ? !loader_wr & rom_index : 1'b1),     // 1 - read, 0 - write
 	.ch2_ready          (rom_wrack),
+	
+	.ram64              (ram64),
 
 	.self_refresh       (loader_en || !xresetl)
 );
 
+`ifdef MISTER_DUAL_SDRAM
 sdram sdram2
 (
-	.init               (~pll_locked),
+	.init               (~pll_locked || (~old_ramreset && status[15])),
 	.clk                (clk_ram),
 
 	.SDRAM_DQ           (SDRAM2_DQ),
@@ -809,16 +886,17 @@ sdram sdram2
 	// Port 2
 	.ch1_addr           (dram_addressp[10:3]),
 	.ch1_caddr          ({3'b000, dram_a}),
-	.ch1_dout           ({ch1_dout[63:48], ch1_dout[31:16]}),
-	.ch1_din            ({ch1_din[63:48], ch1_din[31:16]}),
+	.ch1_dout           ({ch1_dout2[31:16], ch1_dout2[15:0], ch1_dout2[63:48], ch1_dout2[47:32]}),
+	.ch1_din            ({32'h0,ch1_din[63:48], ch1_din[47:32]}),
 	.ch1_reqr           (ch1_reqr),
 	.ch1_reqw           (ch1_reqw),
 	.ch1_ref            (ch1_ref),
 	.ch1_act            (ch1_act),
 	.ch1_pch            (ch1_pch),
 	.ch1_rnw            (ch1_rnw),
-	.ch1_be             ({ch1_be[7:6], ch1_be[3:2]}),
+	.ch1_be             ({4'h0, ch1_be[7:6], ch1_be[5:4]}),
 	.ch1_ready          (ch1b_ready),
+	.ch1_64             (0),
 
 	.ch2_addr           ({22'h0}),    // 25 bit address for 8bit mode. addr[0] = 0 for 16bit mode for correct operations.
 	.ch2_dout           (),    // data output to cpu
@@ -828,28 +906,17 @@ sdram sdram2
 
 	.self_refresh       (loader_en)
 );
+`endif
 
-reg [3:0] mem_cyc;
 reg old_ras_n;
-
-reg [63:0] ch1_dout4;
-reg [63:0] ch1_dout3;
-reg [63:0] ch1_dout2;
-reg [63:0] ch1_dout1;
-
 
 always @(posedge clk_ram)
 if (reset) begin
-	mem_cyc <= `RAM_IDLE;
-	ram_count <= 0;
 	ras_latch <= 10'd0;
 	old_cas_n <= 1;
+	dram_addr_old[11] <= 0;
 end
 else begin
-	ch1_dout1 <= ch1_dout;
-	ch1_dout2 <= ch1_dout1;
-	ch1_dout3 <= ch1_dout2;
-	ch1_dout4 <= ch1_dout3;
 	old_cas_n <= dram_cas_n;
 	old_ras_n <= dram_ras_n;
 	old_ram_read_req <= ram_read_req;
@@ -857,8 +924,8 @@ else begin
 	old_startcas <= startcas;
 	if (old_ras_n && ~dram_ras_n)
 		ras_latch <= dram_a;
-	if (ch1_reqr || ch1_reqw)
-		dram_addr_old <= {ram_write_req,dram_addr};
+	if (ch1_reqr || ch1_reqw || ch1_ref || ch1_act || ch1_pch)
+		dram_addr_old <= {ch1_reqr,dram_addressp[10:3]};
 end
 
 
