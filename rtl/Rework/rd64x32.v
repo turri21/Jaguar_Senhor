@@ -49,7 +49,8 @@ wire	[31:0]	r_qb;
 wire wren_a;
 wire wren_b;
 
-assign wren_a = ~nwea & clka;
+wire dupwrite = (aa == ab) && wren_b;
+assign wren_a = ~nwea & clka && ~dupwrite;
 assign wren_b = ~nweb & clkb;
 
 always @(posedge sys_clk)
