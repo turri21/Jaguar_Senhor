@@ -239,7 +239,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXXXXXXXXXX
+// X XXXXXXXXXXXXXXXX
 
 //
 
@@ -259,7 +259,7 @@ localparam CONF_STR = {
 	"O78,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O9A,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
-	"OB,JagLink,Disabled,Enabled;",
+	"OH,JagLink,Disabled,Enabled;",
 	"O3,CPU Speed,Normal,Turbo;",
 	"OE,VSync,vvs,hvs(debug);",
 	"RF,Reset RAM(debug);",
@@ -478,8 +478,8 @@ wire [15:0] aud_16_r;
 
 wire ser_data_in;
 wire ser_data_out;
-assign ser_data_in = status[11] ? USER_IN[0] : 1'b1;
-assign USER_OUT[1] = status[11] ? ser_data_out : 1'b1;
+assign ser_data_in = status[17] ? USER_IN[0] : 1'b1;
+assign USER_OUT[1] = status[17] ? ser_data_out : 1'b1;
 
 jaguar jaguar_inst
 (
