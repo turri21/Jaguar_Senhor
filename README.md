@@ -2,7 +2,7 @@
 
 Tested: Working Video 720p, 1080p & Sound.
 
-Dev notes: To synthesize for Senhor use the "Jaguar_ReworkSingle.qpf" - Only single a SDRAM stick is supported.
+Dev notes: To synthesize for Senhor use the "Jaguar_ReworkSingle.qpf" - Only a single SDRAM stick is supported.
 
 ___
 # Jaguar_MiSTer
