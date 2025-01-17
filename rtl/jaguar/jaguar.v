@@ -505,16 +505,23 @@ assign j_xd_in[31:16] = 16'b11111111_11111111;	// Data bus bits [31:16] on Jerry
 
 // TOM-specific tristates
 
-// j68 didn't support vectored interrupts, so had some extra logic to
+// Real reason for hack is bug 8//// so had some extra logic to
 // force the vector number onto j68_din when FC==7.
 //
 // assign xfc[0:2] = { j68_fc[0], j68_fc[1], j68_fc[2] };
 //assign xfc_in = 3'b101;
 
-// FX68K directly supports vectored interrupts. ElectronAsh.
-assign xfc_in[0] = (xfc_oe[0] ? xfc_out[0] : 1'd1) & fx68k_fc[0];
-assign xfc_in[1] = (xfc_oe[1] ? xfc_out[1] : 1'd1) & fx68k_fc[1];
-assign xfc_in[2] = (xfc_oe[2] ? xfc_out[2] : 1'd1) & fx68k_fc[2];
+// 8 FC[0..2] should be ignored when Jerry owns the bus
+// Level 0 hardware
+// Description These signals have to be tied off with resistors, as otherwise Tom can assume Jerry bus
+// master cycles are the wrong type.
+
+// Resistors are tied to 2 1 0 = vcc gnd vcc = 3'b101
+// Assumes !fx68k_as_n indicates when 68k is driving fc pins.
+// Hardware bug indicates the issue is avoided by using j_aen in place of fx68k_as_n
+assign xfc_in[0] = (xfc_oe[0] ? xfc_out[0] : 1'd1) & (fx68k_as_n ? 1'd1 : fx68k_fc[0]);
+assign xfc_in[1] = (xfc_oe[1] ? xfc_out[1] : 1'd1) & (fx68k_as_n ? 1'd0 : fx68k_fc[1]);
+assign xfc_in[2] = (xfc_oe[2] ? xfc_out[2] : 1'd1) & (fx68k_as_n ? 1'd1 : fx68k_fc[2]);
 
 // Wire-ORed with pullup (?)
 assign xba_in = xba_oe ? xba_out : 1'b1;		// Bus Acknoledge.
