@@ -32,10 +32,16 @@ wire [6:0] tmaskbit;
 reg old_clk;
 
 // ADDRADD.NET (45) - adder_x : fas16_s
-assign {co_x, addqt_x[15:0]} = adda_x[15:0] + addb_x[15:0] + {15'b0000000_00000000, ~ci_x_n};
+//assign {co_x, addqt_x[15:0]} = adda_x[15:0] + addb_x[15:0] + {15'b0000000_00000000, ~ci_x_n};
+wire [17:0] addx;
+assign addx[17:0] = {adda_x[15:0], ~ci_x_n} + {addb_x[15:0], ~ci_x_n}; // add two halves of ~ci_x_n to reduce 3sum to 2sum
+assign {co_x, addqt_x[15:0]} = addx[17:1];
 
 // ADDRADD.NET (54) - adder_y : fas16_s
-assign {co_y, addq_y[15:0]} = adda_y[15:0] + addb_y[15:0] + {15'b0000000_00000000, ~ci_y_n};
+//assign {co_y, addq_y[15:0]} = adda_y[15:0] + addb_y[15:0] + {15'b0000000_00000000, ~ci_y_n};
+wire [17:0] addy;
+assign addy[17:0] = {adda_y[15:0], ~ci_y_n} + {addb_y[15:0], ~ci_y_n}; // add two halves of ~ci_y_n to reduce 3sum to 2sum
+assign {co_y, addq_y[15:0]} = addy[17:1];
 
 // ADDRADD.NET (67) - cxt0 : an2
 assign cxt_0 = co_x & a1fracld;

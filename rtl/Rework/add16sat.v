@@ -80,7 +80,8 @@ assign hisaturate = eightbit_n & saturate;
 assign r[7:0] = (saturate) ? {8{ctopb}} : q0[7:0];
 
 // ADDARRAY.NET (224) - r[8-15] : mx2p
-assign r[15:8] = (hisaturate) ? {8{ctopb}} : hicinh ? {q3[15:12],q2[11:8]} : eightbit ? q2[15:8] : q1[15:8];
+assign r[15:12] = (hisaturate) ? {4{ctopb}} : hicinh ? {q3[15:12]} : eightbit ? q2[15:12] : q1[15:12];
+assign r[11:8] = (hisaturate) ? {4{ctopb}} : eightbit ? q2[11:8] : q1[11:8];
 
 endmodule
 
