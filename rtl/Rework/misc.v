@@ -177,7 +177,11 @@ begin///////check this; timing critical
 end
 
 // MISC.NET (56) - vclr : nd2
-assign vclr = ~(resetl & ackl_0);
+//assign vclr = ~(resetl & ackl_0); // Original netlist
+// Iron Soldier 2 and Barkley Shut Up and Jam seem to requre one of these
+//assign vclr = ~(resetl & ackl_0) | (int1w && din[0]);
+// NOT_NETLIST
+assign vclr = ~(resetl & ackl_0) | (int1w && din[0] && ~ie[0]);
 
 // MISC.NET (57) - ackl[0] : iv
 assign ackl_0 = ~ack_[0];
