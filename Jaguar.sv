@@ -182,9 +182,15 @@ module emu
 ///////// Default values for ports not used in this core /////////
 
 assign ADC_BUS  = 'Z;
-assign USER_OUT = '1;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
+
+assign USER_OUT[0] = 1'b1;
+assign USER_OUT[2] = 1'b1;
+assign USER_OUT[3] = 1'b1;
+assign USER_OUT[4] = 1'b1;
+assign USER_OUT[5] = 1'b1;
+assign USER_OUT[6] = 1'b1;
 
 assign VGA_SL = 0;
 assign VGA_F1 = 0;
@@ -233,7 +239,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXXXXXXXXXX
+// X XXXXXXXXXXXXXXXX
 
 //
 
@@ -253,6 +259,7 @@ localparam CONF_STR = {
 	"O78,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O9A,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
+	"OH,JagLink,Disabled,Enabled;",
 	"O3,CPU Speed,Normal,Turbo;",
 	"OE,VSync,vvs,hvs(debug);",
 	"RF,Reset RAM(debug);",
@@ -469,6 +476,11 @@ wire startcas;
 wire [15:0] aud_16_l;
 wire [15:0] aud_16_r;
 
+wire ser_data_in;
+wire ser_data_out;
+assign ser_data_in = status[17] ? USER_IN[0] : 1'b1;
+assign USER_OUT[1] = status[17] ? ser_data_out : 1'b1;
+
 jaguar jaguar_inst
 (
 	.xresetl_in( xresetl ) ,	// input  xresetl
@@ -538,7 +550,10 @@ jaguar jaguar_inst
 	.ps2_mouse( ps2_mouse ) ,
 
 	.mouse_ena_1( status[6:5]==1 ) ,
-	.mouse_ena_2( status[6:5]==2 )
+	.mouse_ena_2( status[6:5]==2 ) ,
+
+	.comlynx_tx( ser_data_out ) ,
+	.comlynx_rx( ser_data_in )
 );
 
 
