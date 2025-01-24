@@ -239,7 +239,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXXXXXXXXXXX
+// X XXXXXXXXXXXXXXXXXX
 
 //
 
@@ -258,10 +258,16 @@ localparam CONF_STR = {
 	"O2,Cart Checksum Patch,Off,On;",
 	"O78,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O9A,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
+	"OI,Crop,No,Yes;",
+	"OE,VSync,vvs,hvs(debug);",
+	"-;",
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
 	"OH,JagLink,Disabled,Enabled;",
+	"-;",
 	"O3,CPU Speed,Normal,Turbo;",
-	"OE,VSync,vvs,hvs(debug);",
+	"OJ,Vint Fix,Yes,No;",
+	"-;",
+	"-Options may crash;",
 	"RF,Reset RAM(debug);",
 	"D1OG,SDRAM,2,1(debug);",
 	"-;",
@@ -544,6 +550,7 @@ jaguar jaguar_inst
 	.startcas( startcas ) ,
 
 	.turbo( status[3] ) ,
+	.vintbugfix( ~status[19] ),
 
 	.ntsc( ~status[4] ) ,
 
@@ -620,9 +627,9 @@ video_mixer #(.LINE_LENGTH(700), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 
 	.gamma_bus(gamma_bus),
 
-	.R(vga_r),                  // Input [DW:0] R (set by HALF_DEPTH. is [7:0] here).
-	.G(vga_g),                  // Input [DW:0] G (set by HALF_DEPTH. is [7:0] here).
-	.B(vga_b),                  // Input [DW:0] B (set by HALF_DEPTH. is [7:0] here).
+	.R(crop ? 0 : vga_r),                  // Input [DW:0] R (set by HALF_DEPTH. is [7:0] here).
+	.G(crop ? 0 : vga_g),                  // Input [DW:0] G (set by HALF_DEPTH. is [7:0] here).
+	.B(crop ? 0 : vga_b),                  // Input [DW:0] B (set by HALF_DEPTH. is [7:0] here).
 
 	// Positive pulses.
 	.HSync(vga_hs_n),           // input HSync
@@ -638,6 +645,24 @@ video_mixer #(.LINE_LENGTH(700), .HALF_DEPTH(0), .GAMMA(1)) video_mixer
 	.VGA_DE( VGA_DE ),          // output VGA_DE
 	.CE_PIXEL(CE_PIXEL)
 );
+
+reg crop;
+reg [13:0] hcount;
+always @(posedge clk_sys)
+if (reset) begin
+	 hcount <= 0;
+end else begin
+	hcount <= hcount + 1;
+   if (hblank) begin
+		hcount <= 0;
+	end
+   if (status[18] && (hcount == ((14'd1394)<<2))) begin //works well for NBA Jam and Flip Out
+		crop <= 1;
+	end
+   if (~status[18] || (hcount == ((14'd45)<<2))) begin
+		crop <= 0;
+	end
+end
 
 // assign VGA_R = vga_r;
 // assign VGA_G = vga_g;

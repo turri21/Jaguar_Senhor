@@ -68,7 +68,9 @@ module jaguar
 
 	output              startcas,
 
+// NOT_NETLIST
 	input               turbo,
+	input               vintbugfix,	
 
 	input               ntsc
 );
@@ -874,6 +876,7 @@ _tom tom_inst
 	.startwep        (startwep),
 	.startwe         (startwe),
 	.atp             (dram_addrp[10:3]),
+	.vintbugfix      (vintbugfix),
 	.turbo           (turbo)
 );
 

@@ -33,7 +33,9 @@ module _misc
 	output dr_15_12_oe, // test3r dr[11:0] driven by vid
 	output mreq_out,
 	output mreq_oe,
-	input mreq_in,
+	input mreq_in,	
+// NOT_NETLIST
+	input vintbugfix,	
 	input sys_clk // Generated
 );
 wire vcc;
@@ -177,7 +179,11 @@ begin///////check this; timing critical
 end
 
 // MISC.NET (56) - vclr : nd2
-assign vclr = ~(resetl & ackl_0);
+//assign vclr = ~(resetl & ackl_0); // Original netlist
+// Iron Soldier 2 and Barkley Shut Up and Jam seem to requre one of these
+//assign vclr = ~(resetl & ackl_0) | (int1w && din[0]);
+// NOT_NETLIST
+assign vclr = ~(resetl & ackl_0) | (int1w && din[0] && ~ie[0] && vintbugfix);
 
 // MISC.NET (57) - ackl[0] : iv
 assign ackl_0 = ~ack_[0];

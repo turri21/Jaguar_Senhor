@@ -88,6 +88,7 @@ module _tom
 	output startwe,
 	output [10:3] atp,	
 	input turbo,
+	input vintbugfix,	
 	output wire hsl,
 	output wire vsl
 );
@@ -1340,6 +1341,8 @@ _misc misc__inst
 	.mreq_out /* BUS */ (mreq_misc_out),
 	.mreq_oe /* BUS */ (mreq_misc_oe),
 	.mreq_in /* BUS */ (mreq_out),
+// NOT_NETLIST
+	.vintbugfix(vintbugfix),
 	.sys_clk(sys_clk) // Generated
 );
 
