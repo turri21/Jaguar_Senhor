@@ -239,7 +239,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXXXXXXXXXXXXXXX
+// X XXXXXXXXXXXXXXXXXXXXX
 
 //
 
@@ -263,6 +263,7 @@ localparam CONF_STR = {
 	"-;",
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
   "OKL,Spinner Speed,Normal,Faster,Slow,Slower;",
+  "RM,P1+P2 Pause;",
 	"OH,JagLink,Disabled,Enabled;",
 	"-;",
 	"O3,CPU Speed,Normal,Turbo;",
@@ -546,8 +547,8 @@ jaguar jaguar_inst
 
 	.vid_ce( vid_ce ) ,
 
-	.joystick_0( joystick_0 ) ,
-	.joystick_1( joystick_1 ) ,
+	.joystick_0( {joystick_0[31:9], joystick_0[8]|p1p2pause_active,joystick_0[7:0]} ) ,
+	.joystick_1( {joystick_1[31:9], joystick_1[8]|p1p2pause_active,joystick_1[7:0]} ) ,
 	.analog_0( $signed(analog_0[7:0]) + 9'sd127 ),
 	.analog_1( $signed(analog_0[15:8]) + 9'sd127 ),
 	.analog_2( $signed(analog_1[7:0]) + 9'sd127 ),
@@ -573,6 +574,28 @@ jaguar jaguar_inst
 );
 
 
+reg p1p2pause_active;
+
+always @(posedge clk_sys) begin
+  reg status19_old;
+  reg [25:0] p1p2pulse;
+
+  status19_old <= status[22];
+
+  p1p2pulse <= p1p2pulse + 1;
+
+  if (~status19_old && status[22]) begin
+    p1p2pause_active <= 1;
+    p1p2pulse <= 1;
+  end
+
+
+  if (p1p2pulse == 0) begin
+    p1p2pause_active <= 0;
+  end
+
+
+end
 
 //wire [1:0] romwidth = status[5:4];
 //wire [1:0] romwidth = 2'd2;
