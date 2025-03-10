@@ -239,7 +239,7 @@ assign VIDEO_ARY = (!ar) ? 12'd2040 : 12'd0;
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// X XXXXXXXXXXXXXXXXXX
+// X XXXXXXXXXXXXXXXXXXXX
 
 //
 
@@ -262,6 +262,7 @@ localparam CONF_STR = {
 	"OE,VSync,vvs,hvs(debug);",
 	"-;",
 	"O56,Mouse,Disabled,JoyPort1,JoyPort2;",
+  "OKL,Spinner Speed,Normal,Faster,Slow,Slower;",
 	"OH,JagLink,Disabled,Enabled;",
 	"-;",
 	"O3,CPU Speed,Normal,Turbo;",
@@ -308,6 +309,8 @@ wire [21:0] gamma_bus;
 wire [15:0] sdram_sz;
 wire [15:0] analog_0;
 wire [15:0] analog_1;
+wire [8:0]  spinner_0;
+wire [8:0]  spinner_1;
 
 wire ram64;
 
@@ -355,6 +358,9 @@ hps_io #(.CONF_STR(CONF_STR), .PS2DIV(1000), .WIDE(1)) hps_io
 
 	.ps2_key(ps2_key),
 	.ps2_mouse(ps2_mouse),
+
+	.spinner_0(spinner_0),
+	.spinner_1(spinner_1),
 
 	.gamma_bus(gamma_bus)
 );
@@ -546,6 +552,9 @@ jaguar jaguar_inst
 	.analog_1( $signed(analog_0[15:8]) + 9'sd127 ),
 	.analog_2( $signed(analog_1[7:0]) + 9'sd127 ),
 	.analog_3( $signed(analog_1[15:8]) + 9'sd127 ),
+	.spinner_0(spinner_0),
+	.spinner_1(spinner_1),
+	.spinner_speed(status[21:20]),
 
 	.startcas( startcas ) ,
 

@@ -57,6 +57,9 @@ module jaguar
 	input       [7:0]   analog_1,      // Unsigned 0..255 analog input
 	input       [7:0]   analog_2,      // Unsigned 0..255 analog input
 	input       [7:0]   analog_3,      // Unsigned 0..255 analog input
+	input       [8:0]   spinner_0,
+	input       [8:0]   spinner_1,
+	input       [1:0]   spinner_speed,
 
 	input       [24:0]  ps2_mouse,
 
@@ -636,8 +639,8 @@ jag_controller_mux controller_mux_1
 	.col_n      (~j_xjoy_in[3] ? u374_reg[3:0] : 4'b1111),
 	.row_n      (joy1_row_n),
 
-	.but_right  (joystick_0[0]),
-	.but_left   (joystick_0[1]),
+	.but_right  (joystick_0[0] | sp_out0[0]),
+	.but_left   (joystick_0[1] | sp_out0[1]),
 	.but_down   (joystick_0[2]),
 	.but_up     (joystick_0[3]),
 	.but_a      (joystick_0[4]),
@@ -666,8 +669,8 @@ jag_controller_mux controller_mux_2
 	.col_n      (~j_xjoy_in[3] ? joy2_col_reversed : 4'b1111),
 	.row_n      (joy2_row_n),
 
-	.but_right  (joystick_1[0]),
-	.but_left   (joystick_1[1]),
+	.but_right  (joystick_1[0] | sp_out1[0]),
+	.but_left   (joystick_1[1] | sp_out1[1]),
 	.but_down   (joystick_1[2]),
 	.but_up     (joystick_1[3]),
 	.but_a      (joystick_1[4]),
@@ -688,6 +691,70 @@ jag_controller_mux controller_mux_2
 	.but_star   (joystick_1[19]),
 	.but_hash   (joystick_1[20])
 );
+
+
+reg [1:0] sp_out0;
+reg [1:0] sp_out1;
+wire [7:0] spthresh = spinner_speed[1] ? 12'h8<<spinner_speed : 12'h8>>spinner_speed; 
+
+always @(posedge sys_clk) begin
+	reg [1:0] sp_prev;
+	reg [11:0] accum_0;
+	reg [11:0] accum_1;
+	reg [8:0] spinner_0_abs;
+	reg [8:0] spinner_1_abs;
+
+	if (spinner_0[7]) begin
+		spinner_0_abs <= -$signed(spinner_0[7:0]);
+	end else begin
+		spinner_0_abs <= spinner_0[7:0];
+	end
+
+	if (spinner_1[7]) begin
+		spinner_1_abs <= -$signed(spinner_1[7:0]);
+	end else begin
+		spinner_1_abs <= spinner_1[7:0];
+	end
+
+	sp_prev <= {spinner_1[8], spinner_0[8]};
+	if (spinner_0[8] != sp_prev[0]) begin
+		accum_0 <= accum_0 + spinner_0_abs;
+	end
+
+	if (spinner_1[8] != sp_prev[1]) begin
+		accum_1 <= accum_1 + spinner_1_abs;
+	end
+
+	if (ce_26_6_p3) begin
+		if (accum_0 >= spthresh) begin
+			case({spinner_0[7], sp_out0})
+				{1'b1, 2'b00}: sp_out0 <= 2'b01;
+				{1'b1, 2'b01}: sp_out0 <= 2'b11;
+				{1'b1, 2'b11}: sp_out0 <= 2'b10;
+				{1'b1, 2'b10}: sp_out0 <= 2'b00;
+				{1'b0, 2'b00}: sp_out0 <= 2'b10;
+				{1'b0, 2'b10}: sp_out0 <= 2'b11;
+				{1'b0, 2'b11}: sp_out0 <= 2'b01;
+				{1'b0, 2'b01}: sp_out0 <= 2'b00;
+			endcase
+			accum_0 <= 0;
+		end
+
+		if (accum_1 >= spthresh) begin
+			case({spinner_1[7], sp_out1})
+				{1'b1, 2'b00}: sp_out1 <= 2'b01;
+				{1'b1, 2'b01}: sp_out1 <= 2'b11;
+				{1'b1, 2'b11}: sp_out1 <= 2'b10;
+				{1'b1, 2'b10}: sp_out1 <= 2'b00;
+				{1'b0, 2'b00}: sp_out1 <= 2'b10;
+				{1'b0, 2'b10}: sp_out1 <= 2'b11;
+				{1'b0, 2'b11}: sp_out1 <= 2'b01;
+				{1'b0, 2'b01}: sp_out1 <= 2'b00;
+			endcase
+			accum_1 <= 0;
+		end
+	end
+end
 
 // JOYSTICK INTERFACE
 //
