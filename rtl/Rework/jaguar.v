@@ -605,10 +605,8 @@ assign j_xsck_in = j_xsck_oe ? j_xsck_out : 1'b1;
 assign j_xws_in = j_xws_oe ? j_xws_out : 1'b1;
 assign j_xvclk_in = j_xvclk_oe ? j_xvclk_out : j_xchrdiv;
 
-wire mouseX1;
-wire mouseY1;
-wire mouseX2;
-wire mouseY2;
+wire [1:0] mouseX;
+wire [1:0] mouseY;
 wire mouseButton_l;
 wire mouseButton_r;
 wire mouseButton_m;
@@ -622,10 +620,8 @@ ps2_mouse mouse
 
 	.ps2_mouse(ps2_mouse),      // 25-bit bus, from hps_io.
 
-	.x1(mouseX1),
-	.y1(mouseY1),
-	.x2(mouseX2),
-	.y2(mouseY2),
+	.xout(mouseX),
+	.yout(mouseY),
 	.button_l(mouseButton_l),   // Active-LOW output!
 	.button_r(mouseButton_r),   // Active-LOW output!
 	.button_m(mouseButton_m)    // Active-LOW output!
@@ -781,10 +777,10 @@ end
 assign joy[0] = ee_do;
 assign joy[7:1] = ~j_xjoy_in[3] ? u374_reg[7:1] : 7'b1111_111;      // Port 1, pins 4:2. / Port 2, pins 4:1.
 
-assign joy[8]  = (!mouse_ena_1) ? joy1_row_n[5] : mouseX2;          // Port 1, pin 14. Mouse XB.
-assign joy[9]  = (!mouse_ena_1) ? joy1_row_n[4] : mouseX1;          // Port 1, pin 13. Mouse XA.
-assign joy[10] = (!mouse_ena_1) ? joy1_row_n[3] : mouseY1;          // Port 1, pin 12. Mouse YA / Rotary Encoder XA.
-assign joy[11] = (!mouse_ena_1) ? joy1_row_n[2] : mouseY2;          // Port 1, pin 11. Mouse YB / Rotary Encoder XB.
+assign joy[8]  = (!mouse_ena_1) ? joy1_row_n[5] : mouseX[0];        // Port 1, pin 14. Mouse XB.
+assign joy[9]  = (!mouse_ena_1) ? joy1_row_n[4] : mouseX[1];        // Port 1, pin 13. Mouse XA.
+assign joy[10] = (!mouse_ena_1) ? joy1_row_n[3] : mouseY[1];        // Port 1, pin 12. Mouse YA / Rotary Encoder XA.
+assign joy[11] = (!mouse_ena_1) ? joy1_row_n[2] : mouseY[0];        // Port 1, pin 11. Mouse YB / Rotary Encoder XB.
 assign b[1]    = (!mouse_ena_1) ? joy1_row_n[1] : mouseButton_l;    // Port 1, pin 10. B1. Mouse Left Button / Rotary Encoder button.
 assign b[0]    = (!mouse_ena_1) ? joy1_row_n[0] : mouseButton_r;    // Port 1, pin 6. BO/Light Pen 0. Mouse Right Button.
 
@@ -794,10 +790,10 @@ assign b[0]    = (!mouse_ena_1) ? joy1_row_n[0] : mouseButton_r;    // Port 1, p
 // Mouse / Rotary Encoder hookup info, and test programs...
 // http://mdgames.de/jag_end.htm
 //
-assign joy[12] = (!mouse_ena_2) ? joy2_row_n[5] : mouseX2;          // Port 2, pin 14.
-assign joy[13] = (!mouse_ena_2) ? joy2_row_n[4] : mouseX1;          // Port 2, pin 13.
-assign joy[14] = (!mouse_ena_2) ? joy2_row_n[3] : mouseY1;          // Port 2, pin 12.
-assign joy[15] = (!mouse_ena_2) ? joy2_row_n[2] : mouseY2;          // Port 2, pin 11.
+assign joy[12] = (!mouse_ena_2) ? joy2_row_n[5] : mouseX[0];        // Port 2, pin 14.
+assign joy[13] = (!mouse_ena_2) ? joy2_row_n[4] : mouseX[1];        // Port 2, pin 13.
+assign joy[14] = (!mouse_ena_2) ? joy2_row_n[3] : mouseY[1];        // Port 2, pin 12.
+assign joy[15] = (!mouse_ena_2) ? joy2_row_n[2] : mouseY[0];        // Port 2, pin 11.
 assign b[3]    = (!mouse_ena_2) ? joy2_row_n[1] : mouseButton_l;    // Port 2, pin 10. B3.
 assign b[2]    = (!mouse_ena_2) ? joy2_row_n[0] : mouseButton_r;    // Port 2, pin 6. B2/Light Pen 1.
 
