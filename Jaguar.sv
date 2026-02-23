@@ -268,6 +268,7 @@ localparam CONF_STR = {
 	"OT,Auto EEPROM,No,Yes;",
 	//"O3,CPU Speed,Normal,Turbo;",
 	"ON,Vint Fix,Yes,No;",
+	"O[80],Gamedrive,On,Off;",
 	"-;",
 	"C,Cheats;",
 	"H1O[23],Cheats Enabled,Yes,No;",
@@ -330,7 +331,7 @@ localparam CONF_STR = {
 	"V,v",`BUILD_DATE
 };
 
-wire [63:0] status;
+wire [127:0] status;
 wire  [1:0] buttons;
 wire [31:0] joystick_0;
 wire [31:0] joystick_1;
@@ -586,7 +587,7 @@ else begin
 	end
 	if (~old_download && ioctl_download && (cd_index)) begin
 		mismatch <= 0;
-	end	
+	end
 end
 
 wire reset = RESET | status[0] | buttons[1] | status[15];
@@ -645,6 +646,7 @@ wire [15:0] aud_16_r;
 
 wire ser_data_in;
 wire ser_data_out;
+wire gamedrive_enable = !status[80];
 assign ser_data_in = USER_IN[0];
 assign USER_OUT[1] = ser_data_out;
 
@@ -743,14 +745,14 @@ jaguar jaguar_inst
 	.audwaitl( xwaitl ) ,
 	.aud_ce(aud_ce),
 	.aud_busy(audbus_busy),
-.aud_sess(status[55] ^ status[31]),
-.dohacks(status[2] | status[31]),
-.xvclk_o(xvclk_o),
-.overflow (overflow),
-.underflow (underflow),
-.errflow (errflow),
-.unhandled (unhandled),
-.cd_valid(cd_valid),
+	.aud_sess(status[55] ^ status[31]),
+	.dohacks(status[2] | status[31]),
+	.xvclk_o(xvclk_o),
+	.overflow (overflow),
+	.underflow (underflow),
+	.errflow (errflow),
+	.unhandled (unhandled),
+	.cd_valid(cd_valid),
 	.ntsc( ~status[4] ) ,
 
 	.ps2_mouse( ps2_mouse ) ,
@@ -758,7 +760,7 @@ jaguar jaguar_inst
 	.mouse_ena_1( status[6:5]==1 ) ,
 	.mouse_ena_2( status[6:5]==2 ) ,
 
-.ddreq(!status[54]),
+	.ddreq(!status[54]),
 	.comlynx_tx( ser_data_out ) ,
 	.comlynx_rx( ser_data_in ) ,
 
@@ -766,7 +768,8 @@ jaguar jaguar_inst
 	.m68k_clk(m68k_clk),
 	.m68k_addr(m68k_addr),
 	.m68k_bus_do(m68k_bus_do),
-	.m68k_di(m68k_data)
+	.m68k_di(m68k_data),
+	.gamedrive_enable(gamedrive_enable)
 
 );
 
@@ -879,7 +882,7 @@ wire compare = status[63];
 // If the bin is larger than 16MB it will continue into the next chunks as necessary. The cue needs to account for this.
 // Note it appears 0x3C000000-3FFFFFFF is overwritten when a core is programmed over USB Blaster. The lower 196MB appears to be unchanged.
 // DRAM address is using "abus_out" here (byte address, so three LSB bits are ignored!)
-//assign DDRAM_ADDR = (loader_en)  ? {4'h3,status[25:24], (status[26] | loader_addr[25]), (status[27] | loader_addr[24]), loader_addr[23:3]} : {4'h3,aud_idx[1:0], (aud_idx[2] | audbus_out[25]),  (aud_idx[3] | 
+//assign DDRAM_ADDR = (loader_en)  ? {4'h3,status[25:24], (status[26] | loader_addr[25]), (status[27] | loader_addr[24]), loader_addr[23:3]} : {4'h3,aud_idx[1:0], (aud_idx[2] | audbus_out[25]),  (aud_idx[3] |
 //assign DDRAM_ADDR = (loader_en)  ? {4'h3,(status[27:24] | loader_addr[27:24]), loader_addr[23:3]} : {4'h3,audbus_out[27:3]};
 wire [28:3] sloader_addr;
 assign sloader_addr[28:24] = loader_addr[28] ? loader_addr[28:24] : {1'b0, status[27:24] | loader_addr[27:24]};
@@ -1271,7 +1274,7 @@ always @(posedge clk_sys) begin
 				cd_state <= 4'h1;
 			end
 			cd_toc_wr <= 1;
-		end else if (cd_state == 4'h1) begin // track done 
+		end else if (cd_state == 4'h1) begin // track done
 			cd_state <= 4'hB;
 			cd_cnt <= 3'h0;
 			cd_track <= cd_track + 8'h1;
@@ -1737,7 +1740,7 @@ sdram sdram
 	.ch3_req            (1'b1),     // request
 	.ch3_rnw            (1'b1),     // 1 - read, 0 - write
 	.ch3_ready          (),
-	
+
 	.ram64              (ram64),
 
 	.self_refresh       (loader_en || !xresetlp)

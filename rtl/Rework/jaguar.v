@@ -81,11 +81,11 @@ module jaguar
 
 // NOT_NETLIST
 	input maxc,
-	input auto_eeprom,
-	output [23:0] addr_ch3,
-	input [9:0] toc_addr,
-	input [15:0] toc_data,
-	input toc_wr,
+	input               auto_eeprom,
+	output      [23:0]  addr_ch3,
+	input        [9:0]  toc_addr,
+	input       [15:0]  toc_data,
+	input               toc_wr,
 
 	output      [29:0]  audbus_out,
 	input       [63:0]  aud_in,
@@ -93,28 +93,29 @@ module jaguar
 	input               audwaitl,
 	output              aud_ce,
 	input               aud_busy,
-input aud_sess,
+	input aud_sess,
 
 	input               cd_en,
 	input               cd_ex,
 	output              b_override,
-input dohacks,
-output xvclk_o,
-output overflow,
-output underflow,
-output errflow,
-output unhandled,
-input cd_valid,
-output aud_16_eq,	
+	input               dohacks,
+	output              xvclk_o,
+	output              overflow,
+	output              underflow,
+	output              errflow,
+	output              unhandled,
+	input               cd_valid,
+	output              aud_16_eq,
 	input               turbo,
-	input               vintbugfix,	
-	
+	input               vintbugfix,
+
 	input ddreq,
-	
-	output        m68k_clk,
-	output [22:0] m68k_addr,
-	output [15:0] m68k_bus_do,
-	input [15:0]  m68k_di,
+
+	output             m68k_clk,
+	output [22:0]      m68k_addr,
+	output [15:0]      m68k_bus_do,
+	input [15:0]       m68k_di,
+	input              gamedrive_enable,
 
 	input               ntsc
 );
@@ -531,15 +532,38 @@ wire fx68k_dout_en = fx68k_bus_en & ~fx68k_rw; // The xba_in signal is because I
 wire e_dbus_oe = ~xexpl & rw;
 wire e_dbus_we = ~xexpl & ~rw;
 
+wire        gamedrive_cs = ~j_xgpiol_in[2] & ~xexpl;
+wire        gamedrive_rd = e_dbus_oe;
+wire        gamedrive_wr = e_dbus_we;
+wire        gamedrive_oe;
+wire [15:0] gamedrive_rdata;
+
+
+gamedrive gamedrive_inst
+(
+	.clk     (sys_clk),
+	.rst_n   (xresetl),
+	.enable  (gamedrive_enable),
+	.cs      (gamedrive_cs),
+	.rd      (gamedrive_rd),
+	.wr      (gamedrive_wr),
+	.addr    (abus_out[23:0]),
+	.wdata   (dbus[15:0]),
+	.rdata   (gamedrive_rdata),
+	.oe      (gamedrive_oe)
+);
+
 // The external data bus (ED) is driven when RW is high and XEXPL is low.
 wire [7:0] e_dbus_7_0 =
 	(os_rom_oe)         ? os_rom_q[7:0]     : // BIOS.
+	(gamedrive_oe)      ? gamedrive_rdata[7:0] : // GameDrive emu.
 	(cart_oe[0])        ? cart_qt[7:0]      : // Cart ROM.
 	(joy_bus_oe)        ? joy_bus[7:0]      : // Joyports.
 	(adc_oe)            ? adc_data[7:0]     : // Joystick DAC.. no idea what the out value of this should really be.
 	8'hFF;                                    // External bus is pulled up.
 
 wire [7:0] e_dbus_15_8 =
+	(gamedrive_oe)      ? gamedrive_rdata[15:8] : // GameDrive emu.
 	(cart_oe[0])        ? cart_qt[15:8]     : // Cart ROM.
 	(joy_bus_oe)        ? joy_bus[15:8]     : // Joyports.
 	8'hFF;                                    // External bus is pulled up.
@@ -547,6 +571,7 @@ wire [7:0] e_dbus_15_8 =
 wire [15:0] e_dbus_15_0 = {e_dbus_15_8, e_dbus_7_0};
 
 wire [15:0] e_dbus_31_16 =
+	(gamedrive_oe)   ? 16'hFFFF          : // GameDrive emu is 16-bit.
 	(cart_oe[1])        ? cart_qt[31:16]    : // Cart ROM.
 	16'hFFFF;                                 // External bus is pulled up.
 
@@ -747,7 +772,7 @@ jag_team_tap team_tap_port1_inst (
 	.col_n(~j_xjoy_in[3] ? u374_reg[3:0] : 4'b1111),
 	.enable(team_tap_port1),
 	.row_n(team_tap_port1_row_n),
-	
+
 	// Controller A inputs
 	.but_a_right(joystick_0[0]),
 	.but_a_left(joystick_0[1]),
@@ -770,7 +795,7 @@ jag_team_tap team_tap_port1_inst (
 	.but_a_0(joystick_0[18]),
 	.but_a_star(joystick_0[19]),
 	.but_a_hash(joystick_0[20]),
-	
+
 	// Controller B inputs
 	.but_b_right(joystick_1[0]),
 	.but_b_left(joystick_1[1]),
@@ -793,7 +818,7 @@ jag_team_tap team_tap_port1_inst (
 	.but_b_0(joystick_1[18]),
 	.but_b_star(joystick_1[19]),
 	.but_b_hash(joystick_1[20]),
-	
+
 	// Controller C inputs
 	.but_c_right(joystick_2[0]),
 	.but_c_left(joystick_2[1]),
@@ -816,7 +841,7 @@ jag_team_tap team_tap_port1_inst (
 	.but_c_0(joystick_2[18]),
 	.but_c_star(joystick_2[19]),
 	.but_c_hash(joystick_2[20]),
-	
+
 	// Controller D inputs
 	.but_d_right(joystick_3[0]),
 	.but_d_left(joystick_3[1]),
@@ -849,7 +874,7 @@ jag_team_tap team_tap_port2_inst (
 	.col_n(~j_xjoy_in[3] ? joy2_col_reversed : 4'b1111),
 	.enable(team_tap_port2),
 	.row_n(team_tap_port2_row_n),
-	
+
 	// Controller A inputs
 	.but_a_right(joystick_1[0]),
 	.but_a_left(joystick_1[1]),
@@ -872,7 +897,7 @@ jag_team_tap team_tap_port2_inst (
 	.but_a_0(joystick_1[18]),
 	.but_a_star(joystick_1[19]),
 	.but_a_hash(joystick_1[20]),
-	
+
 	// Controller B inputs
 	.but_b_right(joystick_2[0]),
 	.but_b_left(joystick_2[1]),
@@ -895,7 +920,7 @@ jag_team_tap team_tap_port2_inst (
 	.but_b_0(joystick_2[18]),
 	.but_b_star(joystick_2[19]),
 	.but_b_hash(joystick_2[20]),
-	
+
 	// Controller C inputs
 	.but_c_right(joystick_3[0]),
 	.but_c_left(joystick_3[1]),
@@ -918,7 +943,7 @@ jag_team_tap team_tap_port2_inst (
 	.but_c_0(joystick_3[18]),
 	.but_c_star(joystick_3[19]),
 	.but_c_hash(joystick_3[20]),
-	
+
 	// Controller D inputs
 	.but_d_right(joystick_4[0]),
 	.but_d_left(joystick_4[1]),
@@ -1604,8 +1629,8 @@ module eeprom
 `define EE_WR_END    3'b111
 
 reg          sk_prev = 1'b0;
-reg          ee_type = 1'b0;   // 0 = 128 bytes/9bit ir -- 1 = 2048 bytes/13bit ir 
-reg          detect = 1'b0; 
+reg          ee_type = 1'b0;   // 0 = 128 bytes/9bit ir -- 1 = 2048 bytes/13bit ir
+reg          detect = 1'b0;
 // autosize detect assumes first command after reset is pulsed cs signal then 9 or 13 bit command followed by cs or reads
 // After cs then 9 bits, if next is not cs or write then is ee_type 0. Otherwise type 1.
 //reg [15:0]   mem[0:(1<<6)-1];
