@@ -4,7 +4,8 @@ Tested: Working Video 720p, 1080p & Sound.
 
 Dev notes: To synthesize for Senhor use the "Jaguar_ReworkSingle.qpf" - Only a single SDRAM stick is supported.
 
-Constraints file Jaguar_ReworkSingle.sdc (same as PSX.sdc) has been reworked, in order to fix the pixel artifacts in 1080p.
+Not needed in v20260323
+(Constraints file Jaguar_ReworkSingle.sdc (same as PSX.sdc) has been reworked, in order to fix the pixel artifacts in 1080p.)
 
 ___
 
